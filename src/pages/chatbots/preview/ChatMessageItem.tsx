@@ -38,10 +38,13 @@ const formatMessageText = (text: string): React.ReactNode => {
         
         // Formatear listas numeradas
         if (paragraph.trim().match(/^\d+\.\s/)) {
-          const items = paragraph.split(/\n\d+\.\s/);
+          // Buscar todos los elementos que empiezan por número + punto
+          const listItems = paragraph.split('\n')
+            .filter(line => line.trim().match(/^\d+\.\s/));
+          
           return (
             <ol key={i} className="list-decimal pl-5 my-2">
-              {items.filter(Boolean).map((item, j) => (
+              {listItems.map((item, j) => (
                 <li key={j}>{formatInlineText(item.replace(/^\d+\.\s/, ''))}</li>
               ))}
             </ol>
