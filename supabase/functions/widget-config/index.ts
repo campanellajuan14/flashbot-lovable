@@ -29,6 +29,8 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
+    console.log(`Looking for widget with ID: ${widgetId}`);
+    
     // Get chatbot configuration
     const { data: chatbot, error } = await supabase
       .from('chatbots')
@@ -76,6 +78,8 @@ serve(async (req) => {
         behavior: chatbot.share_settings.behavior
       }
     };
+    
+    console.log("Successfully returning widget config");
     
     return new Response(
       JSON.stringify(response),
