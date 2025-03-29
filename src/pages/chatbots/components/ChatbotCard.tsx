@@ -39,7 +39,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
     <Card className="dashboard-card overflow-hidden transition-all duration-200 hover:shadow-md flex flex-col h-full">
       <CardHeader className="pb-2 relative flex flex-row justify-between items-start">
         <div className="flex flex-col items-start w-full">
-          <Badge variant={chatbot.is_active ? "success" : "secondary"} className="mb-2">
+          <Badge variant="secondary" className={chatbot.is_active ? "bg-green-50 text-green-700 hover:bg-green-50" : ""}>
             {chatbot.is_active ? "Active" : "Inactive"}
           </Badge>
           <div className="flex items-center gap-2 w-full justify-between">
