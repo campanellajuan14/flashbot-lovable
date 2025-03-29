@@ -1,27 +1,20 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 import DocumentNavigation from "@/components/chatbots/DocumentNavigation";
 import InitialChoiceDialog from "./components/InitialChoiceDialog";
-import BasicInfoTab from "./components/BasicInfoTab";
-import PersonalityTab from "./components/PersonalityTab";
-import AdvancedSettingsTab from "./components/AdvancedSettingsTab";
-import TemplateSelectionTab from "./components/TemplateSelectionTab";
 import { useChatbotForm } from "./hooks/useChatbotForm";
 import LoadingState from "./components/LoadingState";
 import { getTemplateById } from "./templates/data";
-import { ChatbotTemplate } from "./templates/types";
+import ChatbotFormHeader from "./components/ChatbotFormHeader";
+import ChatbotFormTabs from "./components/ChatbotFormTabs";
+import FormActions from "./components/FormActions";
 
 const ChatbotForm = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("basic");
   const [showInitialDialog, setShowInitialDialog] = useState<boolean>(!id);
@@ -94,18 +87,6 @@ const ChatbotForm = () => {
     handleSubmit(e);
   };
 
-  const handleBackClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default button behavior
-    e.stopPropagation(); // Stop event propagation
-    navigate(-1);
-  };
-
-  const handleCancelClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default button behavior
-    e.stopPropagation(); // Stop event propagation
-    navigate("/chatbots");
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
@@ -117,101 +98,33 @@ const ChatbotForm = () => {
           onSelectTemplate={handleSelectTemplateFromDialog}
         />
         
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBackClick}
-            className="mr-4"
-            type="button"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="text-left">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {isEditing ? "Edit Chatbot" : "Create New Chatbot"}
-            </h1>
-            <p className="text-muted-foreground">
-              Configure your chatbot's personality and behavior
-            </p>
-          </div>
-        </div>
+        <ChatbotFormHeader isEditing={isEditing} />
 
         {isEditing && (
           <DocumentNavigation chatbotId={id || ""} />
         )}
 
         <form onSubmit={onSubmitForm} className="text-left">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="w-full grid grid-cols-3 mb-2">
-              <TabsTrigger value="basic" type="button">Basic Information</TabsTrigger>
-              <TabsTrigger value="personality" type="button">Personality</TabsTrigger>
-              <TabsTrigger value="advanced" type="button">Advanced Settings</TabsTrigger>
-            </TabsList>
-            
-            {/* Templates tab is now hidden by default but can still be accessed */}
-            {!isEditing && (
-              <TabsContent value="templates" className="pt-4">
-                <TemplateSelectionTab 
-                  selectedTemplateId={selectedTemplateId}
-                  onSelectTemplate={handleTemplateSelect}
-                  onStartFromScratch={handleStartFromScratch}
-                />
-              </TabsContent>
-            )}
-            
-            <TabsContent value="basic" className="pt-4">
-              <BasicInfoTab 
-                form={form} 
-                handleChange={handleChange}
-                chatbotId={id || undefined}
-                userId={user?.id}
-              />
-            </TabsContent>
-            
-            <TabsContent value="personality" className="pt-4">
-              <PersonalityTab 
-                form={form} 
-                handleNestedChange={handleNestedChange} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="advanced" className="pt-4">
-              <AdvancedSettingsTab 
-                form={form} 
-                aiProvider={aiProvider}
-                handleNestedChange={handleNestedChange}
-                handleProviderChange={handleProviderChange}
-              />
-            </TabsContent>
-          </Tabs>
+          <ChatbotFormTabs 
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            form={form}
+            aiProvider={aiProvider}
+            isEditing={isEditing}
+            selectedTemplateId={selectedTemplateId}
+            chatbotId={id}
+            userId={user?.id}
+            handleNestedChange={handleNestedChange}
+            handleChange={handleChange}
+            handleProviderChange={handleProviderChange}
+            handleTemplateSelect={handleTemplateSelect}
+            handleStartFromScratch={handleStartFromScratch}
+          />
           
-          <div className="mt-6 flex justify-end gap-4">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={handleCancelClick}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditing ? "Updating..." : "Creating..."}
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isEditing ? "Update Chatbot" : "Create Chatbot"}
-                </>
-              )}
-            </Button>
-          </div>
+          <FormActions 
+            isSubmitting={isSubmitting}
+            isEditing={isEditing}
+          />
         </form>
       </div>
     </DashboardLayout>
