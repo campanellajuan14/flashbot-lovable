@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -36,12 +37,19 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+// Define independent interfaces without circular references
 interface DocumentMetadata {
   type?: string;
   source?: string;
   size?: number;
   isChunk?: boolean;
   parentId?: string;
+  recordId?: string;
+  chunkIndex?: string;
+  recordRange?: {
+    start?: number;
+    end?: number;
+  };
   [key: string]: any;
 }
 
@@ -52,6 +60,7 @@ interface Document {
   created_at: string;
   chatbot_id: string;
   metadata: DocumentMetadata;
+  user_id?: string;
 }
 
 interface RetrievalSettings {
