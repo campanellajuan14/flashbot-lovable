@@ -4,22 +4,35 @@
   function loadModules() {
     console.log('Starting widget initialization...');
     
+    // Get widget ID from script tag
+    const scriptTag = document.currentScript;
+    const widgetId = scriptTag ? scriptTag.getAttribute('data-widget-id') : null;
+    
+    if (!widgetId) {
+      console.error('Widget initialization failed: Missing data-widget-id attribute');
+      return;
+    }
+    
+    console.log('Initializing widget with ID:', widgetId);
+    
+    // Base URL for modules - derive from the current script's src
+    const basePath = scriptTag ? new URL('./', scriptTag.src).href : '';
+    
     // Create script elements for each module
     const modules = [
-      'widget/state.js',
-      'widget/api.js',
-      'widget/analytics.js',
-      'widget/ui.js',
-      'widget/index.js'
+      `${basePath}widget/state.js`,
+      `${basePath}widget/api.js`,
+      `${basePath}widget/analytics.js`,
+      `${basePath}widget/ui.js`,
+      `${basePath}widget/index.js`
     ];
     
     // Count loaded modules to know when all are ready
     let loadedCount = 0;
     
     // Debug info for troubleshooting
-    console.log('Script base path:', document.currentScript ? document.currentScript.src : 'Unknown');
+    console.log('Script base path:', basePath);
     console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
-    console.log('Widget initialization with anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'); // Log truncated for security
     
     modules.forEach(src => {
       const script = document.createElement('script');
@@ -32,19 +45,22 @@
         // When all modules are loaded, initialize the API
         if (loadedCount === modules.length) {
           console.log('All modules loaded, initializing widget...');
-          import('./widget/index.js')
+          import(`${basePath}widget/index.js`)
             .then(module => {
               // Expose the API globally
-              window.lovableChatbot = module.default;
-              console.log('Widget API exposed as window.lovableChatbot');
+              window.flashbotChat = module.default;
+              console.log('Widget API exposed as window.flashbotChat');
+              
+              // Initialize with the widget ID
+              window.flashbotChat('init', { widget_id: widgetId });
               
               // Trigger any queued commands
-              if (window.lovableChatbotQueue && Array.isArray(window.lovableChatbotQueue)) {
-                console.log(`Processing ${window.lovableChatbotQueue.length} queued commands`);
-                window.lovableChatbotQueue.forEach(args => {
-                  window.lovableChatbot.apply(null, args);
+              if (window.flashbotChatQueue && Array.isArray(window.flashbotChatQueue)) {
+                console.log(`Processing ${window.flashbotChatQueue.length} queued commands`);
+                window.flashbotChatQueue.forEach(args => {
+                  window.flashbotChat.apply(null, args);
                 });
-                delete window.lovableChatbotQueue;
+                delete window.flashbotChatQueue;
               }
             })
             .catch(err => console.error('Error loading chatbot modules:', err));
@@ -56,10 +72,10 @@
   }
   
   // Queue commands until the API is fully loaded
-  window.lovableChatbot = function() {
+  window.flashbotChat = function() {
     console.log('Command queued until widget loads:', Array.from(arguments));
-    window.lovableChatbotQueue = window.lovableChatbotQueue || [];
-    window.lovableChatbotQueue.push(Array.from(arguments));
+    window.flashbotChatQueue = window.flashbotChatQueue || [];
+    window.flashbotChatQueue.push(Array.from(arguments));
   };
   
   console.log('Widget script loaded, starting module loading...');

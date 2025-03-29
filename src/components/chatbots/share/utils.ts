@@ -64,3 +64,11 @@ export const copyEmbedCode = (widgetId: string | null): boolean => {
     return false;
   }
 };
+
+/**
+ * Creates a widget iframe embed code
+ */
+export const getIframeEmbedCode = (widgetId: string | null): string => {
+  if (!widgetId) return '';
+  return `<iframe src="https://chatbot-platform.lovable.app/widget/${widgetId}" width="100%" height="600" frameborder="0"></iframe>`;
+};

@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
     
-    // Initialize Supabase client
+    // Initialize Supabase client - using anon key for public access
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
     
@@ -43,7 +43,7 @@ serve(async (req) => {
     
     console.log(`Looking for widget with ID: ${widgetId}`);
     
-    // Get chatbot configuration
+    // Get chatbot configuration - importantly, we only look for widgets with enabled=true
     const { data: chatbot, error } = await supabase
       .from('chatbots')
       .select('id, name, description, share_settings')

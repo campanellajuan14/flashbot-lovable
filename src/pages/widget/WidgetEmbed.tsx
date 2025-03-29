@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, Zap } from "lucide-react";
 
 interface WidgetConfig {
   id: string;
@@ -23,7 +22,6 @@ interface WidgetConfig {
     content: {
       title: string;
       subtitle?: string;
-      initial_message: string;
       placeholder_text: string;
       welcome_message?: string;
       branding: boolean;
@@ -66,19 +64,30 @@ const WidgetEmbed = () => {
 
       try {
         const response = await fetch(
-          `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`
+          `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              // Include the anon key for public access
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
+            }
+          }
         );
 
         if (!response.ok) {
+          console.error(`Error loading widget: ${response.status} ${response.statusText}`);
+          const errorData = await response.text();
+          console.error("Response body:", errorData);
           throw new Error("Couldn't load widget configuration");
         }
 
         const data = await response.json();
+        console.log("Widget config loaded:", data);
         setConfig(data);
 
         // Check if we have a saved conversation
         if (data.config.behavior.persist_conversation) {
-          const savedConversation = localStorage.getItem(`lovable_chat_${widgetId}`);
+          const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
@@ -91,7 +100,7 @@ const WidgetEmbed = () => {
         }
 
         // Show welcome message if no messages and welcome message exists
-        if (data.config.content.welcome_message && messages.length === 0) {
+        if (data.config.content.welcome_message && (!messages || messages.length === 0)) {
           setMessages([
             { role: "assistant", content: data.config.content.welcome_message }
           ]);
@@ -128,7 +137,10 @@ const WidgetEmbed = () => {
       // Send message to API
       const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/claude-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
+        },
         body: JSON.stringify({
           message: userMessage,
           chatbotId: config.id,
@@ -152,7 +164,7 @@ const WidgetEmbed = () => {
       
       // Save conversation if needed
       if (config.config.behavior.persist_conversation) {
-        localStorage.setItem(`lovable_chat_${widgetId}`, JSON.stringify({
+        localStorage.setItem(`flashbot_chat_${widgetId}`, JSON.stringify({
           messages: [...messages, { role: "user", content: userMessage }, { role: "assistant", content: result.answer }],
           conversationId: result.conversation_id || conversationId
         }));
@@ -182,9 +194,13 @@ const WidgetEmbed = () => {
 
   if (error || !config) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground p-4 text-center">
-        <h3 className="text-lg font-medium">Error</h3>
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground p-4 text-center gap-3">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <h3 className="text-lg font-medium">Widget Error</h3>
         <p>{error || "Could not load widget"}</p>
+        <p className="text-xs text-muted-foreground max-w-xs">
+          This widget may not be enabled or might require domain access permissions.
+        </p>
       </div>
     );
   }
@@ -298,12 +314,13 @@ const WidgetEmbed = () => {
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
         >
           <a 
-            href="https://chatsimp.com" 
+            href="https://flashbot.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            style={{ color: '#999', textDecoration: 'none' }}
+            style={{ color: '#999', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
           >
-            Powered by Chatsimp
+            <Zap className="h-3 w-3" />
+            Powered by Flashbot
           </a>
         </div>
       )}

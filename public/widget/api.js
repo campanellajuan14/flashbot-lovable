@@ -11,7 +11,7 @@ export async function fetchWidgetConfig(widgetId) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Adding apikey to header to pass authentication
+        // Adding apikey to header for anonymous access
         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
       }
     });
@@ -41,7 +41,7 @@ export async function sendChatMessage(message, state) {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // Adding apikey to header to pass authentication
+        // Adding apikey to header for anonymous access
         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
       },
       body: JSON.stringify({
