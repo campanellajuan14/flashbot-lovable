@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
   // Use a temporary ID for the chatbot if we're creating a new one
   const [tempChatbotId] = useState(() => chatbotId || `temp-${uuidv4()}`);
 

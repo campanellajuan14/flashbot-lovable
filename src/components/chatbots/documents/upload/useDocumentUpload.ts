@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -70,32 +71,7 @@ export const useDocumentUpload = ({
       
       console.log(`Procesando ${files.length} archivos`);
       
-      // Check if we're dealing with a temporary ID (during creation)
-      const isTempId = chatbotId.startsWith('temp-');
-      
-      if (isTempId) {
-        // For temporary IDs during creation, we'll simulate success
-        // These documents will need to be re-uploaded after chatbot creation
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log("Simulando procesamiento de documentos para chatbot en creación");
-        
-        setUploadProgress(100);
-        toast({
-          title: "Documentos procesados",
-          description: "Los documentos serán procesados después de crear el chatbot.",
-        });
-        
-        onUploadComplete();
-        
-        setTimeout(() => {
-          setUploading(false);
-          setUploadProgress(0);
-        }, 1000);
-        
-        return;
-      }
-      
-      // Regular processing for existing chatbots
+      // Process files one by one
       const filePromises = Array.from(files).map(async (file) => {
         const text = await file.text();
         
@@ -139,7 +115,7 @@ export const useDocumentUpload = ({
       setUploading(false);
       setUploadProgress(0);
       
-      // Verificar error específico de OpenAI API
+      // Check for specific OpenAI API error
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (errorMsg.includes("OpenAI API key not found")) {
         setErrorMessage("No se ha configurado la clave de API de OpenAI. Contacte al administrador del sistema para configurar esta clave.");

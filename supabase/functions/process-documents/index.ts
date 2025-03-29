@@ -12,7 +12,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Función para generar embeddings usando la API de OpenAI
+// Function to generate embeddings using OpenAI API
 async function getEmbeddings(text: string, model = "text-embedding-ada-002") {
   if (!OPENAI_API_KEY) {
     console.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.");
@@ -46,71 +46,71 @@ async function getEmbeddings(text: string, model = "text-embedding-ada-002") {
   }
 }
 
-// Función mejorada para dividir el texto en chunks de manera más inteligente
+// Improved function to split text into chunks semantically
 function improvedSplitTextIntoChunks(text: string, chunkSize = 1000, overlap = 200) {
-  // Normalizar saltos de línea
+  // Normalize line breaks
   const normalizedText = text.replace(/\r\n/g, '\n');
   
-  // Intentar dividir por párrafos primero
+  // Try to split by paragraphs first
   const paragraphs = normalizedText.split(/\n\s*\n/);
   
   const chunks = [];
   let currentChunk = '';
   let currentSize = 0;
   
-  // Función para estimar tokens (aproximación rudimentaria)
+  // Function to estimate tokens (rudimentary approximation)
   function estimateTokens(text: string): number {
-    return Math.ceil(text.length / 4); // Aproximación simple: ~4 caracteres por token
+    return Math.ceil(text.length / 4); // Simple approximation: ~4 characters per token
   }
   
   for (const paragraph of paragraphs) {
     const paragraphSize = estimateTokens(paragraph);
     
-    // Si el párrafo es muy grande, dividirlo en oraciones
+    // If paragraph is very large, split it into sentences
     if (paragraphSize > chunkSize) {
-      // Dividir párrafos grandes en oraciones
+      // Split large paragraphs into sentences
       const sentences = paragraph.split(/(?<=[.!?])\s+/);
       
       for (const sentence of sentences) {
         const sentenceSize = estimateTokens(sentence);
         
-        // Si la oración es demasiado grande (raro), dividirla por la fuerza
+        // If sentence is too large (rare), force split it
         if (sentenceSize > chunkSize) {
           let remainingSentence = sentence;
           while (remainingSentence.length > 0) {
-            const chunkText = remainingSentence.slice(0, chunkSize * 4); // Multiplicamos por 4 para volver a caracteres
+            const chunkText = remainingSentence.slice(0, chunkSize * 4); // Multiply by 4 to convert back to characters
             chunks.push(chunkText);
             remainingSentence = remainingSentence.slice(Math.max(0, (chunkSize - overlap) * 4));
           }
         } else if (currentSize + sentenceSize <= chunkSize) {
-          // La oración cabe en el chunk actual
+          // Sentence fits in current chunk
           currentChunk += (currentChunk ? ' ' : '') + sentence;
           currentSize += sentenceSize;
         } else {
-          // La oración no cabe, guardar chunk actual y empezar uno nuevo
+          // Sentence doesn't fit, save current chunk and start a new one
           chunks.push(currentChunk);
           currentChunk = sentence;
           currentSize = sentenceSize;
         }
       }
     } else if (currentSize + paragraphSize <= chunkSize) {
-      // El párrafo cabe en el chunk actual
+      // Paragraph fits in current chunk
       currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
       currentSize += paragraphSize;
     } else {
-      // El párrafo no cabe, guardar chunk actual y empezar uno nuevo
+      // Paragraph doesn't fit, save current chunk and start a new one
       chunks.push(currentChunk);
       currentChunk = paragraph;
       currentSize = paragraphSize;
     }
   }
   
-  // No olvidar el último chunk
+  // Don't forget the last chunk
   if (currentChunk) {
     chunks.push(currentChunk);
   }
   
-  // Si no hay chunks (texto muy corto), devolver el texto original
+  // If no chunks (very short text), return the original text
   if (chunks.length === 0 && text.trim()) {
     chunks.push(text);
   }
@@ -118,19 +118,19 @@ function improvedSplitTextIntoChunks(text: string, chunkSize = 1000, overlap = 2
   return chunks;
 }
 
-// Función simple para el caso de error
+// Simple fallback function for chunking in case of error
 function splitTextIntoChunks(text: string, chunkSize = 1000, overlap = 200) {
   const chunks = [];
   let i = 0;
 
   while (i < text.length) {
-    // Si es el último chunk, ajustar para no exceder el texto
+    // If this is the last chunk, adjust to not exceed the text
     const end = Math.min(i + chunkSize, text.length);
     chunks.push(text.slice(i, end));
     i += chunkSize - overlap;
-    // Asegurarse de que no nos pasamos
+    // Make sure we don't go past the end
     if (i >= text.length) break;
-    // Ajustar el inicio para no ir antes del inicio del texto
+    // Adjust the start to not go before the beginning of the text
     i = Math.max(0, i);
   }
 
@@ -146,7 +146,7 @@ serve(async (req) => {
   try {
     const { chatbotId, text, fileName, fileType, userId, retrievalSettings } = await req.json();
     
-    // Validación de entrada
+    // Input validation
     if (!chatbotId || !text || !fileName) {
       return new Response(
         JSON.stringify({ success: false, error: "Faltan parámetros requeridos" }),
@@ -157,12 +157,12 @@ serve(async (req) => {
     console.log(`Processing document for chatbot ${chatbotId}, userId: ${userId}`);
     console.log(`Filename: ${fileName}, fileType: ${fileType}`);
     
-    // Configurar tamaño de chunks y solapamiento desde la configuración o usar valores por defecto
+    // Configure chunk size and overlap from settings or use defaults
     const chunkSize = retrievalSettings?.chunk_size || 1000;
     const chunkOverlap = retrievalSettings?.chunk_overlap || 200;
     console.log(`Usando configuración: chunkSize=${chunkSize}, chunkOverlap=${chunkOverlap}`);
     
-    // Dividir el documento en chunks más pequeños - usar la versión mejorada
+    // Split document into smaller chunks - use the improved version
     let chunks = [];
     try {
       chunks = improvedSplitTextIntoChunks(text, chunkSize, chunkOverlap);
@@ -173,7 +173,7 @@ serve(async (req) => {
       console.log(`Documento dividido en ${chunks.length} chunks usando chunking simple`);
     }
     
-    // Verificar de nuevo si tenemos la clave de OpenAI antes de intentar generar embeddings
+    // Verify again that we have the OpenAI key before trying to generate embeddings
     if (!OPENAI_API_KEY) {
       console.error("ERROR: OPENAI_API_KEY no está configurada");
       return new Response(
@@ -185,24 +185,24 @@ serve(async (req) => {
       );
     }
     
-    // Generar embeddings para cada chunk y guardar en Supabase
+    // Generate embeddings for each chunk and save to Supabase
     const processedChunks = [];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       
       try {
-        // Generar embedding usando OpenAI
+        // Generate embedding using OpenAI
         const embeddingModel = retrievalSettings?.embedding_model || "text-embedding-ada-002";
         const embedding = await getEmbeddings(chunk, embeddingModel);
         
-        // Crear un título descriptivo para el chunk
+        // Create a descriptive title for the chunk
         let chunkTitle = fileName;
         if (chunks.length > 1) {
-          // Si es múltiple, añadir indicación de parte
+          // If multiple chunks, add part indication
           chunkTitle = `${fileName} (parte ${i+1}/${chunks.length})`;
         }
         
-        // Preparar metadatos del documento
+        // Prepare document metadata
         const metadata = {
           fileName,
           fileType,
@@ -216,39 +216,69 @@ serve(async (req) => {
           embeddingModel
         };
         
-        // Guardar en la tabla documents
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            chatbot_id: chatbotId,
+        // For temporary IDs (chatbot creation), store in localStorage for later processing
+        if (chatbotId.startsWith('temp-')) {
+          // Store for later processing after chatbot creation
+          const tempDoc = {
             name: chunkTitle,
             content: chunk,
-            embedding,
             metadata,
-            user_id: userId
-          })
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Error al guardar chunk ${i}:`, errorText);
-          throw new Error(`Error al guardar documento en Supabase: ${response.status}`);
+            timestamp: new Date().toISOString(),
+            userId
+          };
+          
+          // Get existing temp docs or initialize empty array
+          const storageKey = `temp_docs_${chatbotId}`;
+          let tempDocs = [];
+          try {
+            const existing = localStorage.getItem(storageKey);
+            tempDocs = existing ? JSON.parse(existing) : [];
+          } catch (e) {
+            console.error("Error parsing stored temp docs:", e);
+            tempDocs = [];
+          }
+          
+          // Add new temp doc and store back
+          tempDocs.push(tempDoc);
+          localStorage.setItem(storageKey, JSON.stringify(tempDocs));
+          console.log(`Stored document chunk in temporary storage for later processing: ${chunkTitle}`);
+          
+          processedChunks.push(i);
+        } else {
+          // Save directly to the documents table for existing chatbots
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              chatbot_id: chatbotId,
+              name: chunkTitle,
+              content: chunk,
+              embedding,
+              metadata,
+              user_id: userId
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error al guardar chunk ${i}:`, errorText);
+            throw new Error(`Error al guardar documento en Supabase: ${response.status}`);
+          }
+          
+          processedChunks.push(i);
         }
-        
-        processedChunks.push(i);
       } catch (chunkError) {
         console.error(`Error procesando chunk ${i}:`, chunkError);
-        // Continuar con el siguiente chunk en lugar de abortar todo el proceso
+        // Continue with the next chunk instead of aborting the whole process
       }
     }
     
-    // Retornar respuesta exitosa con detalles del procesamiento
+    // Return successful response with processing details
     return new Response(
       JSON.stringify({ 
         success: true, 
