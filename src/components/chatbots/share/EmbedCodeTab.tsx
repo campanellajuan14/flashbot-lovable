@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye, CheckCircle2, Code, Frame } from "lucide-react";
-import { copyEmbedCode } from "./utils";
+import { copyEmbedCode, getIframeEmbedCode } from "./utils";
 import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { ShareSettings } from "./types";
 import { useState } from "react";
@@ -27,7 +27,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
         setTimeout(() => setCopied(false), 2000);
       }
     } else {
-      const iframeCode = `<iframe src="https://chatbot-platform.lovable.app/widget/${widgetId}" width="100%" height="600" frameborder="0"></iframe>`;
+      const iframeCode = getIframeEmbedCode(chatbotId);
       try {
         navigator.clipboard.writeText(iframeCode);
         setCopiedIframe(true);
@@ -91,7 +91,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
           <div className="relative">
             <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
               <code>
-                {`<iframe src="https://chatbot-platform.lovable.app/widget/${widgetId}" width="100%" height="600" frameborder="0"></iframe>`}
+                {getIframeEmbedCode(chatbotId)}
               </code>
             </pre>
             <Button

@@ -16,7 +16,10 @@ serve(async (req) => {
   console.log("widget-config function called");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
-  console.log("Request headers:", JSON.stringify(Object.fromEntries([...new Headers(req.headers)])));
+  
+  // Log all headers to debug authentication issues
+  const headers = Object.fromEntries([...new Headers(req.headers)]);
+  console.log("Request headers:", JSON.stringify(headers));
 
   try {
     const url = new URL(req.url);
@@ -44,23 +47,45 @@ serve(async (req) => {
     console.log(`Looking for widget with ID: ${widgetId}`);
     
     // Get chatbot configuration - importantly, we only look for widgets with enabled=true
-    const { data: chatbot, error } = await supabase
+    // First try the standard format (UUID)
+    let query = supabase
       .from('chatbots')
       .select('id, name, description, share_settings')
-      .eq('share_settings->widget_id', widgetId)
-      .eq('share_settings->enabled', true)
-      .single();
+      .eq('share_settings->widget_id', widgetId);
+      
+    let { data: chatbot, error } = await query.single();
     
+    // If not found, try to query directly by ID as fallback (for direct ID references)
     if (error || !chatbot) {
-      console.error("Widget not found error:", error);
-      return new Response(
-        JSON.stringify({ error: "Widget no encontrado o no activo" }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log("Widget not found by widget_id parameter, trying direct ID");
+      const { data: directChatbot, error: directError } = await supabase
+        .from('chatbots')
+        .select('id, name, description, share_settings')
+        .eq('id', widgetId)
+        .single();
+        
+      if (directError || !directChatbot) {
+        console.error("Widget not found with either method:", error || directError);
+        return new Response(
+          JSON.stringify({ error: "Widget no encontrado o no activo" }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      chatbot = directChatbot;
     }
     
     console.log("Found chatbot:", chatbot.id, chatbot.name);
     console.log("Share settings:", JSON.stringify(chatbot.share_settings));
+    
+    // Verify that widget is enabled, if not, it's NOT publicly available
+    if (!chatbot.share_settings?.enabled) {
+      console.error(`Widget is not enabled: ${widgetId}`);
+      return new Response(
+        JSON.stringify({ error: "Widget no está activo" }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Validate domain restriction if configured
     if (chatbot.share_settings?.restrictions?.allowed_domains?.length > 0) {
@@ -70,9 +95,9 @@ serve(async (req) => {
       console.log(`Referer header: ${referer}`);
       console.log(`Allowed domains: ${JSON.stringify(chatbot.share_settings.restrictions.allowed_domains)}`);
       
-      // If referer is null (e.g., from local file), make a special allowance for testing
-      if (!referer) {
-        console.log("No referer found, allowing access for testing purposes");
+      // Special allowances for testing environments
+      if (!referer || referer.includes('localhost') || referer.includes('127.0.0.1') || referer.includes('lovable.app')) {
+        console.log("Development/testing environment detected, allowing access");
         isAllowed = true;
       } else {
         const refererDomain = new URL(referer).hostname;

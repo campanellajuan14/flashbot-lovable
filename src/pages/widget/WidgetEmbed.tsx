@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2, AlertCircle, Zap } from "lucide-react";
+import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
 interface WidgetConfig {
   id: string;
@@ -57,32 +57,47 @@ const WidgetEmbed = () => {
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        setError("Widget ID not found");
+        setError("ID del widget no encontrado");
         setLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(
-          `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              // Include the anon key for public access
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
-            }
-          }
-        );
+        console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
+        const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
+        console.log(`URL completo: ${apiUrl}`);
 
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Include the anon key for public access
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY',
+            'x-client-info': 'widget-embed-component'
+          }
+        });
+        
+        console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
+        
         if (!response.ok) {
-          console.error(`Error loading widget: ${response.status} ${response.statusText}`);
-          const errorData = await response.text();
-          console.error("Response body:", errorData);
-          throw new Error("Couldn't load widget configuration");
+          console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
+          let errorMessage = `Error al cargar la configuración del widget`;
+          
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            const errorText = await response.text();
+            console.error(`Contenido de la respuesta: ${errorText}`);
+          }
+          
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("Widget config loaded:", data);
+        console.log("Configuración del widget cargada:", data);
         setConfig(data);
 
         // Check if we have a saved conversation
@@ -94,7 +109,7 @@ const WidgetEmbed = () => {
               if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("Error parsing saved conversation:", e);
+              console.error("Error procesando la conversación guardada:", e);
             }
           }
         }
@@ -106,9 +121,9 @@ const WidgetEmbed = () => {
           ]);
         }
 
-      } catch (error) {
-        console.error("Error loading widget config:", error);
-        setError("Error loading widget configuration");
+      } catch (error: any) {
+        console.error("Error cargando la configuración del widget:", error);
+        setError(error.message || "Error al cargar la configuración del widget");
       } finally {
         setLoading(false);
       }
@@ -150,7 +165,10 @@ const WidgetEmbed = () => {
         })
       });
       
-      if (!response.ok) throw new Error('Error sending message');
+      if (!response.ok) {
+        console.error(`Error enviando mensaje: ${response.status} ${response.statusText}`);
+        throw new Error('Error al enviar mensaje');
+      }
       
       const result = await response.json();
       
@@ -171,12 +189,12 @@ const WidgetEmbed = () => {
       }
       
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error enviando mensaje:", error);
       
       // Add error message
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: "Sorry, there was an error processing your message. Please try again later." 
+        content: "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo más tarde." 
       }]);
       
     } finally {
@@ -196,10 +214,10 @@ const WidgetEmbed = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground p-4 text-center gap-3">
         <AlertCircle className="h-10 w-10 text-destructive" />
-        <h3 className="text-lg font-medium">Widget Error</h3>
-        <p>{error || "Could not load widget"}</p>
+        <h3 className="text-lg font-medium">Error</h3>
+        <p>{error || "Error al cargar la configuración del widget :("}</p>
         <p className="text-xs text-muted-foreground max-w-xs">
-          This widget may not be enabled or might require domain access permissions.
+          Este widget puede no estar habilitado o podría requerir permisos de acceso de dominio.
         </p>
       </div>
     );
@@ -268,7 +286,7 @@ const WidgetEmbed = () => {
                 display: 'inline-block'
               }}
             >
-              <span className="text-muted">Typing...</span>
+              <span className="text-muted">Escribiendo...</span>
             </div>
           </div>
         )}
@@ -302,7 +320,7 @@ const WidgetEmbed = () => {
               opacity: inputValue.trim() && !sending ? 1 : 0.7
             }}
           >
-            Send
+            Enviar
           </button>
         </form>
       </div>

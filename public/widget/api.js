@@ -1,6 +1,7 @@
 
 // API interactions
 const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
 export async function fetchWidgetConfig(widgetId) {
   try {
@@ -12,7 +13,9 @@ export async function fetchWidgetConfig(widgetId) {
       headers: {
         'Content-Type': 'application/json',
         // Adding apikey to header for anonymous access
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
+        'apikey': ANON_KEY,
+        // Add extra header to help with debugging
+        'x-client-info': 'widget-client'
       }
     });
     
@@ -42,7 +45,7 @@ export async function sendChatMessage(message, state) {
       headers: { 
         'Content-Type': 'application/json',
         // Adding apikey to header for anonymous access
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
+        'apikey': ANON_KEY
       },
       body: JSON.stringify({
         message,
