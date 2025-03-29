@@ -68,15 +68,9 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent | null, directBotMessage?: ChatMessage) => {
-    if (e) e.preventDefault();
-    if (!chatbot) return;
-    
-    // If we have a direct bot message (from voice chat), add it directly
-    if (directBotMessage) {
-      setMessages(prevMessages => [...prevMessages, directBotMessage]);
-      return;
-    }
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messages || !chatbot) return;
     
     const message = inputRef.current?.value || "";
     if (!message.trim() || isTyping) return;

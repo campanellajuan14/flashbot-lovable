@@ -10,16 +10,11 @@ import ChatMessageItem from "./preview/ChatMessageItem";
 import ChatInput from "./preview/ChatInput";
 import { useChatbotData } from "./preview/useChatbotData";
 import { useChatMessages } from "./preview/useChatMessages";
-import { useVoiceChat } from "./preview/hooks/useVoiceChat";
-import VoiceChat from "./preview/components/VoiceChat";
-import { ChatMessage } from "./preview/types";
-import { toast } from "sonner";
 
 const ChatbotPreview = () => {
   const navigate = useNavigate();
   const { chatbot, isLoading, isError, id } = useChatbotData();
   const [message, setMessage] = useState("");
-  const { isVoiceMode, toggleVoiceMode, apiKey, setApiKey } = useVoiceChat();
   
   const {
     messages,
@@ -31,24 +26,6 @@ const ChatbotPreview = () => {
     toggleSourceDetails
   } = useChatMessages(chatbot);
 
-  // Handle message from voice chat
-  const handleVoiceChatMessage = (text: string) => {
-    const botMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "bot",
-      content: text,
-      timestamp: new Date(),
-    };
-    
-    // Add the bot message to the chat
-    // We access the internal method directly to bypass the user message creation
-    // This allows us to add only the bot response message
-    if (handleSendMessage) {
-      setMessage("");
-      handleSendMessage(null, botMessage);
-    }
-  };
-
   // Clear input field after message is sent
   const handleMessageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +34,6 @@ const ChatbotPreview = () => {
     handleSendMessage(e);
     setMessage("");
   };
-
-  useEffect(() => {
-    // Display a toast message when the component mounts to indicate voice chat is available
-    toast.info("Voice chat is available! Click on the microphone icon in the header to try it.");
-  }, []);
 
   if (isLoading) {
     return (
@@ -84,26 +56,9 @@ const ChatbotPreview = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/10">
-      <ChatHeader 
-        chatbotId={id || ""} 
-        chatbotName={chatbot.name}
-        isVoiceMode={isVoiceMode}
-        toggleVoiceMode={toggleVoiceMode}
-        voiceChatEnabled={true}
-      />
+      <ChatHeader chatbotId={id || ""} chatbotName={chatbot.name} />
       
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-background rounded-lg shadow-sm my-4 overflow-hidden">
-        {isVoiceMode ? (
-          <div className="border-b">
-            <VoiceChat 
-              chatbot={chatbot} 
-              apiKey={apiKey}
-              setApiKey={setApiKey}
-              onMessageReceived={handleVoiceChatMessage}
-            />
-          </div>
-        ) : null}
-        
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="space-y-8">
             {messages.map((msg) => (
