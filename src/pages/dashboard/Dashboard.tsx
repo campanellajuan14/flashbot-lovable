@@ -161,14 +161,16 @@ const Dashboard = () => {
           {stats.map((stat, i) => (
             <Card key={i} className="dashboard-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium flex items-center">
                   {stat.title}
                   <MockDataIndicator isReal={stat.isReal} />
                 </CardTitle>
                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="dashboard-stat text-2xl font-bold">{stat.value}</div>
+                <div className={`dashboard-stat text-2xl font-bold ${!stat.isReal ? "text-muted-foreground italic" : ""}`}>
+                  {stat.value}
+                </div>
                 <p className="text-xs text-muted-foreground">{stat.description}</p>
                 <Button variant="ghost" size="sm" className="mt-4 px-0" asChild>
                   <Link to={stat.link}>
@@ -186,7 +188,10 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Actividad Reciente</CardTitle>
-                <MockDataIndicator isReal={false} />
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Info className="h-4 w-4" />
+                  <span>Datos simulados</span>
+                </div>
               </div>
               <CardDescription>
                 Conversaciones y eventos recientes de tus chatbots
@@ -195,18 +200,18 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-start space-x-4 rounded-md border p-3">
+                  <div key={i} className="flex items-start space-x-4 rounded-md border p-3 border-dashed border-muted">
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium">{activity.botName}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-medium text-muted-foreground">{activity.botName}</p>
+                      <p className="text-xs text-muted-foreground italic">
                         Nueva conversación con usuario{" "}
-                        <span className="font-semibold text-foreground">{activity.email}</span>
+                        <span className="font-semibold">{activity.email}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Hace {activity.timeAgo}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" disabled>
                       Ver
                     </Button>
                   </div>
