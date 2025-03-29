@@ -1,14 +1,30 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentNavigationProps {
   chatbotId: string;
 }
 
 const DocumentNavigation: React.FC<DocumentNavigationProps> = ({ chatbotId }) => {
+  // Obtener el conteo de documentos para este chatbot
+  const { data: documentCount } = useQuery({
+    queryKey: ["chatbot-documents-count", chatbotId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("chatbot_id", chatbotId);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg bg-accent/10">
       <div className="flex items-center gap-3">
@@ -16,15 +32,15 @@ const DocumentNavigation: React.FC<DocumentNavigationProps> = ({ chatbotId }) =>
           <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-medium">Documents</h3>
+          <h3 className="font-medium">Documentos</h3>
           <p className="text-sm text-muted-foreground">
-            Upload documents to improve your chatbot's responses
+            {documentCount ? `${documentCount} documento(s) subido(s)` : "Sin documentos. Añade para mejorar las respuestas"}
           </p>
         </div>
       </div>
       <Button asChild size="sm">
         <Link to={`/chatbots/${chatbotId}/documents`}>
-          Manage Documents
+          Administrar Documentos
           <ArrowRight className="ml-2 h-4 w-4" />
         </Link>
       </Button>

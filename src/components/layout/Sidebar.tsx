@@ -29,6 +29,7 @@ const Sidebar = () => {
       title: "Documents",
       href: "/documents",
       icon: FileText,
+      description: "Gestiona documentos de tus chatbots"
     },
     {
       title: "Analytics",
@@ -62,6 +63,7 @@ const Sidebar = () => {
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
               )}
+              title={item.description}
             >
               <item.icon className="h-5 w-5" />
               {item.title}

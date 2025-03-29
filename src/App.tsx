@@ -15,6 +15,7 @@ import ChatbotList from "./pages/chatbots/ChatbotList";
 import ChatbotForm from "./pages/chatbots/ChatbotForm";
 import ChatbotPreview from "./pages/chatbots/ChatbotPreview";
 import ChatbotDocuments from "./pages/chatbots/ChatbotDocuments";
+import DocumentsPage from "./pages/documents/DocumentsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -77,6 +78,13 @@ const App = () => (
             <Route path="/chatbots/:id" element={
               <ProtectedRoute>
                 <ChatbotForm />
+              </ProtectedRoute>
+            } />
+            
+            {/* Nueva ruta para la página general de documentos */}
+            <Route path="/documents" element={
+              <ProtectedRoute>
+                <DocumentsPage />
               </ProtectedRoute>
             } />
             
