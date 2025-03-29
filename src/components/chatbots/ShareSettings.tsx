@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,7 +140,9 @@ const ShareSettings = () => {
   // Update settings from chatbot data
   useEffect(() => {
     if (chatbot && chatbot.share_settings) {
-      const loadedSettings = chatbot.share_settings as ShareSettings;
+      // Cast the JSON data to our ShareSettings type
+      const loadedSettings = chatbot.share_settings as unknown as ShareSettings;
+      
       setSettings(prevSettings => ({
         ...prevSettings,
         ...loadedSettings,
@@ -166,7 +167,7 @@ const ShareSettings = () => {
       
       const { error } = await supabase
         .from("chatbots")
-        .update({ share_settings: newSettings })
+        .update({ share_settings: newSettings as unknown as object })
         .eq("id", chatbotId);
       
       if (error) throw error;
