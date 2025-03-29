@@ -7,9 +7,10 @@ import { useToast } from "@/components/ui/use-toast";
 import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye } from "lucide-react";
+import { Json } from "@/integrations/supabase/types";
 
 // Define the shape of the widget configuration
-interface ShareSettings {
+export interface ShareSettings {
   widget_id?: string;
   enabled?: boolean;
   appearance?: {
@@ -126,10 +127,11 @@ const ShareSettings = () => {
           };
           
           // Update the database with the new widget ID
+          // Here's the fix: explicitly cast newConfig to Json when updating
           const { error: updateError } = await supabase
             .from("chatbots")
             .update({
-              share_settings: newConfig
+              share_settings: newConfig as unknown as Json
             })
             .eq("id", chatbotId);
 

@@ -9,50 +9,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Loader2 } from "lucide-react";
-
-// Interface for widget configuration (same as in ShareSettings.tsx)
-interface ShareSettings {
-  widget_id?: string;
-  enabled?: boolean;
-  appearance?: {
-    position?: string;
-    theme?: string;
-    initial_state?: string;
-    offset_x?: number;
-    offset_y?: number;
-    width?: number;
-    height?: number;
-    border_radius?: number;
-    box_shadow?: boolean;
-    z_index?: number;
-  };
-  content?: {
-    title?: string;
-    subtitle?: string;
-    placeholder_text?: string;
-    welcome_message?: string;
-    branding?: boolean;
-  };
-  colors?: {
-    primary?: string;
-    secondary?: string;
-    background?: string;
-    text?: string;
-    user_bubble?: string;
-    bot_bubble?: string;
-    links?: string;
-  };
-  behavior?: {
-    auto_open?: boolean;
-    auto_open_delay?: number;
-    persist_conversation?: boolean;
-    save_conversation_id?: boolean;
-  };
-  restrictions?: {
-    allowed_domains?: string[];
-  };
-}
+import { Eye } from "lucide-react";
+import { ShareSettings } from "./ShareSettings";
 
 interface ChatbotPreviewDialogProps {
   chatbotId: string;
