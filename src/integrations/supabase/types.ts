@@ -286,6 +286,12 @@ export type Database = {
             }
             Returns: unknown
           }
+      clear_temp_documents: {
+        Args: {
+          temp_id: string
+        }
+        Returns: undefined
+      }
       get_retrieval_settings: {
         Args: {
           p_chatbot_id: string
@@ -302,6 +308,12 @@ export type Database = {
           use_cache: boolean
           use_hierarchical_embeddings: boolean
         }
+      }
+      get_temp_documents: {
+        Args: {
+          temp_id: string
+        }
+        Returns: Json[]
       }
       halfvec_avg: {
         Args: {
@@ -451,6 +463,13 @@ export type Database = {
           "": unknown[]
         }
         Returns: number
+      }
+      store_temp_document: {
+        Args: {
+          temp_id: string
+          doc: Json
+        }
+        Returns: undefined
       }
       vector_avg: {
         Args: {

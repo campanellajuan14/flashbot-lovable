@@ -71,39 +71,66 @@ export const useDocumentUpload = ({
       
       console.log(`Procesando ${files.length} archivos`);
       
-      // Save temp chatbot ID if we're creating a new chatbot
-      if (chatbotId.startsWith('temp-')) {
-        localStorage.setItem('temp_chatbot_id', chatbotId);
-      }
-      
       // Process files one by one
       const filePromises = Array.from(files).map(async (file) => {
         const text = await file.text();
         
-        console.log(`Sending file ${file.name} to process-documents function`);
-        
-        const { data, error } = await supabase.functions.invoke('process-documents', {
-          body: {
-            chatbotId,
-            text,
-            fileName: file.name,
-            fileType: file.type || 'text/plain',
-            userId,
-            retrievalSettings
+        // Check if this is a temporary chatbot ID (starts with 'temp-')
+        if (chatbotId.startsWith('temp-')) {
+          console.log(`Sending file ${file.name} to KV store for temp chatbot: ${chatbotId}`);
+          
+          const documentData = {
+            name: file.name,
+            content: text,
+            metadata: {
+              fileType: file.type || 'text/plain',
+              fileSize: file.size,
+              uploadedAt: new Date().toISOString(),
+              userId
+            }
+          };
+          
+          // Store document in KV
+          const { data, error } = await supabase.functions.invoke('kv-store-document', {
+            body: {
+              tempChatbotId: chatbotId,
+              document: documentData
+            }
+          });
+          
+          if (error) {
+            console.error("Error storing temporary document:", error);
+            throw error;
           }
-        });
-        
-        if (error) {
-          console.error("Error processing document:", error);
-          throw error;
+          
+          return data;
+        } else {
+          // Regular document processing for existing chatbots
+          console.log(`Sending file ${file.name} to process-documents function`);
+          
+          const { data, error } = await supabase.functions.invoke('process-documents', {
+            body: {
+              chatbotId,
+              text,
+              fileName: file.name,
+              fileType: file.type || 'text/plain',
+              userId,
+              retrievalSettings
+            }
+          });
+          
+          if (error) {
+            console.error("Error processing document:", error);
+            throw error;
+          }
+          
+          if (data && !data.success) {
+            throw new Error(data.error || "Error processing document");
+          }
+          
+          console.log("Document processing result:", data);
+          return data;
         }
-        
-        if (data && !data.success) {
-          throw new Error(data.error || "Error processing document");
-        }
-        
-        console.log("Document processing result:", data);
-        return data;
       });
       
       await Promise.all(filePromises);

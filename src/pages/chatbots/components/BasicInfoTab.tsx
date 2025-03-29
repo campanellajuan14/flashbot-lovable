@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { CloudUpload } from "lucide-react";
+import { CloudUpload, FileText } from "lucide-react";
 import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCard";
 import { ChatbotFormData } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
 
 interface BasicInfoTabProps {
   form: ChatbotFormData;
@@ -28,9 +29,40 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [tempDocuments, setTempDocuments] = useState<any[]>([]);
   
   // Use a temporary ID for the chatbot if we're creating a new one
   const [tempChatbotId] = useState(() => chatbotId || `temp-${uuidv4()}`);
+  
+  // Fetch temporary documents when mounting or after an upload
+  const fetchTempDocuments = async () => {
+    if (tempChatbotId.startsWith('temp-')) {
+      try {
+        const { data, error } = await supabase.functions.invoke('kv-get-documents-by-chatbot', {
+          body: {
+            tempChatbotId
+          }
+        });
+        
+        if (error) {
+          console.error("Error fetching temporary documents:", error);
+          return;
+        }
+        
+        if (data && Array.isArray(data.documents)) {
+          setTempDocuments(data.documents);
+          console.log(`Found ${data.documents.length} temporary documents`);
+        }
+      } catch (error) {
+        console.error("Error fetching temporary documents:", error);
+      }
+    }
+  };
+
+  // Fetch temp documents on mount
+  useEffect(() => {
+    fetchTempDocuments();
+  }, [tempChatbotId]);
 
   const handleDocumentUploadComplete = () => {
     toast({
@@ -38,8 +70,11 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
       description: "Los documentos han sido procesados exitosamente.",
     });
     
+    // Refresh the documents list
+    fetchTempDocuments();
+    
     // Only invalidate queries if we have a real chatbot ID
-    if (chatbotId) {
+    if (chatbotId && !chatbotId.startsWith('temp-')) {
       queryClient.invalidateQueries({ queryKey: ["chatbot-documents", chatbotId] });
     }
   };
@@ -116,6 +151,24 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               }}
               onUploadComplete={handleDocumentUploadComplete}
             />
+            
+            {/* Mostrar documentos temporales */}
+            {tempDocuments.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-medium mb-2">Documentos subidos ({tempDocuments.length})</h3>
+                <div className="border rounded-md divide-y">
+                  {tempDocuments.map((doc, index) => (
+                    <div key={index} className="p-2 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{doc.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Estos documentos serán procesados cuando guardes el chatbot.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
