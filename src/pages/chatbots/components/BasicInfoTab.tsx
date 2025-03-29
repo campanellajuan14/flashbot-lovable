@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { CloudUpload, FileText } from "lucide-react";
 import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCard";
 import { ChatbotFormData } from "../types";
@@ -30,6 +29,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [tempDocuments, setTempDocuments] = useState<any[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
   
   // Use a temporary ID for the chatbot if we're creating a new one
   const [tempChatbotId] = useState(() => {
@@ -48,7 +48,9 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   // Fetch temporary documents when mounting or after an upload
   const fetchTempDocuments = async () => {
     if (tempChatbotId.startsWith('temp-')) {
+      setIsLoadingDocs(true);
       try {
+        console.log("Fetching temporary documents for:", tempChatbotId);
         const { data, error } = await supabase.functions.invoke('kv-get-documents-by-chatbot', {
           body: {
             tempChatbotId
@@ -66,6 +68,8 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
         }
       } catch (error) {
         console.error("Error fetching temporary documents:", error);
+      } finally {
+        setIsLoadingDocs(false);
       }
     }
   };
@@ -159,7 +163,9 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             />
             
             {/* Mostrar documentos temporales */}
-            {tempDocuments.length > 0 && (
+            {isLoadingDocs ? (
+              <div className="mt-4 text-center text-muted-foreground">Cargando documentos...</div>
+            ) : tempDocuments.length > 0 ? (
               <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">Documentos subidos ({tempDocuments.length})</h3>
                 <div className="border rounded-md divide-y">
@@ -174,7 +180,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                   Estos documentos serán procesados cuando guardes el chatbot.
                 </p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       )}

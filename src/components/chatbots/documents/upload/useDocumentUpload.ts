@@ -77,7 +77,7 @@ export const useDocumentUpload = ({
         
         // Check if this is a temporary chatbot ID (starts with 'temp-')
         if (chatbotId.startsWith('temp-')) {
-          console.log(`Sending file ${file.name} to KV store for temp chatbot: ${chatbotId}`);
+          console.log(`Sending file ${file.name} to temporary storage for chatbot: ${chatbotId}`);
           
           const documentData = {
             name: file.name,
@@ -90,7 +90,7 @@ export const useDocumentUpload = ({
             }
           };
           
-          // Store document in KV
+          // Store document in temporary storage
           const { data, error } = await supabase.functions.invoke('kv-store-document', {
             body: {
               tempChatbotId: chatbotId,

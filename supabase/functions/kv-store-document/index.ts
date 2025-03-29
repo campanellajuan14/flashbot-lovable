@@ -34,21 +34,21 @@ serve(async (req) => {
     // Connect to Supabase
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    // Store the document in KV store
-    // Use a simple namespace pattern to avoid key conflicts
-    const key = `temp_docs:${tempChatbotId}:${docId}`;
-    
+    // Store the document in Supabase Database instead of KV
+    // Use a temporary table approach instead of KV store
     try {
-      const { data, error } = await supabase.rpc(
-        'kv_set',
-        { 
-          key: key,
-          value: document
-        }
-      );
+      const { data, error } = await supabase
+        .from('temp_documents')
+        .insert({
+          temp_chatbot_id: tempChatbotId,
+          document_id: docId,
+          name: document.name,
+          content: document.content,
+          metadata: document.metadata
+        });
       
       if (error) {
-        throw new Error(`Error storing document in KV: ${error.message}`);
+        throw new Error(`Error storing document: ${error.message}`);
       }
       
       return new Response(
@@ -59,9 +59,9 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } catch (kvError) {
-      console.error("Error storing document in KV:", kvError);
-      throw new Error(`Error storing document in KV: ${kvError.message}`);
+    } catch (dbError) {
+      console.error("Error storing document:", dbError);
+      throw new Error(`Error storing document: ${dbError.message}`);
     }
   } catch (error) {
     console.error('Error processing request:', error);

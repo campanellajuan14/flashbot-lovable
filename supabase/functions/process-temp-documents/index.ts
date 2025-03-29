@@ -4,11 +4,44 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') as string;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Function to generate embeddings using OpenAI API
+async function getEmbeddings(text: string, model = "text-embedding-ada-002") {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OpenAI API key not found");
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        input: text,
+        model: model
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Error en la API de OpenAI: ${response.status} - ${errorData}`);
+    }
+
+    const json = await response.json();
+    return json.data[0].embedding;
+  } catch (error) {
+    console.error("Error al generar embeddings:", error);
+    throw error;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -21,110 +54,89 @@ serve(async (req) => {
     
     if (!realChatbotId || !tempChatbotId || !userId) {
       return new Response(
-        JSON.stringify({ error: "Se requieren realChatbotId, tempChatbotId y userId" }),
+        JSON.stringify({ error: "Se requiere realChatbotId, tempChatbotId y userId" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    console.log(`Processing temp documents from ${tempChatbotId} to ${realChatbotId}`);
+    
+    // Connect to Supabase
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    console.log(`Processing temporary documents from ${tempChatbotId} to ${realChatbotId}`);
+    // Get all temp documents for this chatbot
+    const { data: tempDocuments, error: getError } = await supabase
+      .from('temp_documents')
+      .select('*')
+      .eq('temp_chatbot_id', tempChatbotId);
     
-    // Get temporary documents from KV storage
-    const { data: keys, error: listError } = await supabase.rpc(
-      'kv_list_keys',
-      { 
-        prefix: `temp_docs:${tempChatbotId}:` 
-      }
-    );
-    
-    if (listError) {
-      throw new Error(`Error listing KV keys: ${listError.message}`);
+    if (getError) {
+      throw new Error(`Error getting temp documents: ${getError.message}`);
     }
     
-    if (!keys || keys.length === 0) {
-      console.log(`No temporary documents found for chatbot ${tempChatbotId}`);
+    if (!tempDocuments || tempDocuments.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, processed: 0 }),
+        JSON.stringify({ 
+          success: true,
+          processed: 0,
+          message: "No temporary documents found"
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log(`Found ${keys.length} temporary document keys to process`);
+    console.log(`Found ${tempDocuments.length} temp documents to process`);
     
     // Process each document
-    const processResults = [];
+    let processedCount = 0;
     
-    for (const key of keys) {
-      // Get document from KV
-      const { data: doc, error: getError } = await supabase.rpc(
-        'kv_get',
-        { key }
-      );
-      
-      if (getError || !doc) {
-        console.error(`Error retrieving document with key ${key}: ${getError?.message || 'No data'}`);
-        processResults.push({
-          key,
-          success: false,
-          error: getError?.message || 'No data found'
-        });
-        continue;
-      }
-      
-      console.log(`Processing document: ${doc.name}`);
-      
-      // Insert document into database with real chatbot ID
-      const { data: insertResult, error: insertError } = await supabase
-        .from('documents')
-        .insert({
-          chatbot_id: realChatbotId,
-          name: doc.name,
-          content: doc.content,
-          user_id: userId,
-          metadata: doc.metadata || {}
-        })
-        .select('id');
-      
-      if (insertError) {
-        console.error(`Error inserting document: ${insertError.message}`);
-        processResults.push({
-          name: doc.name,
-          success: false,
-          error: insertError.message
-        });
-        continue;
-      }
-      
-      processResults.push({
-        name: doc.name,
-        success: true,
-        id: insertResult[0]?.id
-      });
-      
-      // Delete the processed document from KV
-      const { error: deleteError } = await supabase.rpc(
-        'kv_del',
-        { key }
-      );
-      
-      if (deleteError) {
-        console.warn(`Error deleting key ${key}: ${deleteError.message}`);
+    for (const doc of tempDocuments) {
+      try {
+        // Generate embedding for this document
+        const embedding = await getEmbeddings(doc.content);
+        
+        // Save to the documents table
+        const { error: insertError } = await supabase
+          .from('documents')
+          .insert({
+            chatbot_id: realChatbotId,
+            name: doc.name,
+            content: doc.content,
+            embedding,
+            metadata: doc.metadata,
+            user_id: userId
+          });
+        
+        if (insertError) {
+          console.error(`Error saving document ${doc.name}:`, insertError);
+          continue;
+        }
+        
+        processedCount++;
+        
+        // Delete the temp document
+        await supabase
+          .from('temp_documents')
+          .delete()
+          .eq('id', doc.id);
+        
+      } catch (docError) {
+        console.error(`Error processing document ${doc.name}:`, docError);
+        // Continue with next document
       }
     }
     
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: true,
-        processed: processResults.filter(r => r.success).length,
-        failed: processResults.filter(r => !r.success).length,
-        results: processResults
+        processed: processedCount,
+        total: tempDocuments.length,
+        message: `${processedCount} of ${tempDocuments.length} documents processed successfully`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-    
   } catch (error) {
-    console.error('Error processing temporary documents:', error);
+    console.error('Error processing request:', error);
     
     return new Response(
       JSON.stringify({ 

@@ -71,7 +71,33 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       // Process any temporarily uploaded documents if this was a new chatbot
       if (!isEditing && newChatbotId && tempChatbotId) {
         console.log(`New chatbot created with ID: ${newChatbotId}, processing documents from temp ID: ${tempChatbotId}`);
-        await processTemporaryDocuments(newChatbotId, tempChatbotId, userId);
+        
+        try {
+          const { data: processResult, error: processError } = await supabase.functions.invoke('process-temp-documents', {
+            body: {
+              realChatbotId: newChatbotId,
+              tempChatbotId: tempChatbotId,
+              userId
+            }
+          });
+          
+          if (processError) {
+            console.error("Error processing temporary documents:", processError);
+          } else {
+            console.log("Temporary documents processed:", processResult);
+            
+            if (processResult && processResult.processed > 0) {
+              toast({
+                title: "Documentos procesados",
+                description: `${processResult.processed} documentos han sido procesados exitosamente.`,
+              });
+            }
+          }
+        } catch (processError) {
+          console.error("Error processing temporary documents:", processError);
+        }
+        
+        // Clean up the temp ID from localStorage
         localStorage.removeItem('temp_chatbot_id');
       }
       
@@ -90,43 +116,6 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-  
-  // Helper function to process temporarily stored documents after chatbot creation
-  const processTemporaryDocuments = async (chatbotId: string, tempChatbotId: string, userId: string | undefined) => {
-    try {
-      console.log(`Processing temporary documents from ${tempChatbotId} to ${chatbotId}`);
-      
-      // Process the temp documents by calling the edge function
-      const { data, error } = await supabase.functions.invoke('process-temp-documents', {
-        body: {
-          realChatbotId: chatbotId,
-          tempChatbotId: tempChatbotId,
-          userId
-        }
-      });
-      
-      if (error) {
-        console.error("Error processing temporary documents:", error);
-        return;
-      }
-      
-      console.log("Temporary documents processed:", data);
-      
-      if (data && data.processed > 0) {
-        toast({
-          title: "Documentos procesados",
-          description: `${data.processed} documentos han sido procesados exitosamente.`,
-        });
-      }
-    } catch (error) {
-      console.error("Error processing temporary documents:", error);
-      toast({
-        variant: "destructive",
-        title: "Advertencia",
-        description: "Algunos documentos pueden no haberse procesado correctamente.",
-      });
     }
   };
   
