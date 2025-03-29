@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from "@/components/ui";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui";
+import { AlertCircle } from "lucide-react";
 
 interface ErrorDisplayProps {
   errorMessage: string | null;

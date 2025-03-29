@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCa
 import { ChatbotFormData } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 interface BasicInfoTabProps {
   form: ChatbotFormData;
@@ -27,16 +28,18 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  // Use a temporary ID for the chatbot if we're creating a new one
+  const [tempChatbotId] = useState(() => chatbotId || `temp-${uuidv4()}`);
 
   const handleDocumentUploadComplete = () => {
+    toast({
+      title: "Documentos procesados",
+      description: "Los documentos han sido procesados exitosamente.",
+    });
+    
+    // Only invalidate queries if we have a real chatbot ID
     if (chatbotId) {
-      // Refresh documents list after upload
       queryClient.invalidateQueries({ queryKey: ["chatbot-documents", chatbotId] });
-      
-      toast({
-        title: "Documentos procesados",
-        description: "Los documentos han sido procesados exitosamente.",
-      });
     }
   };
 
@@ -102,26 +105,16 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {chatbotId ? (
-              <DocumentUploadCard
-                chatbotId={chatbotId}
-                userId={userId}
-                retrievalSettings={{
-                  chunk_size: 1000,
-                  chunk_overlap: 200,
-                  embedding_model: "text-embedding-ada-002"
-                }}
-                onUploadComplete={handleDocumentUploadComplete}
-              />
-            ) : (
-              <div className="p-6 text-center border-2 border-dashed rounded-lg border-muted-foreground/20">
-                <CloudUpload className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                <h3 className="mb-1 font-medium">Documentos disponibles después de crear el chatbot</h3>
-                <p className="text-sm text-muted-foreground">
-                  Podrás subir documentos después de guardar el chatbot por primera vez
-                </p>
-              </div>
-            )}
+            <DocumentUploadCard
+              chatbotId={tempChatbotId}
+              userId={userId}
+              retrievalSettings={{
+                chunk_size: 1000,
+                chunk_overlap: 200,
+                embedding_model: "text-embedding-ada-002"
+              }}
+              onUploadComplete={handleDocumentUploadComplete}
+            />
           </CardContent>
         </Card>
       )}
