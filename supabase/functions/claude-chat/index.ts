@@ -132,6 +132,23 @@ serve(async (req) => {
       maxTokens: 1000
     };
 
+    // Map OpenAI models to Claude models if needed
+    let claudeModel = 'claude-3-haiku-20240307'; // Default Claude model
+    
+    if (modelSettings.model) {
+      // Map OpenAI models to Claude models
+      if (modelSettings.model === 'gpt-4o-mini' || modelSettings.model === 'gpt-3.5-turbo') {
+        claudeModel = 'claude-3-haiku-20240307'; // Use Haiku for less powerful models
+      } else if (modelSettings.model === 'gpt-4o' || modelSettings.model === 'gpt-4-turbo') {
+        claudeModel = 'claude-3-sonnet-20240229'; // Use Sonnet for more powerful models
+      } else if (modelSettings.model.startsWith('claude-')) {
+        // If it's already a Claude model, use it as is
+        claudeModel = modelSettings.model;
+      }
+    }
+    
+    console.log(`Using Claude model: ${claudeModel} (mapped from: ${modelSettings.model})`);
+
     // Build improved system prompt based on configured behavior
     let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
     
@@ -199,13 +216,13 @@ Instrucciones importantes sobre el uso de estos documentos:
 6. Si necesitas hacer referencia a un documento específico, puedes referirte al contenido sin mencionar que es un documento.`;
     }
 
+    console.log('System prompt:', systemPrompt);
+
     // Format messages for Anthropic API
     const formattedMessages = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
     }));
-
-    console.log('System prompt:', systemPrompt);
 
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
@@ -215,7 +232,7 @@ Instrucciones importantes sobre el uso de estos documentos:
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: modelSettings.model,
+        model: claudeModel,
         messages: formattedMessages,
         system: systemPrompt,
         max_tokens: modelSettings.maxTokens,
