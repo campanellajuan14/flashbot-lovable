@@ -62,7 +62,7 @@ serve(async (req) => {
       }
     }
 
-    // Formatear mensajes para la API de Anthropic
+    // Formatear mensajes para la API de Anthropic (sin incluir el mensaje del sistema como parte de los mensajes)
     const formattedMessages = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
@@ -77,10 +77,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...formattedMessages
-        ],
+        messages: formattedMessages,
+        system: systemPrompt, // El mensaje del sistema se envía como un campo separado
         max_tokens: 1000,
         temperature: 0.7,
       }),
