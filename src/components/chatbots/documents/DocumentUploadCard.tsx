@@ -145,7 +145,7 @@ const DocumentUploadCard = ({
   };
 
   return (
-    <Card>
+    <Card id="upload-card">
       <CardHeader>
         <CardTitle>Subir documentos</CardTitle>
         <CardDescription>
@@ -197,6 +197,7 @@ const DocumentUploadCard = ({
               disabled={uploading}
               className="mt-2"
             >
+              <Plus className="h-4 w-4 mr-2" />
               Seleccionar archivos
             </Button>
           </div>

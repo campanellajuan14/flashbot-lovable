@@ -1,33 +1,20 @@
 
-import React, { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-  Button,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  AlertCircle,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Settings, FileText } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCard";
 import DocumentListCard from "@/components/chatbots/documents/DocumentListCard";
 import RetrievalSettingsCard from "@/components/chatbots/documents/RetrievalSettingsCard";
 
-// Define types without recursive references
-interface RecordRange {
-  start?: number;
-  end?: number;
-}
-
+// Define the types explicitly without circular references
 interface DocumentMetadata {
   type?: string;
   source?: string;
@@ -37,7 +24,10 @@ interface DocumentMetadata {
   recordId?: string;
   chunkIndex?: number;
   totalChunks?: number;
-  recordRange?: RecordRange;
+  recordRange?: {
+    start?: number;
+    end?: number;
+  };
   [key: string]: any;
 }
 
@@ -74,32 +64,28 @@ interface RetrievalSettings {
 
 const ChatbotDocuments = () => {
   const { id } = useParams<{ id: string }>();
-  const [selectedTab, setSelectedTab] = useState<string>("documents");
   const navigate = useNavigate();
-
-  const chatbotId = id || '';
-  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatbotId);
-
-  console.log("Current chatbotId:", chatbotId, "Is valid UUID:", isValidUUID);
-
-  const { 
-    data: chatbot, 
-    isLoading: isLoadingChatbot, 
-    error: chatbotError,
-    isError: isChatbotError
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const chatbotId = id || "";
+  
+  // Fetch chatbot data
+  const {
+    data: chatbot,
+    isLoading: isChatbotLoading,
+    isError: isChatbotError,
   } = useQuery({
-    queryKey: ['chatbot', chatbotId],
+    queryKey: ["chatbot", chatbotId],
     queryFn: async () => {
-      if (!chatbotId || !isValidUUID) {
-        console.error("Invalid chatbot ID format:", chatbotId);
-        throw new Error("ID de chatbot inválido o no proporcionado");
-      }
+      if (!chatbotId) throw new Error("ID de chatbot no válido");
       
       console.log("Fetching chatbot with ID:", chatbotId);
+      
       const { data, error } = await supabase
-        .from('chatbots')
-        .select('*')
-        .eq('id', chatbotId)
+        .from("chatbots")
+        .select("*")
+        .eq("id", chatbotId)
         .single();
       
       if (error) {
@@ -107,209 +93,210 @@ const ChatbotDocuments = () => {
         throw error;
       }
       
-      if (!data) {
-        console.error("No chatbot found with ID:", chatbotId);
-        throw new Error("Chatbot no encontrado");
-      }
-      
       console.log("Chatbot data retrieved:", data);
       return data as Chatbot;
     },
-    retry: 1,
-    enabled: isValidUUID,
+    enabled: !!chatbotId && !!user,
   });
-
-  const { 
-    data: documents, 
-    isLoading: isLoadingDocuments,
-    isError: isErrorDocuments,
-    error: documentsError,
-    refetch: refetchDocuments
+  
+  // Fetch documents for this chatbot
+  const {
+    data: documents,
+    isLoading: isDocumentsLoading,
+    isError: isDocumentsError,
   } = useQuery({
-    queryKey: ['chatbot-documents', chatbotId],
+    queryKey: ["chatbot-documents", chatbotId],
     queryFn: async () => {
-      if (!chatbotId || !isValidUUID) {
-        console.error("Invalid chatbot ID for documents:", chatbotId);
-        throw new Error("ID de chatbot inválido o no proporcionado");
-      }
+      if (!chatbotId) throw new Error("ID de chatbot no válido");
       
       console.log("Fetching documents for chatbot:", chatbotId);
+      
       const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('chatbot_id', chatbotId)
-        .eq('metadata->isChunk', 'false')
-        .order('created_at', { ascending: false });
+        .from("documents")
+        .select("*")
+        .eq("chatbot_id", chatbotId)
+        .order("created_at", { ascending: false });
       
       if (error) {
         console.error("Error fetching documents:", error);
         throw error;
       }
       
-      console.log("Documents retrieved:", data?.length || 0);
+      console.log("Documents retrieved:", data.length);
       return data as Document[];
     },
-    enabled: isValidUUID && !!chatbot,
-    retry: 1
+    enabled: !!chatbotId && !!user,
   });
-
-  const { 
-    data: settings, 
-    isLoading: isLoadingSettings,
-    error: settingsError,
-    refetch: refetchSettings
+  
+  // Fetch retrieval settings for this chatbot
+  const {
+    data: retrievalSettings,
+    isLoading: isSettingsLoading,
+    isError: isSettingsError,
   } = useQuery({
-    queryKey: ['retrieval-settings', chatbotId],
+    queryKey: ["retrieval-settings", chatbotId],
     queryFn: async () => {
-      if (!chatbotId || !isValidUUID) {
-        throw new Error("ID de chatbot inválido o no proporcionado");
-      }
+      if (!chatbotId) throw new Error("ID de chatbot no válido");
       
       const { data, error } = await supabase
-        .rpc('get_retrieval_settings', { p_chatbot_id: chatbotId });
+        .from("retrieval_settings")
+        .select("*")
+        .eq("chatbot_id", chatbotId)
+        .single();
       
       if (error) {
-        console.error("Error al cargar configuración:", error);
+        if (error.code === "PGRST116") {
+          // No settings found, create default settings
+          const defaultSettings: RetrievalSettings = {
+            chatbot_id: chatbotId,
+            similarity_threshold: 0.7,
+            max_results: 3,
+            chunk_size: 1000,
+            chunk_overlap: 200,
+            use_hierarchical_embeddings: false,
+            embedding_model: "text-embedding-ada-002",
+            use_cache: true,
+          };
+          
+          // Insert default settings
+          const { data: newSettings, error: insertError } = await supabase
+            .from("retrieval_settings")
+            .insert(defaultSettings)
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error("Error creating default settings:", insertError);
+            throw insertError;
+          }
+          
+          return newSettings as RetrievalSettings;
+        }
+        
+        console.error("Error fetching retrieval settings:", error);
         throw error;
       }
       
       return data as RetrievalSettings;
     },
-    enabled: isValidUUID,
+    enabled: !!chatbotId && !!user,
   });
-
-  const handleUploadClick = () => {
-    setSelectedTab("documents");
+  
+  const handleDocumentUploadComplete = () => {
+    // Refresh documents list after upload
+    queryClient.invalidateQueries({ queryKey: ["chatbot-documents", chatbotId] });
+    
+    toast({
+      title: "Documentos procesados",
+      description: "Los documentos han sido procesados exitosamente.",
+    });
   };
-
-  if (!isValidUUID) {
-    console.error("Invalid UUID format:", chatbotId);
+  
+  if (isChatbotLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            ID de chatbot inválido o no proporcionado. Por favor, verifica la URL.
-          </AlertDescription>
-        </Alert>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={() => navigate(`/chatbots`)}
-        >
-          Volver a mis chatbots
-        </Button>
-      </div>
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+          Cargando...
+        </div>
+      </DashboardLayout>
     );
   }
-
-  if (isChatbotError) {
-    const errorMessage = (chatbotError as Error)?.message || "Error al cargar el chatbot";
-    console.error("Chatbot error:", errorMessage);
-    
+  
+  if (isChatbotError || !chatbot) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-        <div className="flex gap-2 mt-4">
-          <Button variant="outline" onClick={() => navigate(`/chatbots`)}>
-            Volver a mis chatbots
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center gap-4 p-8">
+          <h1 className="text-2xl font-bold">Chatbot no encontrado</h1>
+          <p className="text-muted-foreground">
+            No pudimos encontrar el chatbot solicitado.
+          </p>
+          <Button onClick={() => navigate("/chatbots")}>
+            Volver a Chatbots
           </Button>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
-
+  
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              asChild
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/chatbots/${chatbotId}`)}
+              className="mr-4"
             >
-              <Link to={`/chatbots/${chatbotId}`}>
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">
-                {isLoadingChatbot ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Cargando...
-                  </span>
-                ) : (
-                  chatbot?.name || "Documentos del chatbot"
-                )}
+              <h1 className="text-3xl font-bold tracking-tight">
+                {chatbot.name} - Documentos
               </h1>
-              <p className="text-sm text-muted-foreground">Gestión de documentos</p>
+              <p className="text-muted-foreground">
+                Gestiona los documentos y configuración de recuperación para tu chatbot
+              </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to={`/chatbots/${chatbotId}`}>
-                Volver al chatbot
-              </Link>
-            </Button>
+          <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to={`/chatbots/${chatbotId}/preview`}>
+                <FileText className="h-4 w-4 mr-2" />
                 Vista previa
               </Link>
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/chatbots/${chatbotId}`}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración
+              </Link>
+            </Button>
           </div>
         </div>
-      </header>
-      
-      <div className="flex-1">
-        <div className="container max-w-6xl mx-auto py-6 px-4">
-          <Tabs 
-            defaultValue="documents" 
-            value={selectedTab}
-            onValueChange={setSelectedTab}
-            className="w-full"
-          >
-            <TabsList className="mb-4">
-              <TabsTrigger value="documents">Documentos</TabsTrigger>
-              <TabsTrigger value="settings">Configuración</TabsTrigger>
-            </TabsList>
+        
+        <Separator />
+        
+        <Tabs defaultValue="documents">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="documents">Documentos</TabsTrigger>
+            <TabsTrigger value="settings">Configuración de recuperación</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="documents" className="space-y-6 py-4">
+            {/* Upload documents card */}
+            <DocumentUploadCard
+              chatbotId={chatbotId}
+              userId={user?.id || ""}
+              retrievalSettings={retrievalSettings}
+              onUploadComplete={handleDocumentUploadComplete}
+            />
             
-            <TabsContent value="documents" className="space-y-6">
-              {chatbot && (
-                <DocumentUploadCard 
-                  chatbotId={chatbotId} 
-                  userId={chatbot.user_id}
-                  retrievalSettings={settings}
-                  onUploadComplete={refetchDocuments}
-                />
-              )}
-              
-              <DocumentListCard 
-                chatbotId={chatbotId}
-                documents={documents}
-                isLoading={isLoadingDocuments}
-                onUploadClick={handleUploadClick}
-              />
-            </TabsContent>
-            
-            <TabsContent value="settings">
-              <RetrievalSettingsCard 
-                chatbotId={chatbotId}
-                settings={settings}
-                isLoading={isLoadingSettings}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+            {/* Document list card */}
+            <DocumentListCard
+              chatbotId={chatbotId}
+              documents={documents}
+              isLoading={isDocumentsLoading}
+              onUploadClick={() => {
+                // Scroll to upload card
+                document.querySelector("#upload-card")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+          </TabsContent>
+          
+          <TabsContent value="settings" className="space-y-4 py-4">
+            {/* Retrieval settings card */}
+            <RetrievalSettingsCard
+              chatbotId={chatbotId}
+              settings={retrievalSettings}
+              isLoading={isSettingsLoading}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
