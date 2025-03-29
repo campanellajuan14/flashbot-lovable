@@ -46,9 +46,8 @@ const ChatbotFormTabs = ({
   
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-      <TabsList className="w-full grid grid-cols-3 mb-2">
+      <TabsList className="w-full grid grid-cols-2 mb-2">
         <TabsTrigger value="basic" type="button">Basic Information</TabsTrigger>
-        <TabsTrigger value="personality" type="button">Personality</TabsTrigger>
         <TabsTrigger value="advanced" type="button">Advanced Settings</TabsTrigger>
       </TabsList>
       
@@ -67,15 +66,9 @@ const ChatbotFormTabs = ({
         <BasicInfoTab 
           form={form} 
           handleChange={handleChange}
+          handleNestedChange={handleNestedChange}
           chatbotId={chatbotId}
           userId={userId}
-        />
-      </TabsContent>
-      
-      <TabsContent value="personality" className="pt-4">
-        <PersonalityTab 
-          form={form} 
-          handleNestedChange={handleNestedChange} 
         />
       </TabsContent>
       
