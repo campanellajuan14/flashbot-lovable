@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-import { ShareSettings } from "./ShareSettings";
+import { ShareSettingsType } from "./ShareSettings";
 
 interface ChatbotPreviewDialogProps {
   chatbotId: string;
-  widgetConfig: ShareSettings | null;
+  widgetConfig: ShareSettingsType | null;
   children?: React.ReactNode;
 }
 
