@@ -81,7 +81,7 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
   
   const topChatbots = getTopChatbots();
   
-  // Función para formatear la fecha
+  // Format date function
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en', { 

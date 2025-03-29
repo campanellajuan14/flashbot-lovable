@@ -66,27 +66,27 @@ export function useDashboardData() {
     {
       title: "Total Chatbots",
       value: isLoadingChatbots ? "..." : String(chatbotsData || 0),
-      description: "Chatbots activos en tu cuenta",
+      description: "Active chatbots in your account",
       icon: MessageSquare,
       color: "text-indigo-500",
       link: "/chatbots",
       isReal: true
     },
     {
-      title: "Total Conversaciones",
+      title: "Total Conversations",
       value: isLoadingConversations ? "..." : String(conversationsData || 0),
-      description: "Conversaciones en los últimos 30 días",
+      description: "Conversations in the last 30 days",
       icon: Users,
       color: "text-cyan-500",
       link: "/analytics",
       isReal: true
     },
     {
-      title: "Tasa de Respuesta",
+      title: "Response Rate",
       value: isLoadingMetrics ? 
         "..." : 
         (metricsData !== null ? `${metricsData}%` : "94%"),
-      description: "Consultas respondidas correctamente",
+      description: "Queries answered correctly",
       icon: BarChart,
       color: "text-emerald-500",
       link: "/analytics",
@@ -97,21 +97,21 @@ export function useDashboardData() {
   // Mock recent activity data
   const recentActivity: ActivityItem[] = [
     {
-      botName: "Soporte al Cliente",
-      email: "usuario1@ejemplo.com",
-      timeAgo: "2 horas",
+      botName: "Customer Support",
+      email: "user1@example.com",
+      timeAgo: "2 hours",
       isReal: false
     },
     {
-      botName: "Asistente de Ventas",
-      email: "usuario2@ejemplo.com",
-      timeAgo: "4 horas",
+      botName: "Sales Assistant",
+      email: "user2@example.com",
+      timeAgo: "4 hours",
       isReal: false
     },
     {
-      botName: "Guía de Productos",
-      email: "usuario3@ejemplo.com",
-      timeAgo: "6 horas",
+      botName: "Product Guide",
+      email: "user3@example.com",
+      timeAgo: "6 hours",
       isReal: false
     }
   ];

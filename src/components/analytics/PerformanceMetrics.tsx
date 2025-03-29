@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import { Activity, Clock, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MetricsData } from "@/hooks/useAnalyticsData";
@@ -65,7 +65,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
       
       return {
         date,
-        formattedDate: format(new Date(date), 'd MMM', { locale: es }),
+        formattedDate: format(new Date(date), 'd MMM', { locale: enUS }),
         precision: avgPrecision,
         response_time: avgResponseTime,
         tokens_used: avgTokens,
@@ -150,7 +150,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
     </Card>
   );
   
-  // Calcular promedios para las métricas
+  // Calculate averages for metrics
   const avgPrecision = chartData.length ? 
     chartData.reduce((sum, item) => sum + item.precision, 0) / chartData.length : 0;
   
