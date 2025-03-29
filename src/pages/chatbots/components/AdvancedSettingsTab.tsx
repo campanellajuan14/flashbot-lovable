@@ -78,13 +78,33 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
               {aiProvider === "claude" ? (
                 availableModels.claude.map(model => (
                   <SelectItem key={model.id} value={model.id}>
-                    {model.description.split(' ')[0]} {model.name} - {model.description.split(' ').slice(1).join(' ')}
+                    <div className="flex items-center justify-between w-full">
+                      <div>
+                        <span className="font-medium">{model.name}</span>
+                        <span className="ml-2 text-muted-foreground text-xs">
+                          - {model.description.split(' ').slice(1).join(' ')}
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-amber-600 ml-2">
+                        {model.cost}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))
               ) : (
                 availableModels.openai.map(model => (
                   <SelectItem key={model.id} value={model.id}>
-                    {model.description.split(' ')[0]} {model.name} - {model.description.split(' ').slice(1).join(' ')}
+                    <div className="flex items-center justify-between w-full">
+                      <div>
+                        <span className="font-medium">{model.name}</span>
+                        <span className="ml-2 text-muted-foreground text-xs">
+                          - {model.description.split(' ').slice(1).join(' ')}
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-amber-600 ml-2">
+                        {model.cost}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))
               )}
