@@ -2,7 +2,6 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicInfoTab from "./BasicInfoTab";
-import PersonalityTab from "./PersonalityTab";
 import AdvancedSettingsTab from "./AdvancedSettingsTab";
 import TemplateSelectionTab from "./TemplateSelectionTab";
 import { ChatbotFormData } from "../types";

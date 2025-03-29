@@ -42,75 +42,71 @@ const BasicInfoTab = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Grouped Name and Description */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Chatbot Name</Label>
-            <Input 
-              type="text" 
-              id="name" 
-              value={form.name} 
-              onChange={(e) => handleChange("name", e.target.value)} 
-              required
-            />
-            {!isNameValid && (
-              <p className="text-xs text-red-500">Chatbot name is required.</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="isActive">Status</Label>
-            <div className="flex items-center space-x-2 h-10">
-              <Switch 
-                id="isActive" 
-                checked={form.isActive} 
-                onCheckedChange={(checked) => handleChange("isActive", checked)} 
+        <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Chatbot Name</Label>
+              <Input 
+                type="text" 
+                id="name" 
+                value={form.name} 
+                onChange={(e) => handleChange("name", e.target.value)} 
+                required
               />
-              <span className="text-sm">{form.isActive ? 'Active' : 'Inactive'}</span>
+              {!isNameValid && (
+                <p className="text-xs text-red-500">Chatbot name is required.</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                placeholder="A brief description of your chatbot"
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                required
+              />
+              {!isDescriptionValid && (
+                <p className="text-xs text-red-500">Chatbot description is required.</p>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Status toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="isActive" className="text-sm font-medium">Status</Label>
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="isActive" 
+              checked={form.isActive} 
+              onCheckedChange={(checked) => handleChange("isActive", checked)} 
+            />
+            <span className="text-sm">{form.isActive ? 'Active' : 'Inactive'}</span>
+          </div>
+        </div>
+
+        {/* Custom Instructions (Prompt) */}
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="instructions">Prompt (Chatbot Instructions)</Label>
           <Textarea
-            id="description"
-            placeholder="A brief description of your chatbot"
-            value={form.description}
-            onChange={(e) => handleChange("description", e.target.value)}
-            required
-            rows={2}
+            id="instructions"
+            placeholder="Provide specific instructions for how the chatbot should respond..."
+            rows={4}
+            value={form.personality.instructions}
+            onChange={(e) => handleNestedChange("personality", "instructions", e.target.value)}
           />
-          {!isDescriptionValid && (
-            <p className="text-xs text-red-500">Chatbot description is required.</p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            These instructions guide how your chatbot will respond to users
+          </p>
         </div>
 
-        {/* Language Selection */}
-        <div className="space-y-2 max-w-md">
-          <Label htmlFor="language" className="text-left block">Primary Language</Label>
-          <Select
-            value={form.personality.language}
-            onValueChange={(value) => handleNestedChange("personality", "language", value)}
-          >
-            <SelectTrigger id="language" className="max-w-xs">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="english">English</SelectItem>
-              <SelectItem value="spanish">Spanish</SelectItem>
-              <SelectItem value="french">French</SelectItem>
-              <SelectItem value="german">German</SelectItem>
-              <SelectItem value="chinese">Chinese</SelectItem>
-              <SelectItem value="japanese">Japanese</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Greeting and Custom Instructions */}
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="customization">
-            <AccordionTrigger className="text-md font-medium">Personality & Behavior</AccordionTrigger>
-            <AccordionContent className="space-y-4 pt-2">
+        {/* Personality & Behavior */}
+        <Accordion type="single" collapsible className="w-full border rounded-md">
+          <AccordionItem value="personality">
+            <AccordionTrigger className="px-4 py-2 text-md font-medium">Personality & Behavior</AccordionTrigger>
+            <AccordionContent className="space-y-4 px-4 pt-2 pb-4">
               <div className="space-y-2">
                 <Label htmlFor="greeting">Initial Greeting</Label>
                 <Textarea
@@ -122,20 +118,6 @@ const BasicInfoTab = ({
                 />
                 <p className="text-xs text-muted-foreground">
                   The first message users will see when starting a conversation
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="instructions">Custom Instructions</Label>
-                <Textarea
-                  id="instructions"
-                  placeholder="Provide specific instructions for how the chatbot should respond..."
-                  rows={4}
-                  value={form.personality.instructions}
-                  onChange={(e) => handleNestedChange("personality", "instructions", e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Additional instructions to guide your chatbot's behavior
                 </p>
               </div>
               
@@ -177,18 +159,42 @@ const BasicInfoTab = ({
                   </Select>
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="language" className="text-left block">Primary Language</Label>
+                <Select
+                  value={form.personality.language}
+                  onValueChange={(value) => handleNestedChange("personality", "language", value)}
+                >
+                  <SelectTrigger id="language" className="max-w-xs">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="english">English</SelectItem>
+                    <SelectItem value="spanish">Spanish</SelectItem>
+                    <SelectItem value="french">French</SelectItem>
+                    <SelectItem value="german">German</SelectItem>
+                    <SelectItem value="chinese">Chinese</SelectItem>
+                    <SelectItem value="japanese">Japanese</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
         
         {/* Knowledge Base Resources */}
-        <div className="mt-4 pt-2 border-t">
+        <div className="pt-2 border-t">
           <h3 className="text-lg font-medium mb-2">Knowledge Base Resources</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Download sample documents to use as knowledge base for your chatbot.
           </p>
           
           <SampleDocumentDownload />
+          
+          <p className="text-sm text-muted-foreground mt-4">
+            Once your chatbot is created, you'll be able to upload documents to enhance its knowledge.
+          </p>
         </div>
         
         {/* Show document uploads section for Lovable Hackathon template */}
