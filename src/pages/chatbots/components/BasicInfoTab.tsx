@@ -25,8 +25,10 @@ const BasicInfoTab = ({
   const isNameValid = form.name.length > 0;
   const isDescriptionValid = form.description.length > 0;
   
-  // If this is the Lovable Hackathon template, show document upload option
-  const isLovableHackathonTemplate = form.name === "Lovable Hackathon Expert";
+  // Check if this is a Lovable Hackathon template (exact match or contains the name)
+  const isLovableHackathonTemplate = form.name === "Lovable Hackathon Expert" || 
+                                    form.name.toLowerCase().includes("lovable") && 
+                                    form.name.toLowerCase().includes("hackathon");
   
   return (
     <Card>
@@ -77,8 +79,8 @@ const BasicInfoTab = ({
           </div>
         </div>
         
-        {/* Show sample document download component for all users */}
-        <div className="mt-4 pt-4 border-t">
+        {/* Show sample document download component for all users with more prominence */}
+        <div className="mt-8 pt-4 border-t">
           <h3 className="text-lg font-medium mb-2">Knowledge Base Resources</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Download sample documents to use as knowledge base for your chatbot.
