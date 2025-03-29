@@ -3,7 +3,7 @@
 const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
-// Increasing retries and adding more debugging 
+// Enhanced retries and debugging
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 1000;
 
@@ -14,27 +14,33 @@ const RETRY_DELAY = 1000;
  */
 export async function fetchWidgetConfig(widgetId, retryCount = 0) {
   try {
+    const requestUrl = `${API_BASE_URL}/widget-config?widget_id=${widgetId}`;
+    
     console.log(`Attempting to load configuration for widget ID: ${widgetId} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
-    console.log(`Full URL: ${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
+    console.log(`Full URL: ${requestUrl}`);
+    
+    // Create a set of headers that will work reliably for public access
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY,
+      'Authorization': `Bearer ${ANON_KEY}`,
+      'x-client-info': 'widget-client',
+      'Origin': window.location.origin,
+      'Referer': document.referrer || window.location.href
+    };
+    
     console.log('Using headers:', {
       'Content-Type': 'application/json',
       'apikey': ANON_KEY ? 'Key is set' : 'Key is missing',
+      'Authorization': ANON_KEY ? 'Bearer token is set' : 'Bearer token is missing',
       'Origin': window.location.origin,
       'Referer': document.referrer || window.location.href
     });
     
-    const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
+    const response = await fetch(requestUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': ANON_KEY,
-        'Authorization': `Bearer ${ANON_KEY}`, // Adding explicit Authorization header
-        'x-client-info': 'widget-client',
-        'Origin': window.location.origin,
-        'Referer': document.referrer || window.location.href
-      },
-      // Ensuring cookies are included in the request
-      credentials: 'include',
+      headers: headers,
+      credentials: 'omit' // Don't send cookies, use the anon key only
     });
     
     console.log(`Response received with status: ${response.status} ${response.statusText}`);
@@ -57,6 +63,9 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
           console.error(`Detailed error: ${errorData.error}`);
           if (errorData.details) {
             console.error(`Additional details: ${errorData.details}`);
+          }
+          if (errorData.tip) {
+            console.error(`Tip: ${errorData.tip}`);
           }
         }
       } catch (e) {
@@ -127,7 +136,7 @@ export async function sendChatMessage(message, state) {
       headers: { 
         'Content-Type': 'application/json',
         'apikey': ANON_KEY,
-        'Authorization': `Bearer ${ANON_KEY}`, // Adding explicit Authorization header
+        'Authorization': `Bearer ${ANON_KEY}`,
         'Origin': window.location.origin,
         'Referer': document.referrer || window.location.href
       },
@@ -139,8 +148,8 @@ export async function sendChatMessage(message, state) {
         widget_id: state.widgetId,
         user_info: state.userInfo
       }),
-      // Ensuring cookies are included in the request
-      credentials: 'include',
+      // Use omit to ensure clean requests
+      credentials: 'omit',
     });
     
     if (!response.ok) {

@@ -21,10 +21,13 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const [embedType, setEmbedType] = useState<"script" | "iframe">("script");
   const { toast } = useToast();
 
-  // Función para obtener el código de script correcto
+  // Get the widget ID from the config or use the provided widgetId
+  const effectiveWidgetId = widgetConfig?.widget_id || widgetId;
+
+  // Function to get the script code with the correct widget ID
   const getScriptCode = () => {
-    // Prioriza el widget_id, pero si no está disponible usa el ID del chatbot directamente
-    const idToUse = widgetId || chatbotId;
+    // Use the effective widget ID from the config, or fall back to chatbot ID
+    const idToUse = effectiveWidgetId || chatbotId;
     return `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${idToUse}"></script>`;
   };
 
@@ -68,12 +71,12 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     }
   };
 
-  // Función para mostrar información del ID actual del widget
+  // Function to show information about the current widget ID
   const getWidgetInfo = () => {
-    if (widgetId) {
+    if (effectiveWidgetId) {
       return (
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4 text-sm text-blue-800">
-          <p className="font-medium mb-1">Widget ID configurado: <span className="font-mono">{widgetId}</span></p>
+          <p className="font-medium mb-1">Widget ID configurado: <span className="font-mono select-all">{effectiveWidgetId}</span></p>
           <p className="text-xs text-blue-700">
             Este ID es diferente del ID del chatbot y es el que se usará para el acceso público.
           </p>
@@ -84,7 +87,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
       <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mt-4 text-sm text-amber-800">
         <p className="font-medium mb-1">Usando el ID del chatbot como widget ID</p>
         <p className="text-xs text-amber-700">
-          No se ha configurado un widget ID específico, se usará el ID del chatbot: <span className="font-mono">{chatbotId}</span>
+          No se ha configurado un widget ID específico, se usará el ID del chatbot: <span className="font-mono select-all">{chatbotId}</span>
         </p>
       </div>
     );
@@ -116,7 +119,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
         <TabsContent value="script" className="mt-0 space-y-4">
           <div className="relative">
             <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
-              <code>{getScriptCode()}</code>
+              <code className="select-all">{getScriptCode()}</code>
             </pre>
             <Button
               variant="ghost"
@@ -145,7 +148,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
         <TabsContent value="iframe" className="mt-0 space-y-4">
           <div className="relative">
             <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
-              <code>
+              <code className="select-all">
                 {getIframeEmbedCode(chatbotId)}
               </code>
             </pre>
@@ -215,6 +218,17 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
             Domain restrictions are optional and can be configured in the Access tab
           </p>
         </div>
+      </div>
+
+      <div className="bg-sky-50 border border-sky-100 rounded-lg p-4 text-sky-800 text-sm">
+        <h4 className="font-medium mb-2">Debugging Access Issues</h4>
+        <p className="mb-2">If you're experiencing widget access issues:</p>
+        <ol className="list-decimal ml-5 space-y-1">
+          <li>Make sure the widget is <strong>enabled</strong> in the configuration</li>
+          <li>Check that the correct widget ID is being used in the embed code</li>
+          <li>Verify that your domain is allowed or domain restrictions are disabled</li>
+          <li>Check the browser console for detailed error messages</li>
+        </ol>
       </div>
     </div>
   );

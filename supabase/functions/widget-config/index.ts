@@ -20,7 +20,7 @@ serve(async (req) => {
   
   // Log all headers to debug authentication issues
   const headers = Object.fromEntries([...new Headers(req.headers)]);
-  console.log("Request headers:", JSON.stringify(headers));
+  console.log("Request headers:", JSON.stringify(headers, null, 2));
 
   try {
     const url = new URL(req.url);
@@ -47,12 +47,12 @@ serve(async (req) => {
     
     console.log(`Looking for widget with ID: ${widgetId}`);
     
-    // Improved widget search logic - Try different methods
+    // Try multiple approaches to find the chatbot
     let chatbot = null;
     let error = null;
     
     // 1. Search by widget_id in share_settings
-    console.log("Searching by widget_id in share_settings");
+    console.log("Method 1: Searching by widget_id in share_settings");
     const { data: widgetData, error: widgetError } = await supabase
       .from('chatbots')
       .select('id, name, description, share_settings')
@@ -61,10 +61,12 @@ serve(async (req) => {
     
     if (!widgetError && widgetData) {
       chatbot = widgetData;
-      console.log("Found widget by widget_id:", chatbot.id);
+      console.log("Found widget by widget_id in share_settings:", chatbot.id);
     } else {
-      // 2. Search directly by chatbot ID
-      console.log("Not found by widget_id, searching by chatbot ID");
+      console.log("Not found by widget_id in share_settings. Error:", widgetError?.message);
+      
+      // 2. Search directly by chatbot ID (in case widget_id is actually the chatbot ID)
+      console.log("Method 2: Searching directly by chatbot ID");
       const { data: directData, error: directError } = await supabase
         .from('chatbots')
         .select('id, name, description, share_settings')
@@ -75,30 +77,58 @@ serve(async (req) => {
         chatbot = directData;
         console.log("Found widget by direct ID:", chatbot.id);
       } else {
+        console.log("Not found by direct ID. Error:", directError?.message);
+        
+        // 3. Search by checking all chatbots with 'enabled' widgets for any matching widget_id
+        console.log("Method 3: Searching all enabled widgets");
+        const { data: allChatbots, error: allChatbotsError } = await supabase
+          .from('chatbots')
+          .select('id, name, description, share_settings')
+          .eq('share_settings->enabled', true);
+          
+        if (!allChatbotsError && allChatbots) {
+          console.log(`Found ${allChatbots.length} chatbots with enabled widgets`);
+          
+          for (const bot of allChatbots) {
+            if (bot.share_settings?.widget_id === widgetId) {
+              chatbot = bot;
+              console.log("Found widget in enabled widgets list:", chatbot.id);
+              break;
+            }
+          }
+        } else {
+          console.log("Error searching all chatbots:", allChatbotsError?.message);
+        }
+          
         error = directError || widgetError;
-        console.error("Widget not found with either method:", error);
       }
     }
     
     if (!chatbot) {
+      console.error("Widget not found with any method:", error);
       return new Response(
-        JSON.stringify({ error: "Widget not found or not active", details: error?.message }),
+        JSON.stringify({ 
+          error: "Widget not found or not active", 
+          details: error?.message,
+          searchedId: widgetId,
+          tip: "Make sure the widget_id is correct and the widget is enabled in share_settings"
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
     console.log("Found chatbot:", chatbot.id, chatbot.name);
-    console.log("Share settings:", JSON.stringify(chatbot.share_settings));
+    console.log("Share settings:", JSON.stringify(chatbot.share_settings, null, 2));
     
-    // Ensure share_settings exists to avoid null reference errors
+    // Ensure share_settings exists and has minimum required structure
     if (!chatbot.share_settings) {
       chatbot.share_settings = {
         enabled: true
       };
     }
     
-    // IMPORTANT: Temporarily disable domain restriction to solve issues
-    // We'll first get the widget working, then re-enable restrictions if needed
+    // IMPORTANT: Make widget publicly accessible without auth
+    // This is a public endpoint that should work for any visitor
     
     // Prepare response (remove sensitive data)
     const response = {
@@ -147,7 +177,11 @@ serve(async (req) => {
     console.error('Error in widget-config:', error);
     
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: String(error) }),
+      JSON.stringify({ 
+        error: "Internal server error", 
+        details: String(error),
+        message: "Please check the Edge Function logs for details"
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

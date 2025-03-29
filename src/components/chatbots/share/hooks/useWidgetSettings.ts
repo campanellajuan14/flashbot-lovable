@@ -31,16 +31,20 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
         
         // If widget_id exists in share_settings, use it
         if (shareSettings?.widget_id) {
+          console.log("Using existing widget ID:", shareSettings.widget_id);
           setWidgetId(shareSettings.widget_id);
           setWidgetConfig(shareSettings);
         } else {
           // Generate a new widget ID
           const newWidgetId = crypto.randomUUID();
+          console.log("Generated new widget ID:", newWidgetId);
           setWidgetId(newWidgetId);
           
           // Create default settings with the new widget ID
           const defaultConfig = createDefaultWidgetConfig(newWidgetId);
           setWidgetConfig(defaultConfig);
+          
+          console.log("Updating chatbot with new widget ID");
           
           // Update chatbot with new widget_id and default settings
           await supabase
@@ -49,6 +53,8 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
               share_settings: defaultConfig as any
             })
             .eq("id", chatbotId);
+            
+          console.log("Chatbot updated with new widget ID");
         }
       } catch (error) {
         console.error('Error fetching widget settings:', error);
@@ -71,6 +77,8 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
     setIsSaving(true);
     
     try {
+      console.log("Saving widget settings with ID:", widgetConfig.widget_id);
+      
       // Update existing settings in the share_settings field
       const { error } = await supabase
         .from("chatbots")
@@ -85,6 +93,8 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
         title: "Success",
         description: "Widget settings saved successfully",
       });
+      
+      console.log("Widget settings saved successfully");
     } catch (error) {
       console.error('Error saving widget settings:', error);
       toast({

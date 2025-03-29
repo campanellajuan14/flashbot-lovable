@@ -51,6 +51,7 @@
     // Add a timeout to detect loading problems
     const loadTimeout = setTimeout(() => {
       console.error('Widget modules loading timeout - some modules may have failed to load');
+      showErrorMessage('Widget modules loading timeout. Check browser console for details.');
     }, 10000);
     
     modules.forEach(src => {
@@ -96,17 +97,7 @@
             .catch(err => {
               console.error('Error loading chatbot modules:', err);
               // Try to recover from error
-              const errorDiv = document.createElement('div');
-              errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
-                               color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
-                               font-family: sans-serif; z-index: 10000; max-width: 300px;`;
-              errorDiv.innerHTML = `
-                <strong>Widget Error</strong>
-                <p>Widget loading failed. Please contact administrator.</p>
-                <p>Error: ${err.message}</p>
-                <p>Widget ID: <code>${widgetId}</code></p>
-              `;
-              document.body.appendChild(errorDiv);
+              showErrorMessage(`Widget module loading failed: ${err.message}. Widget ID: ${widgetId}`);
             });
         }
       };
@@ -116,19 +107,27 @@
         loadedCount++;
         
         // Show visual error
-        const errorDiv = document.createElement('div');
-        errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
-                         color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
-                         font-family: sans-serif; z-index: 10000; max-width: 300px;`;
-        errorDiv.innerHTML = `
-          <strong>Widget Error</strong>
-          <p>Error loading module: ${src}</p>
-          <p>Widget ID: <code>${widgetId}</code></p>
-        `;
-        document.body.appendChild(errorDiv);
+        showErrorMessage(`Failed to load module: ${src}. Check your connection and try again.`);
       };
       document.head.appendChild(script);
     });
+  }
+  
+  // Helper function to show error messages
+  function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
+                   color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
+                   font-family: sans-serif; z-index: 10000; max-width: 300px;`;
+    errorDiv.innerHTML = `
+      <strong>Widget Error</strong>
+      <p>${message}</p>
+      <button style="background: #721c24; color: white; border: none; padding: 5px; border-radius: 3px; margin-top: 5px; cursor: pointer; font-size: 10px;" 
+              onclick="this.parentNode.style.display='none'">
+        Dismiss
+      </button>
+    `;
+    document.body.appendChild(errorDiv);
   }
   
   // Queue commands until the API is fully loaded
@@ -144,6 +143,6 @@
   const isIframe = window !== window.parent;
   console.log('Is iframe:', isIframe);
   
-  // Initialize module loading
-  loadModules();
+  // Initialize module loading with a small delay to ensure DOM is ready
+  setTimeout(loadModules, 100);
 })();
