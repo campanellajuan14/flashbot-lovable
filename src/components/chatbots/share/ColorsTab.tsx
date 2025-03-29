@@ -16,7 +16,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="primary">Color primario</Label>
+          <Label htmlFor="primary">Primary color</Label>
           <div className="flex">
             <Input 
               id="primary" 
@@ -34,7 +34,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="background">Color de fondo</Label>
+          <Label htmlFor="background">Background color</Label>
           <div className="flex">
             <Input 
               id="background" 
@@ -52,7 +52,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="text">Color de texto</Label>
+          <Label htmlFor="text">Text color</Label>
           <div className="flex">
             <Input 
               id="text" 
@@ -70,7 +70,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="user_bubble">Burbuja del usuario</Label>
+          <Label htmlFor="user_bubble">User bubble</Label>
           <div className="flex">
             <Input 
               id="user_bubble" 
@@ -88,7 +88,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="bot_bubble">Burbuja del chatbot</Label>
+          <Label htmlFor="bot_bubble">Chatbot bubble</Label>
           <div className="flex">
             <Input 
               id="bot_bubble" 

@@ -27,8 +27,8 @@ const RestrictionsTab: React.FC<RestrictionsTabProps> = ({ widgetConfig, setWidg
     const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/;
     if (!domainRegex.test(domain)) {
       toast({
-        title: "Formato inválido",
-        description: "Por favor ingresa un dominio válido (ejemplo: midominio.com)",
+        title: "Invalid format",
+        description: "Please enter a valid domain (example: mydomain.com)",
         variant: "destructive",
       });
       return;
@@ -37,8 +37,8 @@ const RestrictionsTab: React.FC<RestrictionsTabProps> = ({ widgetConfig, setWidg
     // Check if domain already exists
     if (widgetConfig.restrictions?.allowed_domains?.includes(domain)) {
       toast({
-        title: "Dominio duplicado",
-        description: "Este dominio ya está en la lista",
+        title: "Duplicate domain",
+        description: "This domain is already in the list",
         variant: "destructive",
       });
       return;
@@ -65,20 +65,20 @@ const RestrictionsTab: React.FC<RestrictionsTabProps> = ({ widgetConfig, setWidg
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="allowed_domains" className="block mb-2">Dominios permitidos</Label>
+        <Label htmlFor="allowed_domains" className="block mb-2">Allowed domains</Label>
         <p className="text-sm text-muted-foreground mb-4">
-          Si no especificas ningún dominio, el widget funcionará en cualquier sitio web.
-          Agrega dominios para restringir dónde se puede usar el widget.
+          If you don't specify any domains, the widget will work on any website.
+          Add domains to restrict where the widget can be used.
         </p>
         
         <div className="flex gap-2 mb-4">
           <Input 
             id="allowed_domains" 
-            placeholder="ejemplo.com"
+            placeholder="example.com"
             value={allowedDomain}
             onChange={(e) => setAllowedDomain(e.target.value)}
           />
-          <Button onClick={addAllowedDomain}>Agregar</Button>
+          <Button onClick={addAllowedDomain}>Add</Button>
         </div>
         
         {widgetConfig?.restrictions?.allowed_domains?.length ? (
@@ -99,7 +99,7 @@ const RestrictionsTab: React.FC<RestrictionsTabProps> = ({ widgetConfig, setWidg
           </div>
         ) : (
           <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-md text-center">
-            No hay dominios restringidos
+            No restricted domains
           </div>
         )}
       </div>

@@ -18,39 +18,39 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="position">Posición</Label>
+          <Label htmlFor="position">Position</Label>
           <Select 
             value={widgetConfig?.appearance?.position || 'right'} 
             onValueChange={(value) => onAppearanceChange('position', value)}
           >
             <SelectTrigger id="position">
-              <SelectValue placeholder="Selecciona una posición" />
+              <SelectValue placeholder="Select a position" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="left">Izquierda</SelectItem>
-              <SelectItem value="right">Derecha</SelectItem>
+              <SelectItem value="left">Left</SelectItem>
+              <SelectItem value="right">Right</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="initial_state">Estado inicial</Label>
+          <Label htmlFor="initial_state">Initial state</Label>
           <Select 
             value={widgetConfig?.appearance?.initial_state || 'closed'} 
             onValueChange={(value) => onAppearanceChange('initial_state', value)}
           >
             <SelectTrigger id="initial_state">
-              <SelectValue placeholder="Selecciona un estado inicial" />
+              <SelectValue placeholder="Select an initial state" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="closed">Cerrado</SelectItem>
-              <SelectItem value="open">Abierto</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="width">Ancho (px)</Label>
+          <Label htmlFor="width">Width (px)</Label>
           <Input 
             id="width" 
             type="number" 
@@ -60,7 +60,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="height">Alto (px)</Label>
+          <Label htmlFor="height">Height (px)</Label>
           <Input 
             id="height" 
             type="number" 
@@ -70,7 +70,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="border_radius">Radio de borde (px)</Label>
+          <Label htmlFor="border_radius">Border radius (px)</Label>
           <Input 
             id="border_radius" 
             type="number" 
@@ -80,7 +80,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="offset_x">Margen horizontal (px)</Label>
+          <Label htmlFor="offset_x">Horizontal margin (px)</Label>
           <Input 
             id="offset_x" 
             type="number" 
@@ -90,7 +90,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="offset_y">Margen vertical (px)</Label>
+          <Label htmlFor="offset_y">Vertical margin (px)</Label>
           <Input 
             id="offset_y" 
             type="number" 
@@ -100,7 +100,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="box_shadow" className="block mb-2">Sombra</Label>
+          <Label htmlFor="box_shadow" className="block mb-2">Shadow</Label>
           <div className="flex items-center">
             <Switch 
               id="box_shadow" 
@@ -108,7 +108,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
               onCheckedChange={(checked) => onAppearanceChange('box_shadow', checked)}
             />
             <Label htmlFor="box_shadow" className="ml-2">
-              {widgetConfig?.appearance?.box_shadow ? "Activado" : "Desactivado"}
+              {widgetConfig?.appearance?.box_shadow ? "Enabled" : "Disabled"}
             </Label>
           </div>
         </div>
