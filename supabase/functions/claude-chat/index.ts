@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, behavior, chatbotName } = await req.json();
+    const { messages, behavior, chatbotName, settings } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error('Invalid request: messages array is required');
@@ -24,6 +24,14 @@ serve(async (req) => {
 
     console.log('Received request with messages:', messages);
     console.log('Behavior settings:', behavior);
+    console.log('Model settings:', settings);
+
+    // Configuraciones predeterminadas si no se proporcionan
+    const modelSettings = settings || {
+      model: 'claude-3-haiku-20240307',
+      temperature: 0.7,
+      maxTokens: 1000
+    };
 
     // Construir el mensaje del sistema basado en el comportamiento configurado
     let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
@@ -37,6 +45,21 @@ serve(async (req) => {
       // Agregar instrucciones sobre el estilo
       if (behavior.style) {
         systemPrompt += `Tu estilo de respuesta debe ser ${behavior.style}. `;
+      }
+      
+      // Agregar instrucciones sobre el idioma
+      if (behavior.language) {
+        const languageMap: Record<string, string> = {
+          'english': 'inglés',
+          'spanish': 'español',
+          'french': 'francés',
+          'german': 'alemán',
+          'chinese': 'chino',
+          'japanese': 'japonés'
+        };
+        
+        const languageDisplay = languageMap[behavior.language] || behavior.language;
+        systemPrompt += `Debes comunicarte en ${languageDisplay}. `;
       }
       
       // Agregar instrucciones sobre el uso de emojis
@@ -76,11 +99,11 @@ serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: modelSettings.model,
         messages: formattedMessages,
         system: systemPrompt, // El mensaje del sistema se envía como un campo separado
-        max_tokens: 1000,
-        temperature: 0.7,
+        max_tokens: modelSettings.maxTokens,
+        temperature: modelSettings.temperature,
       }),
     });
 

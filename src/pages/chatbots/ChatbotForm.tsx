@@ -52,10 +52,24 @@ const defaultPersonality: Personality = {
 };
 
 const defaultSettings: Settings = {
-  model: "gpt-4o",
+  model: "claude-3-haiku-20240307",
   temperature: 0.7,
-  maxTokens: 2048,
+  maxTokens: 1000,
   includeReferences: true
+};
+
+// Modelos disponibles por proveedor
+const availableModels = {
+  claude: [
+    { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku", description: "Rápido y económico" },
+    { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet", description: "Equilibrio entre velocidad y capacidad" },
+    { id: "claude-3-opus-20240229", name: "Claude 3 Opus", description: "El más potente" }
+  ],
+  openai: [
+    { id: "gpt-4o", name: "GPT-4o", description: "El más recomendado" },
+    { id: "gpt-4-turbo", name: "GPT-4 Turbo", description: "Potente y rápido" },
+    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", description: "El más rápido" }
+  ]
 };
 
 const ChatbotForm = () => {
@@ -74,6 +88,9 @@ const ChatbotForm = () => {
     personality: defaultPersonality,
     settings: defaultSettings
   });
+  
+  // Estado para controlar qué proveedor de IA está seleccionado
+  const [aiProvider, setAiProvider] = useState<"claude" | "openai">("claude");
 
   useEffect(() => {
     if (isEditing && user) {
@@ -122,6 +139,13 @@ const ChatbotForm = () => {
               personality: personalityData,
               settings: settingsData
             });
+            
+            // Detectar qué proveedor de IA está siendo usado basado en el modelo
+            if (settingsData.model.includes('claude')) {
+              setAiProvider("claude");
+            } else {
+              setAiProvider("openai");
+            }
           }
         } catch (error) {
           console.error("Error fetching chatbot:", error);
@@ -160,6 +184,17 @@ const ChatbotForm = () => {
       }
       return prev;
     });
+  };
+  
+  // Cambiar el proveedor de IA y actualizar el modelo por defecto
+  const handleProviderChange = (provider: "claude" | "openai") => {
+    setAiProvider(provider);
+    // Establecer el modelo predeterminado según el proveedor
+    const defaultModel = provider === "claude" 
+      ? "claude-3-haiku-20240307" 
+      : "gpt-4o";
+    
+    handleNestedChange("settings", "model", defaultModel);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -413,6 +448,25 @@ const ChatbotForm = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="provider">AI Provider</Label>
+                    <Select
+                      value={aiProvider}
+                      onValueChange={(value: "claude" | "openai") => handleProviderChange(value)}
+                    >
+                      <SelectTrigger id="provider">
+                        <SelectValue placeholder="Select AI provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="claude">Anthropic Claude</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Elija el proveedor de IA para alimentar su chatbot
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="model">AI Model</Label>
                     <Select
                       value={form.settings.model}
@@ -422,13 +476,23 @@ const ChatbotForm = () => {
                         <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="gpt-4o">GPT-4o (Recommended)</SelectItem>
-                        <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster)</SelectItem>
+                        {aiProvider === "claude" ? (
+                          availableModels.claude.map(model => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name} ({model.description})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          availableModels.openai.map(model => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name} ({model.description})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      The AI model determines the quality and capabilities of your chatbot
+                      El modelo de IA determina la calidad y capacidades de su chatbot
                     </p>
                   </div>
                   
@@ -460,9 +524,19 @@ const ChatbotForm = () => {
                           <SelectValue placeholder="Select length" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1024">Short (1024 tokens)</SelectItem>
-                          <SelectItem value="2048">Medium (2048 tokens)</SelectItem>
-                          <SelectItem value="4096">Long (4096 tokens)</SelectItem>
+                          {aiProvider === "claude" ? (
+                            <>
+                              <SelectItem value="1000">Short (1000 tokens)</SelectItem>
+                              <SelectItem value="2000">Medium (2000 tokens)</SelectItem>
+                              <SelectItem value="4000">Long (4000 tokens)</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="1024">Short (1024 tokens)</SelectItem>
+                              <SelectItem value="2048">Medium (2048 tokens)</SelectItem>
+                              <SelectItem value="4096">Long (4096 tokens)</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
