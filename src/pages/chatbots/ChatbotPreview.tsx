@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Bot, Copy, User, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Bot, Copy, User, FileText, Loader2, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ const ChatbotPreview = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showSourceDetails, setShowSourceDetails] = useState<Record<string, boolean>>({});
   
   // Fetch chatbot data from Supabase
   const { data: chatbot, isLoading, isError } = useQuery({
@@ -104,7 +105,10 @@ const ChatbotPreview = () => {
           messages: formattedMessages,
           behavior: chatbot.behavior,
           chatbotName: chatbot.name,
-          settings: chatbot.settings,
+          settings: {
+            ...chatbot.settings,
+            includeReferences: true // Solicitar explícitamente referencias de documentos
+          },
           chatbotId: chatbot.id // Enviar el ID del chatbot para la recuperación de documentos
         }
       });
@@ -187,6 +191,13 @@ const ChatbotPreview = () => {
     setMessages(prev => [...prev, botMessage]);
   };
 
+  const toggleSourceDetails = (messageId: string) => {
+    setShowSourceDetails(prev => ({
+      ...prev,
+      [messageId]: !prev[messageId]
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -226,6 +237,12 @@ const ChatbotPreview = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/chatbots/${id}/documents`}>
+                <BookOpen className="h-4 w-4 mr-2" />
+                Documentos
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/chatbots/${id}`}>
                 Editar Chatbot
@@ -277,16 +294,38 @@ const ChatbotPreview = () => {
                       {msg.content}
                     </div>
                     {msg.references && msg.references.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {msg.references.map((ref, i) => (
-                          <div 
-                            key={i}
-                            className="inline-flex items-center text-xs text-muted-foreground bg-secondary rounded-full px-2 py-1"
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-2 mb-1">
+                          <button 
+                            onClick={() => toggleSourceDetails(msg.id)}
+                            className="inline-flex items-center text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-full px-2 py-1 transition-colors"
                           >
                             <FileText className="h-3 w-3 mr-1" />
-                            {ref.name} ({Math.round(ref.similarity * 100)}%)
+                            {showSourceDetails[msg.id] ? "Ocultar fuentes" : `${msg.references.length} fuentes`}
+                          </button>
+                        </div>
+                        
+                        {showSourceDetails[msg.id] && (
+                          <div className="space-y-1 border rounded-md p-2 bg-background mt-1 text-xs">
+                            <div className="font-medium text-muted-foreground mb-1">Documentos de referencia:</div>
+                            {msg.references.map((ref, i) => (
+                              <div 
+                                key={i}
+                                className="flex items-start gap-1 py-1 border-t border-dashed first:border-0"
+                              >
+                                <div className="flex-shrink-0 rounded-full bg-primary/10 w-4 h-4 flex items-center justify-center mt-0.5">
+                                  <span className="text-[10px] font-bold text-primary">{i+1}</span>
+                                </div>
+                                <div>
+                                  <div className="font-medium">{ref.name}</div>
+                                  <div className="text-muted-foreground">
+                                    Relevancia: {Math.round(ref.similarity * 100)}%
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                     <div className="mt-1 text-xs text-muted-foreground pl-1">
@@ -337,6 +376,8 @@ const ChatbotPreview = () => {
           </form>
           <p className="text-xs text-muted-foreground mt-2 text-center">
             Esta es una vista previa de cómo aparecerá tu chatbot para los usuarios.
+            {chatbot.behavior?.language === 'english' && 
+              " Recuerda que este chatbot está configurado para responder en inglés."}
           </p>
         </div>
       </div>

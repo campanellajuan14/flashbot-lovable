@@ -35,7 +35,7 @@ serve(async (req) => {
     
     // Obtener la configuración de recuperación
     let retrievalSettings = null;
-    if (chatbotId) {
+    try {
       const { data: settings, error } = await supabase
         .from('retrieval_settings')
         .select('*')
@@ -47,7 +47,37 @@ serve(async (req) => {
         console.log('Retrieved settings:', retrievalSettings);
       } else {
         console.error('Error fetching retrieval settings:', error);
+        // Crear configuración por defecto
+        const { error: insertError } = await supabase
+          .from('retrieval_settings')
+          .insert({
+            chatbot_id: chatbotId,
+            similarity_threshold: 0.65,
+            max_results: 4,
+            chunk_size: 1000,
+            chunk_overlap: 200,
+            use_hierarchical_embeddings: false,
+            embedding_model: "text-embedding-ada-002",
+            use_cache: true
+          });
+          
+        if (insertError) {
+          console.error("Error creating default settings:", insertError);
+        } else {
+          const { data: newSettings } = await supabase
+            .from('retrieval_settings')
+            .select('*')
+            .eq('chatbot_id', chatbotId)
+            .single();
+            
+          if (newSettings) {
+            retrievalSettings = newSettings;
+            console.log("Using newly created settings:", retrievalSettings);
+          }
+        }
       }
+    } catch (settingsError) {
+      console.error("Error handling retrieval settings:", settingsError);
     }
 
     // Obtener el último mensaje del usuario para la búsqueda
@@ -60,48 +90,30 @@ serve(async (req) => {
     // Si hay un ID de chatbot y un mensaje de usuario, buscar documentos relevantes
     if (chatbotId && lastUserMessage) {
       try {
-        // Obtener embeddings para el mensaje del usuario
-        const openaiResponse = await fetch("https://api.openai.com/v1/embeddings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`
-          },
-          body: JSON.stringify({
-            input: lastUserMessage,
-            model: retrievalSettings?.embedding_model || "text-embedding-ada-002"
-          })
+        // Invocar la función edge match-documents con umbral adaptativo 
+        // para mayor probabilidad de encontrar documentos relevantes
+        const matchResponse = await supabase.functions.invoke('match-documents', {
+          body: {
+            query: lastUserMessage,
+            chatbotId,
+            threshold: retrievalSettings?.similarity_threshold,
+            limit: retrievalSettings?.max_results,
+            model: retrievalSettings?.embedding_model,
+            adaptiveThreshold: true // Habilitar umbral adaptativo
+          }
         });
 
-        if (!openaiResponse.ok) {
-          throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+        if (matchResponse.error) {
+          throw new Error(`Match documents error: ${matchResponse.error}`);
         }
 
-        const openaiData = await openaiResponse.json();
-        const queryEmbedding = openaiData.data[0].embedding;
-
-        // Buscar documentos con similitud usando el vector de embeddings
-        const { data: documents, error } = await supabase.rpc(
-          'match_documents',
-          {
-            query_embedding: queryEmbedding,
-            p_chatbot_id: chatbotId,
-            match_threshold: retrievalSettings?.similarity_threshold || 0.7,
-            match_count: retrievalSettings?.max_results || 3
-          }
-        );
-
-        if (error) {
-          throw error;
-        }
-
-        if (documents && documents.length > 0) {
-          console.log(`Found ${documents.length} relevant documents`);
-          relevantDocuments = documents;
+        if (matchResponse.data && matchResponse.data.documents && matchResponse.data.documents.length > 0) {
+          console.log(`Found ${matchResponse.data.documents.length} relevant documents`);
+          relevantDocuments = matchResponse.data.documents;
           
-          // Crear contexto con los documentos recuperados
+          // Crear contexto con los documentos recuperados de manera más estructurada
           documentContext = "Here are some relevant documents that might help you answer the question:\n\n";
-          documents.forEach((doc, i) => {
+          relevantDocuments.forEach((doc, i) => {
             documentContext += `DOCUMENT ${i+1}: ${doc.name}\n${doc.content}\n\n`;
           });
         } else {
@@ -120,18 +132,21 @@ serve(async (req) => {
       maxTokens: 1000
     };
 
-    // Build system prompt based on configured behavior
+    // Build improved system prompt based on configured behavior
     let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
+    
+    // Código ChatSimp inspirado para enfatizar el nombre del chatbot (problema crítico)
+    systemPrompt += `\n\nMUY IMPORTANTE: Tu nombre es ${chatbotName}. SIEMPRE debes identificarte con este nombre cuando te pregunten cómo te llamas o cuál es tu nombre. NUNCA debes decir que eres un asistente sin nombre. Esto es crítico para tu identidad.`;
     
     if (behavior) {
       // Add tone instructions
       if (behavior.tone) {
-        systemPrompt += `Debes responder con un tono ${behavior.tone}. `;
+        systemPrompt += `\nDebes responder con un tono ${behavior.tone}. `;
       }
       
       // Add style instructions
       if (behavior.style) {
-        systemPrompt += `Tu estilo de respuesta debe ser ${behavior.style}. `;
+        systemPrompt += `\nTu estilo de respuesta debe ser ${behavior.style}. `;
       }
       
       // Add language instructions
@@ -146,44 +161,66 @@ serve(async (req) => {
         };
         
         const languageDisplay = languageMap[behavior.language] || behavior.language;
-        systemPrompt += `Debes comunicarte en ${languageDisplay}. `;
+        systemPrompt += `\nDebes comunicarte en ${languageDisplay}. `;
       }
       
       // Add emoji usage instructions
       if (behavior.useEmojis) {
-        systemPrompt += `Usa emojis en tus respuestas cuando sea apropiado. `;
+        systemPrompt += `\nUsa emojis en tus respuestas cuando sea apropiado. `;
       } else {
-        systemPrompt += `No uses emojis en tus respuestas. `;
+        systemPrompt += `\nNo uses emojis en tus respuestas. `;
       }
       
       // Add asking questions instructions
       if (behavior.askQuestions) {
-        systemPrompt += `Haz preguntas al usuario para entender mejor sus necesidades. `;
+        systemPrompt += `\nHaz preguntas al usuario para entender mejor sus necesidades. `;
       }
       
       // Add suggesting solutions instructions
       if (behavior.suggestSolutions) {
-        systemPrompt += `Siempre sugiere soluciones prácticas a los problemas del usuario. `;
+        systemPrompt += `\nSiempre sugiere soluciones prácticas a los problemas del usuario. `;
       }
       
       // Add custom instructions
       if (behavior.instructions) {
-        systemPrompt += `Instrucciones adicionales: ${behavior.instructions}`;
+        systemPrompt += `\nInstrucciones adicionales: ${behavior.instructions}`;
       }
     }
 
-    // Agregar instrucciones sobre cómo usar el contexto de documentos si hay documentos relevantes
+    // Instrucciones mejoradas para el uso del contexto de documentos
     if (documentContext) {
-      systemPrompt += `\n\nUsa la siguiente información de documentos como contexto para responder las preguntas del usuario. Cítala cuando sea relevante pero no digas explícitamente que estás usando documentos a menos que te lo pidan directamente. Usa esta información como tu conocimiento:\n\n${documentContext}`;
+      systemPrompt += `\n\nUsa la siguiente información de documentos como contexto para responder las preguntas del usuario:
+
+${documentContext}
+
+Instrucciones importantes sobre el uso de estos documentos:
+1. Basa tu respuesta principalmente en estos documentos cuando sean relevantes a la pregunta.
+2. Si la información en los documentos contradice tu conocimiento general, prioriza la información de los documentos.
+3. Si la pregunta no puede responderse completamente con los documentos, complementa con tu conocimiento general, pero indica claramente cuando estás haciendo esto.
+4. No menciones explícitamente que estás usando "documentos" a menos que el usuario te pregunte específicamente por tus fuentes.
+5. Si citas información de los documentos, hazlo de manera natural y fluida en tu respuesta.
+6. Si necesitas hacer referencia a un documento específico, puedes referirte al contenido sin mencionar que es un documento.`;
     }
 
-    // Format messages for Anthropic API (without including system message in the messages array)
+    // Format messages for Anthropic API
     const formattedMessages = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
     }));
 
     console.log('System prompt:', systemPrompt);
+
+    // Verificar si se está preguntando por el nombre para asegurar consistencia
+    const isNameQuestion = lastUserMessage && 
+      (lastUserMessage.toLowerCase().includes("cómo te llamas") || 
+       lastUserMessage.toLowerCase().includes("cuál es tu nombre") ||
+       lastUserMessage.toLowerCase().includes("quién eres"));
+
+    // Si es una pregunta sobre el nombre, añadir instrucción especial
+    let finalSystemPrompt = systemPrompt;
+    if (isNameQuestion) {
+      finalSystemPrompt += `\n\nRECUERDA: Esta pregunta es sobre tu nombre. Tu ÚNICO nombre es ${chatbotName}. Debes responder que te llamas ${chatbotName}, sin excepciones ni alternativas.`;
+    }
 
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
@@ -195,7 +232,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: modelSettings.model,
         messages: formattedMessages,
-        system: systemPrompt, // System message sent as a separate field
+        system: finalSystemPrompt,
         max_tokens: modelSettings.maxTokens,
         temperature: modelSettings.temperature,
       }),
@@ -210,20 +247,44 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Anthropic API response:', data);
 
+    // Verificación post-respuesta para asegurar el nombre correcto
+    let finalMessage = data.content[0].text;
+    
+    if (isNameQuestion && !finalMessage.toLowerCase().includes(chatbotName.toLowerCase())) {
+      console.log("Name verification failed, forcing correct name");
+      // Si Claude no respondió con el nombre correcto en una pregunta de nombre,
+      // modificar la respuesta para incluir el nombre explícitamente
+      finalMessage = `Mi nombre es ${chatbotName}. ${finalMessage.replace(/Mi nombre es [^.]*\./, "").trim()}`;
+    }
+
     // Construir respuesta con referencias a documentos si hay documentos relevantes
     const responseData = {
-      message: data.content[0].text,
+      message: finalMessage,
       model: data.model,
       usage: data.usage
     };
     
-    // Agregar referencias a documentos solo si es solicitado en la configuración
-    if (settings?.includeReferences && relevantDocuments.length > 0) {
+    // Agregar referencias a documentos
+    if (relevantDocuments.length > 0) {
       responseData.references = relevantDocuments.map(doc => ({
         id: doc.id,
         name: doc.name,
         similarity: doc.similarity
       }));
+    }
+
+    // Registrar esta interacción para análisis (opcional)
+    try {
+      await supabase.from('message_metrics').insert({
+        chatbot_id: chatbotId,
+        query: lastUserMessage,
+        has_documents: relevantDocuments.length > 0,
+        document_count: relevantDocuments.length,
+        message_tokens: data.usage?.output_tokens || 0,
+        created_at: new Date().toISOString()
+      }).select();
+    } catch (metricsError) {
+      console.error("Error logging message metrics:", metricsError);
     }
 
     return new Response(JSON.stringify(responseData), {
