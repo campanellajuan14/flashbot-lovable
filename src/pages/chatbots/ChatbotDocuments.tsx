@@ -17,7 +17,8 @@ import {
   TabsList,
   TabsTrigger,
   Separator,
-  Badge
+  Badge,
+  useToast
 } from "@/components/ui";
 import { 
   ArrowLeft, 
@@ -34,7 +35,6 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 
 interface Document {
   id: string;
@@ -60,6 +60,13 @@ interface RetrievalSettings {
   use_hierarchical_embeddings: boolean;
   embedding_model: string;
   use_cache: boolean;
+}
+
+interface Chatbot {
+  id: string;
+  name: string;
+  user_id: string;
+  [key: string]: any;
 }
 
 const ChatbotDocuments = () => {
@@ -112,7 +119,7 @@ const ChatbotDocuments = () => {
       }
       
       console.log("Chatbot data retrieved:", data);
-      return data;
+      return data as Chatbot;
     },
     retry: 1,
     enabled: isValidUUID,
