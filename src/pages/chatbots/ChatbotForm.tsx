@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -99,7 +100,9 @@ const ChatbotForm = () => {
             <TabsContent value="basic" className="space-y-4 pt-4">
               <BasicInfoTab 
                 form={form} 
-                handleChange={handleChange} 
+                handleChange={handleChange}
+                chatbotId={id || undefined}
+                userId={user?.id}
               />
             </TabsContent>
             
