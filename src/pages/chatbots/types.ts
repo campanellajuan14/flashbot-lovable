@@ -32,3 +32,18 @@ export interface ChatbotData {
   settings: Json;
   user_id: string;
 }
+
+export interface Chatbot {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  user_id: string;
+  settings: Record<string, any>;
+  behavior: Record<string, any>;
+}
+
+export interface ChatbotWithDocuments extends Chatbot {
+  documentCount: number;
+}
