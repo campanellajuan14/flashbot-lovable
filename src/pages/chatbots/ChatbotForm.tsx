@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -57,13 +56,20 @@ const ChatbotForm = () => {
   };
   
   const handleNestedChange = (parent: string, field: string, value: any) => {
-    setForm(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent as keyof typeof prev],
-        [field]: value
+    setForm(prev => {
+      // Ensure the parent property exists and is an object before spreading it
+      const parentValue = prev[parent as keyof typeof prev];
+      if (typeof parentValue === 'object' && parentValue !== null) {
+        return {
+          ...prev,
+          [parent]: {
+            ...parentValue,
+            [field]: value
+          }
+        };
       }
-    }));
+      return prev;
+    });
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
