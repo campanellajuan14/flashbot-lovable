@@ -5,6 +5,8 @@ const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 export async function fetchWidgetConfig(widgetId) {
   try {
     console.log(`Fetching widget config for ID: ${widgetId}`);
+    console.log(`Full request URL: ${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
+    
     const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
       method: 'GET',
       headers: {
@@ -14,6 +16,8 @@ export async function fetchWidgetConfig(widgetId) {
     
     if (!response.ok) {
       console.error(`Error fetching widget config: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`Response body: ${errorText}`);
       throw new Error('Error al cargar configuración');
     }
     
