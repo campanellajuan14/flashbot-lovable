@@ -4,9 +4,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bot, Copy, Edit, ExternalLink, FileText, MessageSquare, MoreHorizontal, Trash, Cpu } from "lucide-react";
+import { Bot, Copy, Edit, MessageSquare, MoreHorizontal, Trash, Cpu, FileText } from "lucide-react";
 import { ChatbotWithDocuments } from "../types";
 
 interface ChatbotCardProps {
@@ -41,103 +40,71 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
 
   return (
     <Card className="dashboard-card overflow-hidden transition-all duration-200 hover:shadow-md">
-      <CardHeader className="pb-2 relative">
-        <div className="flex items-center justify-between">
-          <Badge variant={chatbot.is_active ? "default" : "secondary"} className="mb-2">
+      <CardHeader className="pb-2 relative flex flex-row justify-between items-start">
+        <div className="flex flex-col items-start">
+          <Badge variant={chatbot.is_active ? "primary" : "secondary"} className="mb-2">
             {chatbot.is_active ? "Active" : "Inactive"}
           </Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to={`/chatbots/${chatbot.id}/preview`} className="flex w-full cursor-pointer">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Preview
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex cursor-pointer"
-                onClick={() => onCopyId(chatbot.id)}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copy ID
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex cursor-pointer text-destructive focus:text-destructive"
-                onClick={() => onDelete(chatbot.id)}
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" />
+            <CardTitle className="text-xl">{chatbot.name}</CardTitle>
+          </div>
+          <CardDescription className="line-clamp-2 mt-1 text-left">
+            {chatbot.description || "No description"}
+          </CardDescription>
         </div>
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <CardTitle className="text-xl">{chatbot.name}</CardTitle>
-        </div>
-        <CardDescription className="line-clamp-2 mt-1">
-          {chatbot.description || "No description"}
-        </CardDescription>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="flex cursor-pointer"
+              onClick={() => onCopyId(chatbot.id)}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copy ID
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="flex cursor-pointer text-destructive focus:text-destructive"
+              onClick={() => onDelete(chatbot.id)}
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex flex-wrap gap-2 mb-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge variant="outline" className={getModelBadgeColor(getModelName(chatbot))}>
-                  <Cpu className="mr-1 h-3 w-3" />
-                  {getModelName(chatbot)}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>AI Model</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Badge variant="outline" className={getModelBadgeColor(getModelName(chatbot))}>
+            <Cpu className="mr-1 h-3 w-3" />
+            {getModelName(chatbot)}
+          </Badge>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge variant="outline" className={
-                  chatbot.documentCount > 0 
-                    ? "bg-blue-100 text-blue-800 hover:bg-blue-100" 
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-100"
-                }>
-                  <FileText className="mr-1 h-3 w-3" />
-                  {chatbot.documentCount} document{chatbot.documentCount !== 1 ? 's' : ''}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{chatbot.documentCount > 0 ? "Connected documents" : "No documents"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Badge variant="outline" className={
+            chatbot.documentCount > 0 
+              ? "bg-blue-100 text-blue-800 hover:bg-blue-100" 
+              : "bg-gray-100 text-gray-600 hover:bg-gray-100"
+          }>
+            <FileText className="mr-1 h-3 w-3" />
+            {chatbot.documentCount} {chatbot.documentCount === 1 ? 'document' : 'documents'}
+          </Badge>
         </div>
         
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="text-left text-sm">
           <div>
-            <p className="text-muted-foreground">Conversations</p>
-            <p className="font-medium">{0}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Language</p>
-            <p className="font-medium">
-              {chatbot.behavior?.language === 'es' ? 'Spanish' : 
-                chatbot.behavior?.language === 'en' ? 'English' : 
-                chatbot.behavior?.language || 'Not defined'}
-            </p>
+            <span className="text-muted-foreground">Conversations: </span>
+            <span className="font-medium">0</span>
           </div>
         </div>
       </CardContent>
@@ -148,7 +115,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
             Edit
           </Link>
         </Button>
-        <Button size="sm" asChild>
+        <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
           <Link to={`/chatbots/${chatbot.id}/preview`}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Test

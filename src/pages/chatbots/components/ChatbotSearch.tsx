@@ -10,17 +10,14 @@ interface ChatbotSearchProps {
 
 const ChatbotSearch: React.FC<ChatbotSearchProps> = ({ searchQuery, onSearchChange }) => {
   return (
-    <div className="w-full max-w-md">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search chatbots..."
-          className="pl-8"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder="Search chatbots..."
+        className="pl-9 bg-background border-primary/20 rounded-full"
+      />
     </div>
   );
 };

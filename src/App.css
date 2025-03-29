@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Card styles */
+.dashboard-card {
+  transition: all 0.2s ease-in-out;
+  border-radius: 12px;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}

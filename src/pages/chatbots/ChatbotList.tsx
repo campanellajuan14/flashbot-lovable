@@ -23,12 +23,6 @@ const ChatbotList = () => {
     user
   } = useChatbotsList();
 
-  useEffect(() => {
-    console.log("Current user:", user);
-    console.log("Is loading:", isLoading);
-    console.log("Filtered chatbots:", filteredChatbots);
-  }, [user, isLoading, filteredChatbots]);
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
