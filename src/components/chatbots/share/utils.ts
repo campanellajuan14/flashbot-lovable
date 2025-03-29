@@ -1,70 +1,49 @@
 
 import { ShareSettings } from "./types";
-import { toast } from "@/components/ui/use-toast";
 
+/**
+ * Creates a default widget configuration
+ */
 export const createDefaultWidgetConfig = (widgetId: string): ShareSettings => {
   return {
     widget_id: widgetId,
     enabled: true,
     appearance: {
-      position: "right",
-      theme: "light",
-      initial_state: "closed",
+      position: 'right',
+      theme: 'light',
+      initial_state: 'closed',
       offset_x: 20,
       offset_y: 20,
       width: 350,
       height: 500,
-      border_radius: 10,
+      border_radius: 8,
       box_shadow: true,
       z_index: 9999
     },
     content: {
-      title: "Chat con nosotros",
-      subtitle: "Responderemos tus dudas",
-      placeholder_text: "Escribe un mensaje...",
-      welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?",
+      title: 'Chat with us',
+      subtitle: 'Ask us anything',
+      welcome_message: 'Hello! How can I help you today?',
+      placeholder_text: 'Type your message here...',
       branding: true
     },
     colors: {
-      primary: "#2563eb",
-      secondary: "#4b5563",
-      background: "#ffffff",
-      text: "#333333",
-      user_bubble: "#2563eb",
-      bot_bubble: "#f1f0f0",
-      links: "#0078ff"
+      primary: '#2563eb',
+      secondary: '#f1f5f9',
+      background: '#ffffff',
+      text: '#333333',
+      user_bubble: '#2563eb',
+      bot_bubble: '#f1f5f9',
+      links: '#2563eb'
     },
     behavior: {
       auto_open: false,
-      auto_open_delay: 3000,
+      auto_open_delay: 3,
       persist_conversation: true,
-      save_conversation_id: true
+      save_conversation_id: false
     },
     restrictions: {
       allowed_domains: []
     }
   };
-};
-
-export const copyEmbedCode = (widgetId: string | null) => {
-  if (!widgetId) return false;
-  
-  const embedCode = `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${widgetId}"></script>`;
-  
-  try {
-    navigator.clipboard.writeText(embedCode);
-    toast({
-      title: "Código copiado",
-      description: "El código de incrustación se ha copiado al portapapeles",
-    });
-    return true;
-  } catch (error) {
-    console.error("Error copying embed code:", error);
-    toast({
-      title: "Error",
-      description: "No se pudo copiar el código. Inténtalo de nuevo.",
-      variant: "destructive",
-    });
-    return false;
-  }
 };

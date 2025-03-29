@@ -18,49 +18,36 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
       setIsLoading(true);
       
       try {
-        // First, fetch the chatbot to get the widget_id
+        // Fetch the chatbot settings
         const { data: chatbot, error: chatbotError } = await supabase
           .from("chatbots")
-          .select("widget_id")
+          .select("share_settings")
           .eq("id", chatbotId)
           .single();
         
         if (chatbotError) throw chatbotError;
         
-        // If widget_id exists, fetch settings
-        if (chatbot?.widget_id) {
-          setWidgetId(chatbot.widget_id);
-          
-          const { data: settings, error: settingsError } = await supabase
-            .from("widget_settings")
-            .select("*")
-            .eq("widget_id", chatbot.widget_id)
-            .single();
-          
-          if (settingsError && settingsError.code !== 'PGRST116') {
-            throw settingsError;
-          }
-          
-          if (settings) {
-            setWidgetConfig(settings);
-          } else {
-            // Create default settings
-            const defaultConfig = createDefaultWidgetConfig(chatbot.widget_id);
-            setWidgetConfig(defaultConfig);
-          }
+        const shareSettings = chatbot?.share_settings as ShareSettings | null;
+        
+        // If widget_id exists in share_settings, use it
+        if (shareSettings?.widget_id) {
+          setWidgetId(shareSettings.widget_id);
+          setWidgetConfig(shareSettings);
         } else {
           // Generate a new widget ID
           const newWidgetId = crypto.randomUUID();
           setWidgetId(newWidgetId);
           
-          // Create default settings
+          // Create default settings with the new widget ID
           const defaultConfig = createDefaultWidgetConfig(newWidgetId);
           setWidgetConfig(defaultConfig);
           
-          // Update chatbot with new widget_id
+          // Update chatbot with new widget_id and default settings
           await supabase
             .from("chatbots")
-            .update({ widget_id: newWidgetId })
+            .update({ 
+              share_settings: defaultConfig 
+            })
             .eq("id", chatbotId);
         }
       } catch (error) {
@@ -79,37 +66,20 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
   }, [chatbotId]);
   
   const updateSettings = async () => {
-    if (!widgetId || !widgetConfig || !chatbotId) return;
+    if (!widgetConfig || !chatbotId) return;
     
     setIsSaving(true);
     
     try {
-      // Check if settings exist
-      const { data: existingSettings, error: checkError } = await supabase
-        .from("widget_settings")
-        .select("widget_id")
-        .eq("widget_id", widgetId)
-        .single();
+      // Update existing settings in the share_settings field
+      const { error } = await supabase
+        .from("chatbots")
+        .update({ 
+          share_settings: widgetConfig 
+        })
+        .eq("id", chatbotId);
       
-      let result;
-      
-      if (existingSettings) {
-        // Update existing settings
-        result = await supabase
-          .from("widget_settings")
-          .update(widgetConfig)
-          .eq("widget_id", widgetId);
-      } else {
-        // Insert new settings
-        result = await supabase
-          .from("widget_settings")
-          .insert({
-            ...widgetConfig,
-            chatbot_id: chatbotId,
-          });
-      }
-      
-      if (result.error) throw result.error;
+      if (error) throw error;
       
       toast({
         title: "Success",
