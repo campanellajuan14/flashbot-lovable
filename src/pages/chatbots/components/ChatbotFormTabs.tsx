@@ -39,8 +39,13 @@ const ChatbotFormTabs = ({
   handleTemplateSelect,
   handleStartFromScratch
 }: ChatbotFormTabsProps) => {
+  // Explicitly handle tab change to prevent any default behavior
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
       <TabsList className="w-full grid grid-cols-3 mb-2">
         <TabsTrigger value="basic" type="button">Basic Information</TabsTrigger>
         <TabsTrigger value="personality" type="button">Personality</TabsTrigger>

@@ -21,14 +21,14 @@ const FormActions = ({ isSubmitting, isEditing }: FormActionsProps) => {
   return (
     <div className="mt-6 flex justify-end gap-4">
       <Button 
-        type="button" 
+        type="button" // Explicitly set as button type to prevent form submission
         variant="outline"
         onClick={handleCancelClick}
       >
         Cancel
       </Button>
       <Button
-        type="submit"
+        type="submit" // This is a submit button
         disabled={isSubmitting}
       >
         {isSubmitting ? (

@@ -33,19 +33,21 @@ const ChatbotForm = () => {
     handleSubmit
   } = useChatbotForm({ id, userId: user?.id });
 
+  // Ensure we prevent default and stop propagation
   const handleStartFromScratch = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault(); // Prevent default if event is passed
-      e.stopPropagation(); // Stop event propagation
+      e.preventDefault();
+      e.stopPropagation();
     }
     setShowInitialDialog(false);
     setActiveTab("basic");
   };
   
+  // Ensure we prevent default and stop propagation
   const handleSelectTemplateFromDialog = (templateId: string, e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault(); // Prevent default if event is passed
-      e.stopPropagation(); // Stop event propagation
+      e.preventDefault();
+      e.stopPropagation();
     }
     
     if (templateId === "") {
@@ -80,10 +82,10 @@ const ChatbotForm = () => {
     );
   }
 
-  // Dedicated function to handle form submission
+  // Explicit function to handle form submission with prevent default
   const onSubmitForm = (e: React.FormEvent) => {
-    e.preventDefault(); // Ensure we prevent default form submission
-    e.stopPropagation(); // Stop event propagation
+    e.preventDefault();
+    e.stopPropagation();
     handleSubmit(e);
   };
 

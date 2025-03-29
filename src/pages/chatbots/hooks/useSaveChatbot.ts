@@ -109,7 +109,10 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         description: `${form.name} has been ${isEditing ? "updated" : "created"} successfully.`,
       });
       
-      navigate("/chatbots");
+      // Use a small timeout to ensure the toast shows before navigation
+      setTimeout(() => {
+        navigate("/chatbots");
+      }, 100);
     } catch (error: any) {
       console.error("Error saving chatbot:", error);
       toast({

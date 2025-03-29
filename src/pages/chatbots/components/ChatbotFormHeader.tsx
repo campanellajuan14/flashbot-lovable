@@ -24,7 +24,7 @@ const ChatbotFormHeader = ({ isEditing }: ChatbotFormHeaderProps) => {
         size="sm" 
         onClick={handleBackClick}
         className="mr-4"
-        type="button"
+        type="button" // Explicitly set button type
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
