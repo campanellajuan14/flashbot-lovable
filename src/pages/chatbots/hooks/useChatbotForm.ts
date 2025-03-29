@@ -64,8 +64,10 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
     }
   };
   
-  // Simplified handleSubmit function that doesn't require an event parameter
-  const handleSubmit = () => submitChatbot(form);
+  // Fixed handleSubmit function to work with the form parameter
+  const handleSubmit = () => {
+    return submitChatbot(form);
+  };
 
   return {
     form,

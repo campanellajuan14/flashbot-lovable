@@ -32,18 +32,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import ShareSettings from "@/components/chatbots/ShareSettings";
-
-interface BehaviorSettings {
-  tone?: string;
-  style?: string;
-  language?: string;
-  useEmojis?: boolean;
-  askQuestions?: boolean;
-  suggestSolutions?: boolean;
-  instructions?: string;
-  [key: string]: any;
-}
+import ShareSettings from "@/components/chatbots/share/ShareSettings";
+import ChatbotInformation from "./components/detail/ChatbotInformation";
+import ChatbotConfiguration from "./components/detail/ChatbotConfiguration";
 
 interface ChatbotSettings {
   model?: string;
@@ -181,9 +172,6 @@ const ChatbotDetail = () => {
     );
   }
 
-  const behaviorSettings = chatbot.behavior as BehaviorSettings;
-  const chatbotSettings = chatbot.settings as ChatbotSettings;
-
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -207,6 +195,7 @@ const ChatbotDetail = () => {
               size="sm"
               onClick={handleToggleActive}
               disabled={toggleActiveMutation.isPending}
+              type="button"
             >
               {toggleActiveMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -246,229 +235,26 @@ const ChatbotDetail = () => {
             className="w-full"
           >
             <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="info">Information</TabsTrigger>
-              <TabsTrigger value="config">Configuration</TabsTrigger>
-              <TabsTrigger value="share">Share</TabsTrigger>
+              <TabsTrigger value="info" type="button">Information</TabsTrigger>
+              <TabsTrigger value="config" type="button">Configuration</TabsTrigger>
+              <TabsTrigger value="share" type="button">Share</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="info" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="col-span-1 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            {chatbot.name}
-                            {chatbot.is_active ? (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                                Active
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-                                Inactive
-                              </Badge>
-                            )}
-                          </CardTitle>
-                          <CardDescription className="mt-1">
-                            {chatbot.description || "No description"}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">Personality</h3>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="font-medium">Tone:</span>{" "}
-                              {behaviorSettings.tone || "Not specified"}
-                            </div>
-                            <div>
-                              <span className="font-medium">Style:</span>{" "}
-                              {behaviorSettings.style || "Not specified"}
-                            </div>
-                            <div>
-                              <span className="font-medium">Language:</span>{" "}
-                              {behaviorSettings.language === "es"
-                                ? "Spanish"
-                                : behaviorSettings.language === "en"
-                                ? "English"
-                                : behaviorSettings.language || "Not specified"}
-                            </div>
-                            <div>
-                              <span className="font-medium">Emojis:</span>{" "}
-                              {behaviorSettings.useEmojis ? "Yes" : "No"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">
-                            Behavior
-                          </h3>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="font-medium">Ask questions:</span>{" "}
-                              {behaviorSettings.askQuestions ? "Yes" : "No"}
-                            </div>
-                            <div>
-                              <span className="font-medium">
-                                Suggest solutions:
-                              </span>{" "}
-                              {behaviorSettings.suggestSolutions ? "Yes" : "No"}
-                            </div>
-                          </div>
-                        </div>
-
-                        {behaviorSettings.instructions && (
-                          <>
-                            <Separator />
-                            <div>
-                              <h3 className="text-sm font-medium mb-1">
-                                Custom instructions
-                              </h3>
-                              <div className="text-sm bg-muted p-2 rounded">
-                                {behaviorSettings.instructions}
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/chatbots/${chatbotId}/documents`}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Documents
-                        </Link>
-                      </Button>
-                      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Delete chatbot?</DialogTitle>
-                            <DialogDescription>
-                              This action will permanently delete the chatbot {chatbot.name} and cannot be undone.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              variant="outline"
-                              onClick={() => setShowDeleteDialog(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={handleDeleteChatbot}
-                              disabled={deleteChatbotMutation.isPending}
-                            >
-                              {deleteChatbotMutation.isPending && (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              )}
-                              Delete
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </CardFooter>
-                  </Card>
-                </div>
-
-                <div className="col-span-1 md:col-span-2 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Model Configuration</CardTitle>
-                      <CardDescription>
-                        Technical configuration of the AI model
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="text-sm font-medium mb-1">Model</h3>
-                            <div className="text-sm">
-                              {chatbotSettings.model || "claude-3-haiku-20240307"}
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium mb-1">
-                              Temperature
-                            </h3>
-                            <div className="text-sm">
-                              {chatbotSettings.temperature || "0.7"}
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium mb-1">
-                              Max Tokens
-                            </h3>
-                            <div className="text-sm">
-                              {chatbotSettings.maxTokens || "1000"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Usage Statistics</CardTitle>
-                      <CardDescription>
-                        Chatbot usage metrics
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center p-6 text-muted-foreground">
-                        <p>Statistics will be available soon</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+            <TabsContent value="info" className="space-y-6 animate-fade-in">
+              <ChatbotInformation 
+                chatbot={chatbot} 
+                onDelete={() => setShowDeleteDialog(true)} 
+              />
             </TabsContent>
             
-            <TabsContent value="config">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Settings className="mr-2 h-5 w-5" />
-                    Advanced Configuration
-                  </CardTitle>
-                  <CardDescription>
-                    Advanced chatbot settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center p-6 text-muted-foreground">
-                    <p>Edit the chatbot to modify advanced configuration</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      asChild
-                    >
-                      <Link to={`/chatbots/${chatbotId}/edit`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Configuration
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="config" className="animate-fade-in">
+              <ChatbotConfiguration 
+                chatbot={chatbot} 
+                chatbotId={chatbotId || ''} 
+              />
             </TabsContent>
             
-            <TabsContent value="share">
+            <TabsContent value="share" className="animate-fade-in">
               <div className="space-y-4">
                 <Card className="mb-4">
                   <CardHeader>
@@ -486,6 +272,38 @@ const ChatbotDetail = () => {
               </div>
             </TabsContent>
           </Tabs>
+          
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete chatbot?</DialogTitle>
+                <DialogDescription>
+                  This action will permanently delete the chatbot {chatbot.name} and cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteDialog(false)}
+                  type="button"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteChatbot}
+                  disabled={deleteChatbotMutation.isPending}
+                  type="button"
+                >
+                  {deleteChatbotMutation.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
