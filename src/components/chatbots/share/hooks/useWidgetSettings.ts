@@ -1,122 +1,135 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import { ShareSettings } from "../types";
 import { createDefaultWidgetConfig } from "../utils";
+import { toast } from "@/components/ui/use-toast";
 
 export const useWidgetSettings = (chatbotId: string | undefined) => {
   const [widgetId, setWidgetId] = useState<string | null>(null);
   const [widgetConfig, setWidgetConfig] = useState<ShareSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
-    if (!chatbotId) return;
-
-    const fetchShareSettings = async () => {
+    const fetchSettings = async () => {
+      if (!chatbotId) return;
+      
       setIsLoading(true);
+      
       try {
-        const { data, error } = await supabase
+        // First, fetch the chatbot to get the widget_id
+        const { data: chatbot, error: chatbotError } = await supabase
           .from("chatbots")
-          .select("share_settings")
+          .select("widget_id")
           .eq("id", chatbotId)
           .single();
-
-        if (error) throw error;
-
-        const shareSettings = data?.share_settings as ShareSettings | null;
-
-        if (shareSettings?.widget_id) {
-          setWidgetId(shareSettings.widget_id);
-          setWidgetConfig(shareSettings);
+        
+        if (chatbotError) throw chatbotError;
+        
+        // If widget_id exists, fetch settings
+        if (chatbot?.widget_id) {
+          setWidgetId(chatbot.widget_id);
+          
+          const { data: settings, error: settingsError } = await supabase
+            .from("widget_settings")
+            .select("*")
+            .eq("widget_id", chatbot.widget_id)
+            .single();
+          
+          if (settingsError && settingsError.code !== 'PGRST116') {
+            throw settingsError;
+          }
+          
+          if (settings) {
+            setWidgetConfig(settings);
+          } else {
+            // Create default settings
+            const defaultConfig = createDefaultWidgetConfig(chatbot.widget_id);
+            setWidgetConfig(defaultConfig);
+          }
         } else {
-          // Generate a widget ID if none exists
-          const newWidgetId = `wgt_${Math.random().toString(36).substring(2, 12)}`;
+          // Generate a new widget ID
+          const newWidgetId = crypto.randomUUID();
           setWidgetId(newWidgetId);
           
-          // Create a new configuration object with the generated widget ID
-          const newConfig = createDefaultWidgetConfig(newWidgetId);
+          // Create default settings
+          const defaultConfig = createDefaultWidgetConfig(newWidgetId);
+          setWidgetConfig(defaultConfig);
           
-          // Update the database with the new widget ID
-          const { error: updateError } = await supabase
+          // Update chatbot with new widget_id
+          await supabase
             .from("chatbots")
-            .update({
-              share_settings: newConfig as unknown as any
-            })
+            .update({ widget_id: newWidgetId })
             .eq("id", chatbotId);
-
-          if (updateError) throw updateError;
-          
-          // Fetch the updated settings
-          const { data: updatedData } = await supabase
-            .from("chatbots")
-            .select("share_settings")
-            .eq("id", chatbotId)
-            .single();
-            
-          if (updatedData?.share_settings) {
-            setWidgetConfig(updatedData.share_settings as ShareSettings);
-          }
         }
       } catch (error) {
-        console.error("Error fetching share settings:", error);
+        console.error('Error fetching widget settings:', error);
         toast({
           title: "Error",
-          description: "Could not load sharing settings",
+          description: "Could not load widget settings",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchShareSettings();
-  }, [chatbotId, toast]);
-
+    
+    fetchSettings();
+  }, [chatbotId]);
+  
   const updateSettings = async () => {
-    if (!chatbotId || !widgetConfig) return;
+    if (!widgetId || !widgetConfig || !chatbotId) return;
     
     setIsSaving(true);
-    const success = await saveWidgetSettings(chatbotId, widgetConfig);
-    setIsSaving(false);
     
-    return success;
-  };
-
-  // Function to save widget settings to the database
-  const saveWidgetSettings = async (chatbotId: string, widgetConfig: ShareSettings) => {
     try {
-      const { error } = await supabase
-        .from("chatbots")
-        .update({
-          share_settings: widgetConfig as unknown as any
-        })
-        .eq("id", chatbotId);
-
-      if (error) throw error;
+      // Check if settings exist
+      const { data: existingSettings, error: checkError } = await supabase
+        .from("widget_settings")
+        .select("widget_id")
+        .eq("widget_id", widgetId)
+        .single();
+      
+      let result;
+      
+      if (existingSettings) {
+        // Update existing settings
+        result = await supabase
+          .from("widget_settings")
+          .update(widgetConfig)
+          .eq("widget_id", widgetId);
+      } else {
+        // Insert new settings
+        result = await supabase
+          .from("widget_settings")
+          .insert({
+            ...widgetConfig,
+            chatbot_id: chatbotId,
+          });
+      }
+      
+      if (result.error) throw result.error;
       
       toast({
-        title: "Configuración guardada",
-        description: "La configuración del widget se ha guardado correctamente",
+        title: "Success",
+        description: "Widget settings saved successfully",
       });
-      
-      return true;
     } catch (error) {
-      console.error("Error updating settings:", error);
+      console.error('Error saving widget settings:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la configuración",
+        description: "Could not save widget settings",
         variant: "destructive",
       });
-      return false;
+    } finally {
+      setIsSaving(false);
     }
   };
-
+  
   return {
-    widgetId, 
-    widgetConfig, 
+    widgetId,
+    widgetConfig,
     setWidgetConfig,
     isLoading,
     isSaving,

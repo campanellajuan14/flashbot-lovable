@@ -59,7 +59,7 @@ const WidgetEmbed = () => {
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        setError("Widget ID no encontrado");
+        setError("Widget ID not found");
         setLoading(false);
         return;
       }
@@ -70,7 +70,7 @@ const WidgetEmbed = () => {
         );
 
         if (!response.ok) {
-          throw new Error("No se pudo cargar la configuración del widget");
+          throw new Error("Couldn't load widget configuration");
         }
 
         const data = await response.json();
@@ -99,7 +99,7 @@ const WidgetEmbed = () => {
 
       } catch (error) {
         console.error("Error loading widget config:", error);
-        setError("Error al cargar la configuración del widget");
+        setError("Error loading widget configuration");
       } finally {
         setLoading(false);
       }
@@ -138,7 +138,7 @@ const WidgetEmbed = () => {
         })
       });
       
-      if (!response.ok) throw new Error('Error al enviar mensaje');
+      if (!response.ok) throw new Error('Error sending message');
       
       const result = await response.json();
       
@@ -164,7 +164,7 @@ const WidgetEmbed = () => {
       // Add error message
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, intenta de nuevo más tarde." 
+        content: "Sorry, there was an error processing your message. Please try again later." 
       }]);
       
     } finally {
@@ -184,7 +184,7 @@ const WidgetEmbed = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground p-4 text-center">
         <h3 className="text-lg font-medium">Error</h3>
-        <p>{error || "No se pudo cargar el widget"}</p>
+        <p>{error || "Could not load widget"}</p>
       </div>
     );
   }
@@ -252,7 +252,7 @@ const WidgetEmbed = () => {
                 display: 'inline-block'
               }}
             >
-              <span className="text-muted">Escribiendo...</span>
+              <span className="text-muted">Typing...</span>
             </div>
           </div>
         )}
@@ -286,7 +286,7 @@ const WidgetEmbed = () => {
               opacity: inputValue.trim() && !sending ? 1 : 0.7
             }}
           >
-            Enviar
+            Send
           </button>
         </form>
       </div>
@@ -298,12 +298,12 @@ const WidgetEmbed = () => {
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
         >
           <a 
-            href="https://lovable.dev" 
+            href="https://chatsimp.com" 
             target="_blank" 
             rel="noopener noreferrer"
             style={{ color: '#999', textDecoration: 'none' }}
           >
-            Powered by Lovable
+            Powered by Chatsimp
           </a>
         </div>
       )}

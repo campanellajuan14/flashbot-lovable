@@ -98,8 +98,8 @@ export function createWidgetElements(state) {
   if (state.config.config.content.branding) {
     footerHTML = `
       <div style="padding: 8px 15px; font-size: 11px; text-align: center; color: #999; border-top: 1px solid #eee;">
-        <a href="https://lovable.dev" target="_blank" style="color: #999; text-decoration: none;">
-          Powered by Lovable
+        <a href="https://chatsimp.com" target="_blank" style="color: #999; text-decoration: none;">
+          Powered by Chatsimp
         </a>
       </div>
     `;

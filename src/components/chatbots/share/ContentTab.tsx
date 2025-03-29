@@ -94,11 +94,11 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               onCheckedChange={(checked) => onContentChange('branding', checked)}
             />
             <Label htmlFor="branding" className="ml-2">
-              Show "Powered by Lovable" footer
+              Show "Powered by Chatsimp" footer
             </Label>
           </div>
           <p className="text-xs text-muted-foreground">
-            Display a small "Powered by Lovable" text at the bottom of the chat window
+            Display a small "Powered by Chatsimp" text at the bottom of the chat window
           </p>
         </div>
       </div>

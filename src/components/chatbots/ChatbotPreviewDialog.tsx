@@ -106,7 +106,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                     maxWidth: '80%'
                   }}
                 >
-                  ¿Cómo puedo ayudarte hoy?
+                  How can I help you today?
                 </div>
               </div>
               
@@ -120,7 +120,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                     maxWidth: '80%'
                   }}
                 >
-                  Estoy aquí para responder tus preguntas. ¿En qué puedo ayudarte?
+                  I'm here to answer your questions. What can I help you with?
                 </div>
               </div>
             </div>
@@ -130,7 +130,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder={content?.placeholder_text || "Escribe un mensaje..."}
+                  placeholder={content?.placeholder_text || "Type a message..."}
                   className="flex-1 p-2 border rounded"
                   style={{ 
                     borderColor: 'rgba(0,0,0,0.2)',
@@ -149,7 +149,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                     cursor: 'pointer'
                   }}
                 >
-                  Enviar
+                  Send
                 </button>
               </div>
             </div>
@@ -161,12 +161,12 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                 style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
               >
                 <a 
-                  href="https://lovable.dev" 
+                  href="https://chatsimp.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   style={{ color: '#999', textDecoration: 'none' }}
                 >
-                  Powered by Lovable
+                  Powered by Chatsimp
                 </a>
               </div>
             )}
