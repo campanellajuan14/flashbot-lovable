@@ -78,13 +78,13 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
               {aiProvider === "claude" ? (
                 availableModels.claude.map(model => (
                   <SelectItem key={model.id} value={model.id}>
-                    {model.name} ({model.description})
+                    {model.description.split(' ')[0]} {model.name} - {model.description.split(' ').slice(1).join(' ')}
                   </SelectItem>
                 ))
               ) : (
                 availableModels.openai.map(model => (
                   <SelectItem key={model.id} value={model.id}>
-                    {model.name} ({model.description})
+                    {model.description.split(' ')[0]} {model.name} - {model.description.split(' ').slice(1).join(' ')}
                   </SelectItem>
                 ))
               )}
