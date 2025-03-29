@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -33,6 +34,7 @@ interface Personality {
   style: string;
   language: string;
   instructions: string;
+  greeting: string;
 }
 
 interface Settings {
@@ -46,7 +48,8 @@ const defaultPersonality: Personality = {
   tone: "professional",
   style: "concise",
   language: "english",
-  instructions: ""
+  instructions: "",
+  greeting: "¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?"
 };
 
 const defaultSettings: Settings = {
@@ -111,7 +114,8 @@ const ChatbotForm = () => {
                 tone: typeof behavior.tone === 'string' ? behavior.tone : defaultPersonality.tone,
                 style: typeof behavior.style === 'string' ? behavior.style : defaultPersonality.style,
                 language: typeof behavior.language === 'string' ? behavior.language : defaultPersonality.language,
-                instructions: typeof behavior.instructions === 'string' ? behavior.instructions : defaultPersonality.instructions
+                instructions: typeof behavior.instructions === 'string' ? behavior.instructions : defaultPersonality.instructions,
+                greeting: typeof behavior.greeting === 'string' ? behavior.greeting : defaultPersonality.greeting
               };
             }
             
@@ -411,6 +415,20 @@ const ChatbotForm = () => {
                         <SelectItem value="japanese">Japanese</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="greeting">Initial Greeting</Label>
+                    <Textarea
+                      id="greeting"
+                      placeholder="¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?"
+                      rows={3}
+                      value={form.personality.greeting || defaultPersonality.greeting}
+                      onChange={(e) => handleNestedChange("personality", "greeting", e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The first message users will see when starting a conversation with your chatbot
+                    </p>
                   </div>
                   
                   <Separator />

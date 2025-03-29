@@ -2,6 +2,7 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ShareSettings } from "./types";
 
@@ -48,12 +49,16 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
         
         <div className="space-y-2">
           <Label htmlFor="welcome_message">Mensaje de bienvenida</Label>
-          <Input 
+          <Textarea 
             id="welcome_message" 
             value={widgetConfig?.content?.welcome_message || ''} 
             onChange={(e) => onContentChange('welcome_message', e.target.value)}
             placeholder="¡Hola! ¿En qué puedo ayudarte hoy?"
+            rows={3}
           />
+          <p className="text-xs text-muted-foreground">
+            Este mensaje se mostrará al inicio de la conversación. Si el chatbot tiene un saludo personalizado configurado, ese tendrá prioridad.
+          </p>
         </div>
         
         <div className="space-y-2">

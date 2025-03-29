@@ -273,10 +273,15 @@ export async function handleSubmit(e, state) {
 
 // Show welcome message
 export function showWelcomeMessage(state) {
-  if (state.config.config.content.welcome_message && state.messages.length === 0) {
+  if (state.messages.length === 0) {
+    // Check for custom greeting in behavior.greeting first
+    const greeting = state.config?.behavior?.greeting || 
+                     state.config?.config?.content?.welcome_message || 
+                     '¡Hola! ¿En qué puedo ayudarte hoy?';
+    
     state.messages.push({
       role: 'assistant',
-      content: state.config.config.content.welcome_message
+      content: greeting
     });
     renderMessages(state);
   }
