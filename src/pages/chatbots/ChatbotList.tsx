@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 
-// Define a type for our chatbot data
 interface Chatbot {
   id: string;
   name: string;
@@ -30,7 +28,6 @@ const ChatbotList = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Fetch chatbots from Supabase
   const { data: chatbots, isLoading, isError, refetch } = useQuery({
     queryKey: ['chatbots', user?.id],
     queryFn: async () => {
@@ -54,7 +51,6 @@ const ChatbotList = () => {
     enabled: !!user,
   });
 
-  // Function to copy chatbot ID
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -67,7 +63,6 @@ const ChatbotList = () => {
     }
   };
 
-  // Function to delete a chatbot
   const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de que quieres eliminar este chatbot?")) {
       try {
@@ -83,7 +78,6 @@ const ChatbotList = () => {
           description: "El chatbot ha sido eliminado con éxito",
         });
         
-        // Refetch chatbots to update the list
         refetch();
       } catch (err) {
         console.error("Error al eliminar chatbot:", err);
@@ -95,14 +89,12 @@ const ChatbotList = () => {
       }
     }
   };
-  
-  // Filter chatbots based on search query
+
   const filteredChatbots = chatbots?.filter(chatbot => 
     chatbot.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (chatbot.description && chatbot.description.toLowerCase().includes(searchQuery.toLowerCase()))
   ) || [];
 
-  // Calculate conversation count from Supabase
   const getConversationCount = async (chatbotId: string) => {
     try {
       const { count, error } = await supabase
@@ -118,7 +110,6 @@ const ChatbotList = () => {
     }
   };
 
-  // Debugging logs
   useEffect(() => {
     console.log("Current user:", user);
     console.log("Is loading:", isLoading);

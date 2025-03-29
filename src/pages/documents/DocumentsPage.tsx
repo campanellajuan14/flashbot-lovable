@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +34,6 @@ interface Document {
 const DocumentsPage = () => {
   const { user } = useAuth();
   
-  // Obtener todos los documentos del usuario con nombre del chatbot
   const { data: documents, isLoading } = useQuery({
     queryKey: ["user-documents"],
     queryFn: async () => {
@@ -56,7 +54,6 @@ const DocumentsPage = () => {
       
       if (error) throw error;
       
-      // Transformar los datos para una estructura más fácil de usar
       return data.map(doc => ({
         id: doc.id,
         name: doc.name,
@@ -69,7 +66,6 @@ const DocumentsPage = () => {
     enabled: !!user,
   });
   
-  // Agrupar documentos por chatbot
   const documentsByChatbot = React.useMemo(() => {
     if (!documents) return {};
     
