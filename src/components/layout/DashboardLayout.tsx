@@ -12,11 +12,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full">
       <Header />
-      <div className="flex flex-1">
+      <div className="flex flex-1 w-full">
         {!isMobile && <Sidebar />}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );

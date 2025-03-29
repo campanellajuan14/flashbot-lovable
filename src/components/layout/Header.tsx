@@ -21,26 +21,18 @@ const Header = () => {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <nav className="hidden md:flex gap-4">
-                <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
-                  Dashboard
-                </Link>
-                <Link to="/chatbots" className="text-foreground/80 hover:text-foreground transition-colors">
-                  Chatbots
-                </Link>
-                <Link to="/docs" className="text-foreground/80 hover:text-foreground transition-colors">
-                  Documentation
-                </Link>
-              </nav>
+              <Button variant="ghost" asChild className="hidden md:flex">
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
               <UserButton />
             </>
           ) : (
             <div className="flex gap-2">
               <Button variant="ghost" asChild>
-                <Link to="/sign-in">Sign In</Link>
+                <Link to="/auth/signin">Sign In</Link>
               </Button>
               <Button asChild>
-                <Link to="/sign-up">Sign Up</Link>
+                <Link to="/auth/signup">Sign Up</Link>
               </Button>
             </div>
           )}
