@@ -1,13 +1,15 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Bot, Copy, User, FileText } from "lucide-react";
+import { ArrowLeft, Send, Bot, Copy, User, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface ChatMessage {
   id: string;
@@ -17,6 +19,22 @@ interface ChatMessage {
   references?: string[];
 }
 
+interface Chatbot {
+  id: string;
+  name: string;
+  description: string;
+  user_id: string;
+  is_active: boolean;
+  behavior: {
+    tone?: string;
+    language?: string;
+    useEmojis?: boolean;
+    askQuestions?: boolean;
+    suggestSolutions?: boolean;
+  };
+  settings?: Record<string, any>;
+}
+
 const ChatbotPreview = () => {
   const { id } = useParams<{ id: string }>();
   const [message, setMessage] = useState("");
@@ -24,14 +42,25 @@ const ChatbotPreview = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   
-  // Mock chatbot data (in a real app, this would be fetched from your API)
-  const chatbot = {
-    id: id || "unknown",
-    name: "Customer Support Bot",
-    description: "Helps customers with common questions and issues",
-    avatarUrl: "",
-  };
+  // Fetch chatbot data from Supabase
+  const { data: chatbot, isLoading, isError } = useQuery({
+    queryKey: ['chatbot', id],
+    queryFn: async () => {
+      if (!id) throw new Error("Chatbot ID is required");
+      
+      const { data, error } = await supabase
+        .from('chatbots')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data as Chatbot;
+    },
+    retry: 1,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,15 +68,15 @@ const ChatbotPreview = () => {
 
   useEffect(() => {
     scrollToBottom();
-    if (messages.length === 0) {
+    if (messages.length === 0 && chatbot) {
       // Add initial bot message
-      handleBotResponse("Hi there! I'm the Customer Support Assistant. How can I help you today?");
+      handleBotResponse(`Hi there! I'm ${chatbot.name}. ${chatbot.description ? chatbot.description : "How can I help you today?"}`);
     }
-  }, [messages]);
+  }, [messages, chatbot]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !chatbot) return;
     
     // Add user message
     const userMessage: ChatMessage = {
@@ -70,20 +99,26 @@ const ChatbotPreview = () => {
     setTimeout(() => {
       let response = "";
       
-      // Very simple response logic for demo
+      // Simple response logic based on chatbot behavior if available
       const lowercaseMessage = message.toLowerCase();
+      const tone = chatbot.behavior?.tone || "professional";
+      const useEmojis = chatbot.behavior?.useEmojis || false;
+      
       if (lowercaseMessage.includes("hello") || lowercaseMessage.includes("hi")) {
-        response = "Hello! How can I assist you today?";
+        response = `Hello! ${tone === "friendly" ? "It's great to meet you! " : ""}How can I assist you today${useEmojis ? " 😊" : ""}?`;
       } else if (lowercaseMessage.includes("return")) {
-        response = "Our return policy allows returns within 30 days of purchase. You can initiate a return from your order history page or contact our support team.";
+        response = `Our return policy allows returns within 30 days of purchase. You can initiate a return from your order history page or contact our support team${useEmojis ? " 📦" : ""}.`;
       } else if (lowercaseMessage.includes("shipping") || lowercaseMessage.includes("delivery")) {
-        response = "We offer standard shipping (3-5 business days) and express shipping (1-2 business days). Shipping is free for orders over $50.";
+        response = `We offer standard shipping (3-5 business days) and express shipping (1-2 business days). Shipping is free for orders over $50${useEmojis ? " 🚚" : ""}.`;
       } else if (lowercaseMessage.includes("payment") || lowercaseMessage.includes("pay")) {
-        response = "We accept all major credit cards, PayPal, and Apple Pay as payment methods.";
+        response = `We accept all major credit cards, PayPal, and Apple Pay as payment methods${useEmojis ? " 💳" : ""}.`;
       } else if (lowercaseMessage.includes("hours") || lowercaseMessage.includes("open")) {
-        response = "Our customer service team is available Monday to Friday, 9am to 6pm EST.";
+        response = `Our customer service team is available Monday to Friday, 9am to 6pm EST${useEmojis ? " 🕙" : ""}.`;
       } else {
-        response = "I understand you're asking about " + message.split(" ").slice(0, 3).join(" ") + "... To best assist you, could you provide more details about your question?";
+        response = `I understand you're asking about ${message.split(" ").slice(0, 3).join(" ")}... ${
+          chatbot.behavior?.askQuestions ? "To best assist you, could you provide more details about your question?" : 
+          "I'd be happy to help with that. Please let me know if you need more specific information."
+        }${useEmojis ? " 🤔" : ""}`;
       }
       
       handleBotResponse(response, lowercaseMessage.includes("shipping") ? ["Shipping Policy", "FAQ"] : undefined);
@@ -102,6 +137,25 @@ const ChatbotPreview = () => {
     
     setMessages((prev) => [...prev, botMessage]);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError || !chatbot) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <div className="text-xl font-semibold">Chatbot not found</div>
+        <Button onClick={() => navigate('/chatbots')}>
+          Return to Chatbots
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -158,7 +212,7 @@ const ChatbotPreview = () => {
                     ) : (
                       <>
                         <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
-                        <AvatarImage src={chatbot.avatarUrl} />
+                        <AvatarImage src="" />
                       </>
                     )}
                   </Avatar>
@@ -199,7 +253,7 @@ const ChatbotPreview = () => {
                 <div className="flex items-start gap-3">
                   <Avatar className="bg-accent border">
                     <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
-                    <AvatarImage src={chatbot.avatarUrl} />
+                    <AvatarImage src="" />
                   </Avatar>
                   <div className="rounded-lg px-4 py-3 bg-accent text-accent-foreground">
                     <div className="typing-indicator">
