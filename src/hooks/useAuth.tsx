@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Sign in function
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     
     try {
@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: `¡Bienvenido de nuevo, ${email}!`,
       });
       
-      return data;
+      // No return needed, this function returns void
     } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
       toast({
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Sign up function
-  const signUp = async (email: string, password: string, businessName: string) => {
+  const signUp = async (email: string, password: string, businessName: string): Promise<void> => {
     setIsLoading(true);
     
     try {
@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: `¡Bienvenido a ChatSimp, ${businessName}!`,
       });
       
-      return data;
+      // No return needed, this function returns void
     } catch (error: any) {
       console.error('Error de registro:', error);
       toast({
