@@ -18,5 +18,5 @@ export interface UseChatbotFormReturn {
   handleNestedChange: (parent: string, field: string, value: any) => void;
   handleProviderChange: (provider: "claude" | "openai") => void;
   handleTemplateSelect: (template: ChatbotTemplate) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  handleSubmit: (formData?: ChatbotFormData) => Promise<void>;
 }

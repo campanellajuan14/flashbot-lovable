@@ -64,9 +64,9 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
     }
   };
   
-  // Fixed handleSubmit function to work with the form parameter
-  const handleSubmit = () => {
-    return submitChatbot(form);
+  // Handle form submission with the form parameter
+  const handleSubmit = (formData = form) => {
+    return submitChatbot(formData);
   };
 
   return {
