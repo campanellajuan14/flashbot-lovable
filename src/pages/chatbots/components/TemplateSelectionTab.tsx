@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import TemplateSelector from "../templates/TemplateSelector";
 import { ChatbotTemplate } from "../templates/types";
@@ -10,14 +9,12 @@ interface TemplateSelectionTabProps {
   selectedTemplateId: string | null;
   onSelectTemplate: (template: ChatbotTemplate) => void;
   onStartFromScratch: () => void;
-  onContinue: () => void;
 }
 
 const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({ 
   selectedTemplateId, 
   onSelectTemplate,
-  onStartFromScratch,
-  onContinue
+  onStartFromScratch
 }) => {
   return (
     <Card>
@@ -47,16 +44,11 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
         <TemplateSelector 
           selectedTemplateId={selectedTemplateId} 
           onSelectTemplate={onSelectTemplate} 
+          onTemplateClick={(template) => {
+            onSelectTemplate(template);
+            onStartFromScratch(); // Navigate to the next tab on template selection
+          }}
         />
-        
-        <div className="flex justify-end pt-4">
-          <Button
-            onClick={onContinue}
-            disabled={!selectedTemplateId}
-          >
-            Continuar con esta plantilla
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

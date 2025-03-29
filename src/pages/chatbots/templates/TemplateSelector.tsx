@@ -15,11 +15,13 @@ import { cn } from "@/lib/utils";
 interface TemplateSelectorProps {
   selectedTemplateId: string | null;
   onSelectTemplate: (template: ChatbotTemplate) => void;
+  onTemplateClick?: (template: ChatbotTemplate) => void;
 }
 
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   selectedTemplateId,
-  onSelectTemplate
+  onSelectTemplate,
+  onTemplateClick
 }) => {
   return (
     <div className="space-y-4">
@@ -36,7 +38,13 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   ? "border-2 border-primary shadow-md" 
                   : "border border-border"
               )}
-              onClick={() => onSelectTemplate(template)}
+              onClick={() => {
+                if (onTemplateClick) {
+                  onTemplateClick(template);
+                } else {
+                  onSelectTemplate(template);
+                }
+              }}
             >
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">

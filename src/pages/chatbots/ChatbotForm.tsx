@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -36,10 +35,6 @@ const ChatbotForm = () => {
   } = useChatbotForm({ id, userId: user?.id });
 
   const handleStartFromScratch = () => {
-    setActiveTab("basic");
-  };
-
-  const handleContinueWithTemplate = () => {
     setActiveTab("basic");
   };
 
@@ -95,11 +90,8 @@ const ChatbotForm = () => {
               <TabsContent value="templates" className="space-y-4 pt-4">
                 <TemplateSelectionTab 
                   selectedTemplateId={selectedTemplateId}
-                  onSelectTemplate={(template) => {
-                    handleTemplateSelect(template);
-                  }}
+                  onSelectTemplate={handleTemplateSelect}
                   onStartFromScratch={handleStartFromScratch}
-                  onContinue={handleContinueWithTemplate}
                 />
               </TabsContent>
             )}
