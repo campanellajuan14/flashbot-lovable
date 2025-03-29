@@ -27,10 +27,12 @@ interface Chatbot {
   is_active: boolean;
   behavior: {
     tone?: string;
+    style?: string;
     language?: string;
     useEmojis?: boolean;
     askQuestions?: boolean;
     suggestSolutions?: boolean;
+    instructions?: string;
   };
   settings?: Record<string, any>;
 }
@@ -115,12 +117,30 @@ const ChatbotPreview = () => {
       // Response logic based on chatbot behavior from Supabase
       const lowercaseMessage = message.toLowerCase();
       const tone = chatbot.behavior?.tone || "professional";
+      const style = chatbot.behavior?.style || "concise";
+      const language = chatbot.behavior?.language || "english";
       const useEmojis = chatbot.behavior?.useEmojis || false;
       const askQuestions = chatbot.behavior?.askQuestions || false;
       const suggestSolutions = chatbot.behavior?.suggestSolutions || false;
+      const customInstructions = chatbot.behavior?.instructions || "";
+      
+      // Apply custom instructions if available
+      if (customInstructions) {
+        console.log("Applying custom instructions:", customInstructions);
+        // Here we could use a more advanced approach with a real AI API
+        // For now, we'll integrate the custom instructions into our responses
+      }
       
       if (lowercaseMessage.includes("hola") || lowercaseMessage.includes("hi")) {
         response = `¡Hola! ${tone === "friendly" ? "¡Es un placer conocerte! " : ""}¿En qué puedo ayudarte hoy${useEmojis ? " 😊" : ""}?`;
+        
+        // Add custom greeting based on instructions if available
+        if (customInstructions.includes("te llamas")) {
+          const nameMatch = customInstructions.match(/te llamas (\w+)/i);
+          if (nameMatch && nameMatch[1]) {
+            response = `¡Hola! Me llamo ${nameMatch[1]}. ${tone === "friendly" ? "¡Es un placer conocerte! " : ""}¿En qué puedo ayudarte hoy${useEmojis ? " 😊" : ""}?`;
+          }
+        }
       } else if (lowercaseMessage.includes("devol")) {
         response = `Nuestra política de devoluciones permite devoluciones dentro de los 30 días posteriores a la compra. Puedes iniciar una devolución desde la página de historial de pedidos o contactar con nuestro equipo de soporte${useEmojis ? " 📦" : ""}.`;
       } else if (lowercaseMessage.includes("envío") || lowercaseMessage.includes("envio") || lowercaseMessage.includes("entrega")) {
@@ -130,17 +150,45 @@ const ChatbotPreview = () => {
       } else if (lowercaseMessage.includes("horario") || lowercaseMessage.includes("abierto")) {
         response = `Nuestro equipo de atención al cliente está disponible de lunes a viernes, de 9 am a 6 pm${useEmojis ? " 🕙" : ""}.`;
       } else {
-        response = `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}... ${
-          askQuestions ? "Para ayudarte mejor, ¿podrías proporcionar más detalles sobre tu pregunta?" : 
-          "Me encantaría ayudarte con eso. Házmelo saber si necesitas información más específica."
-        }${useEmojis ? " 🤔" : ""}`;
+        // Base response with style considerations
+        const baseResponse = style === "detailed" 
+          ? `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}. Permíteme proporcionarte información detallada al respecto.` 
+          : `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}...`;
+          
+        response = baseResponse;
+        
+        // Add question if enabled
+        if (askQuestions) {
+          response += ` Para ayudarte mejor, ¿podrías proporcionar más detalles sobre tu pregunta?`;
+        } else {
+          response += ` Me encantaría ayudarte con eso. Házmelo saber si necesitas información más específica.`;
+        }
+        
+        // Add emoji if enabled
+        if (useEmojis) {
+          response += " 🤔";
+        }
 
+        // Add solution suggestion if enabled
         if (suggestSolutions) {
           response += ` ${useEmojis ? "💡 " : ""}Te sugiero que ${
             lowercaseMessage.includes("producto") ? "revises nuestro catálogo de productos para encontrar opciones que se adapten a tus necesidades." :
             lowercaseMessage.includes("problema") ? "nos brindes más detalles sobre el problema específico que estás experimentando para poder ofrecerte una solución más precisa." :
             "explores nuestra sección de preguntas frecuentes donde podrías encontrar información útil sobre este tema."
           }`;
+        }
+        
+        // Incorporate any specific custom instructions for general responses
+        if (customInstructions) {
+          // Simple implementation - in a real app, you'd use AI to integrate this more naturally
+          if (customInstructions.length < 50) {
+            // For short instructions, add them directly
+            response += ` (${customInstructions})`;
+          } else if (!response.includes(customInstructions.substring(0, 20))) {
+            // For longer instructions, try to integrate a portion if not already included
+            const shortInstruction = customInstructions.substring(0, 50) + "...";
+            response += ` Como mencionaste en tus instrucciones: "${shortInstruction}"`;
+          }
         }
       }
       
