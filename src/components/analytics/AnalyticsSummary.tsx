@@ -13,6 +13,7 @@ interface AnalyticsSummaryProps {
 }
 
 const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {
+  // Data here is already filtered for the current user in the parent component
   const summaryItems = [
     {
       title: "Chatbots",

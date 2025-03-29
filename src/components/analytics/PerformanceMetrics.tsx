@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,6 +16,7 @@ interface MetricsDataItem {
   created_at: string;
   chatbots: {
     name: string;
+    user_id: string;
   };
 }
 
@@ -26,11 +26,11 @@ interface PerformanceMetricsProps {
 }
 
 const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading }) => {
-  // Procesar datos si están disponibles
+  // Process data if available - data is already filtered by user in the parent component
   const getProcessedData = () => {
     if (!data || data.length === 0) return [];
     
-    // Agrupar por fecha (día)
+    // Group by date (day)
     const groupedByDate = data.reduce<Record<string, {
       precision: number[];
       response_time: number[];
@@ -56,7 +56,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
       return acc;
     }, {});
     
-    // Convertir a formato para gráficos
+    // Convert to format for charts
     return Object.entries(groupedByDate).map(([date, metrics]) => {
       const avgPrecision = metrics.precision.reduce((sum, val) => sum + val, 0) / metrics.count;
       const avgResponseTime = metrics.response_time.reduce((sum, val) => sum + val, 0) / metrics.count;

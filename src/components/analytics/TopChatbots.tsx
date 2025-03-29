@@ -16,6 +16,7 @@ interface MetricsDataItem {
   created_at: string;
   chatbots: {
     name: string;
+    user_id: string;
   };
 }
 
@@ -25,11 +26,11 @@ interface TopChatbotsProps {
 }
 
 const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
-  // Procesar datos para obtener los chatbots más utilizados
+  // Process data to get the most used chatbots - data is already filtered by user in the parent component
   const getTopChatbots = () => {
     if (!data || data.length === 0) return [];
     
-    // Agrupar por chatbot
+    // Group by chatbot
     const chatbotStats = data.reduce<Record<string, {
       id: string;
       name: string;
@@ -54,11 +55,11 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
       const chatbot = acc[item.chatbot_id];
       chatbot.queries++;
       chatbot.totalTokens += item.tokens_used;
-      // Acumular para calcular promedio después
+      // Accumulate for calculating average later
       chatbot.avgPrecision += item.precision;
       chatbot.avgResponseTime += item.response_time;
       
-      // Actualizar fecha de último uso si es más reciente
+      // Update last used date if more recent
       if (new Date(item.created_at) > new Date(chatbot.lastUsed)) {
         chatbot.lastUsed = item.created_at;
       }
@@ -66,7 +67,7 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
       return acc;
     }, {});
     
-    // Calcular promedios y ordenar por número de consultas
+    // Calculate averages and sort by number of queries
     return Object.values(chatbotStats)
       .map(chatbot => ({
         ...chatbot,

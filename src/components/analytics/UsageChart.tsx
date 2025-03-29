@@ -15,6 +15,7 @@ interface MetricsDataItem {
   created_at: string;
   chatbots: {
     name: string;
+    user_id: string;
   };
 }
 
@@ -24,10 +25,10 @@ interface UsageChartProps {
 }
 
 const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
-  // Procesar los datos para el gráfico de uso
+  // Process data for usage chart - data is already filtered by user in the parent component
   const getUsageData = () => {
     if (!data || data.length === 0) {
-      // Si no hay datos, generar datos de ejemplo con los últimos 7 días
+      // If no data, generate example data with the last 7 days
       return Array.from({ length: 7 }, (_, i) => {
         const date = subDays(new Date(), 6 - i);
         return {
@@ -39,7 +40,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
       });
     }
     
-    // Agrupar por fecha (día)
+    // Group by date (day)
     const groupedByDate = data.reduce<Record<string, {
       tokens: number;
       queries: number;
@@ -59,7 +60,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
       return acc;
     }, {});
     
-    // Asegurar que tengamos datos para los últimos 7 días
+    // Ensure we have data for the last 7 days
     const result = [];
     for (let i = 6; i >= 0; i--) {
       const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
