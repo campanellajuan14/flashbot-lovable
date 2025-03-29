@@ -71,6 +71,11 @@ export const useDocumentUpload = ({
       
       console.log(`Procesando ${files.length} archivos`);
       
+      // Save temp chatbot ID if we're creating a new chatbot
+      if (chatbotId.startsWith('temp-')) {
+        localStorage.setItem('temp_chatbot_id', chatbotId);
+      }
+      
       // Process files one by one
       const filePromises = Array.from(files).map(async (file) => {
         const text = await file.text();

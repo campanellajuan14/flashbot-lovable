@@ -1,0 +1,4 @@
+
+project_id = "obiiomoqhpbgaymfphdz"
+[functions.kv-get-documents-by-chatbot]
+verify_jwt = false

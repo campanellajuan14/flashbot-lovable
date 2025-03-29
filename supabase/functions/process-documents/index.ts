@@ -137,6 +137,17 @@ function splitTextIntoChunks(text: string, chunkSize = 1000, overlap = 200) {
   return chunks;
 }
 
+// Store temporary documents for later processing
+type TempDocument = {
+  chatbotId: string;
+  name: string;
+  content: string;
+  metadata: any;
+  userId: string;
+};
+
+const tempDocumentStorage = new Map<string, TempDocument[]>();
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -191,10 +202,6 @@ serve(async (req) => {
       const chunk = chunks[i];
       
       try {
-        // Generate embedding using OpenAI
-        const embeddingModel = retrievalSettings?.embedding_model || "text-embedding-ada-002";
-        const embedding = await getEmbeddings(chunk, embeddingModel);
-        
         // Create a descriptive title for the chunk
         let chunkTitle = fileName;
         if (chunks.length > 1) {
@@ -213,38 +220,42 @@ serve(async (req) => {
           isChunk: chunks.length > 1,
           chunkingMethod: 'semantic',
           approximateTokens: Math.ceil(chunk.length / 4),
-          embeddingModel
+          embeddingModel: retrievalSettings?.embedding_model || "text-embedding-ada-002"
         };
         
-        // For temporary IDs (chatbot creation), store in localStorage for later processing
+        // For temporary IDs (chatbot creation), store documents to be processed after creation
         if (chatbotId.startsWith('temp-')) {
-          // Store for later processing after chatbot creation
+          // Store the temp document for processing later
           const tempDoc = {
+            chatbotId,
             name: chunkTitle,
             content: chunk,
             metadata,
-            timestamp: new Date().toISOString(),
             userId
           };
           
-          // Get existing temp docs or initialize empty array
-          const storageKey = `temp_docs_${chatbotId}`;
-          let tempDocs = [];
-          try {
-            const existing = localStorage.getItem(storageKey);
-            tempDocs = existing ? JSON.parse(existing) : [];
-          } catch (e) {
-            console.error("Error parsing stored temp docs:", e);
-            tempDocs = [];
+          // If the chatbot id doesn't exist in the map, create an entry
+          if (!tempDocumentStorage.has(chatbotId)) {
+            tempDocumentStorage.set(chatbotId, []);
           }
           
-          // Add new temp doc and store back
-          tempDocs.push(tempDoc);
-          localStorage.setItem(storageKey, JSON.stringify(tempDocs));
-          console.log(`Stored document chunk in temporary storage for later processing: ${chunkTitle}`);
+          // Get the array of documents for this chatbot
+          const docs = tempDocumentStorage.get(chatbotId) || [];
+          
+          // Add the new document
+          docs.push(tempDoc);
+          
+          // Update the map
+          tempDocumentStorage.set(chatbotId, docs);
+          
+          console.log(`Stored document chunk in temporary storage for chatbot: ${chatbotId}, document: ${chunkTitle}`);
           
           processedChunks.push(i);
         } else {
+          // Generate embedding using OpenAI
+          const embeddingModel = retrievalSettings?.embedding_model || "text-embedding-ada-002";
+          const embedding = await getEmbeddings(chunk, embeddingModel);
+          
           // Save directly to the documents table for existing chatbots
           const response = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
             method: 'POST',
@@ -277,6 +288,11 @@ serve(async (req) => {
         // Continue with the next chunk instead of aborting the whole process
       }
     }
+
+    // Export the temp document storage for access from other endpoints
+    if (chatbotId.startsWith('temp-')) {
+      console.log(`Número de documentos temporales almacenados para ${chatbotId}: ${tempDocumentStorage.get(chatbotId)?.length || 0}`);
+    }
     
     // Return successful response with processing details
     return new Response(
@@ -284,7 +300,8 @@ serve(async (req) => {
         success: true, 
         message: `Documento "${fileName}" procesado exitosamente en ${chunks.length} chunks.`,
         chunksProcessed: processedChunks.length,
-        totalChunks: chunks.length
+        totalChunks: chunks.length,
+        usedTempStorage: chatbotId.startsWith('temp-')
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

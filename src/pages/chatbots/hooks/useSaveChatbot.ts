@@ -42,6 +42,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       
       let result;
       let newChatbotId: string | undefined;
+      let tempChatbotId: string | undefined;
       
       if (isEditing) {
         result = await supabase
@@ -51,6 +52,9 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
           .eq('user_id', userId);
         newChatbotId = id;
       } else {
+        // Check if we have a temp chatbot ID in localStorage
+        tempChatbotId = localStorage.getItem('temp_chatbot_id');
+        
         result = await supabase
           .from('chatbots')
           .insert(chatbotData)
@@ -64,9 +68,11 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       
       if (error) throw error;
       
-      // Process any temporarily stored documents if this was a new chatbot
-      if (!isEditing && newChatbotId) {
-        await processTemporaryDocuments(newChatbotId, userId);
+      // Process any temporarily uploaded documents if this was a new chatbot
+      if (!isEditing && newChatbotId && tempChatbotId) {
+        console.log(`New chatbot created with ID: ${newChatbotId}, processing documents from temp ID: ${tempChatbotId}`);
+        await processTemporaryDocuments(newChatbotId, tempChatbotId, userId);
+        localStorage.removeItem('temp_chatbot_id');
       }
       
       toast({
@@ -88,69 +94,23 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
   };
   
   // Helper function to process temporarily stored documents after chatbot creation
-  const processTemporaryDocuments = async (chatbotId: string, userId: string | undefined) => {
+  const processTemporaryDocuments = async (chatbotId: string, tempChatbotId: string, userId: string | undefined) => {
     try {
-      // Search localStorage for any temp docs for this chatbot
-      const tempKeys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('temp_docs_temp-')) {
-          tempKeys.push(key);
+      // Process the temp documents by calling a new edge function
+      const { data, error } = await supabase.functions.invoke('process-temp-documents', {
+        body: {
+          realChatbotId: chatbotId,
+          tempChatbotId: tempChatbotId,
+          userId
         }
-      }
+      });
       
-      if (tempKeys.length === 0) {
-        console.log("No temporary documents found to process");
+      if (error) {
+        console.error("Error processing temporary documents:", error);
         return;
       }
       
-      console.log(`Found ${tempKeys.length} temporary document collections to process`);
-      
-      for (const key of tempKeys) {
-        try {
-          const tempDocsJson = localStorage.getItem(key);
-          if (!tempDocsJson) continue;
-          
-          const tempDocs = JSON.parse(tempDocsJson);
-          console.log(`Processing ${tempDocs.length} temporary documents for ${chatbotId}`);
-          
-          // Process each temporary document
-          for (const doc of tempDocs) {
-            try {
-              // Generate embedding
-              const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('process-documents', {
-                body: {
-                  chatbotId: chatbotId, // Use the real chatbot ID now
-                  text: doc.content,
-                  fileName: doc.metadata.fileName,
-                  fileType: doc.metadata.fileType,
-                  userId: userId,
-                  retrievalSettings: {
-                    chunk_size: 1000,
-                    chunk_overlap: 200,
-                    embedding_model: "text-embedding-ada-002"
-                  }
-                }
-              });
-              
-              if (embeddingError) {
-                console.error("Error processing temporary document:", embeddingError);
-                continue;
-              }
-              
-              console.log("Successfully processed temporary document:", doc.name);
-            } catch (docError) {
-              console.error("Error processing individual temp doc:", docError);
-            }
-          }
-          
-          // Remove the processed temp docs from localStorage
-          localStorage.removeItem(key);
-          console.log(`Removed processed temporary documents: ${key}`);
-        } catch (keyError) {
-          console.error(`Error processing temporary documents for key ${key}:`, keyError);
-        }
-      }
+      console.log("Temporary documents processed:", data);
     } catch (error) {
       console.error("Error processing temporary documents:", error);
     }

@@ -1,0 +1,4 @@
+
+project_id = "obiiomoqhpbgaymfphdz"
+[functions.process-temp-documents]
+verify_jwt = false
