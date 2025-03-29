@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ const DocumentsPage = () => {
   const { data: documents, isLoading } = useQuery({
     queryKey: ["user-documents"],
     queryFn: async () => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
       
       const { data, error } = await supabase
         .from("documents")
@@ -59,7 +60,7 @@ const DocumentsPage = () => {
         name: doc.name,
         chatbot_id: doc.chatbot_id,
         created_at: doc.created_at,
-        chatbot_name: doc.chatbots?.name || "Chatbot desconocido",
+        chatbot_name: doc.chatbots?.name || "Unknown Chatbot",
         metadata: doc.metadata || {}
       })) as Document[];
     },
@@ -83,9 +84,9 @@ const DocumentsPage = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
             <p className="text-muted-foreground">
-              Administra los documentos de tus chatbots
+              Manage your chatbot documents
             </p>
           </div>
         </div>
@@ -116,12 +117,12 @@ const DocumentsPage = () => {
                     <Button asChild size="sm" variant="secondary">
                       <Link to={`/chatbots/${chatbotId}/documents`}>
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Administrar
+                        Manage
                       </Link>
                     </Button>
                   </div>
                   <CardDescription>
-                    {chatbotDocuments.length} documento(s)
+                    {chatbotDocuments.length} document(s)
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -142,7 +143,7 @@ const DocumentsPage = () => {
                               )}
                               {doc.metadata?.isChunk && (
                                 <Badge variant="outline" className="bg-blue-50">
-                                  Fragmento
+                                  Fragment
                                 </Badge>
                               )}
                             </div>
@@ -161,16 +162,16 @@ const DocumentsPage = () => {
         ) : (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>No hay documentos</CardTitle>
+              <CardTitle>No documents</CardTitle>
               <CardDescription>
-                Sube documentos a tus chatbots para mejorar sus respuestas
+                Upload documents to your chatbots to improve their responses
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild>
                 <Link to="/chatbots">
                   <Plus className="mr-2 h-4 w-4" />
-                  Ir a tus chatbots
+                  Go to your chatbots
                 </Link>
               </Button>
             </CardContent>

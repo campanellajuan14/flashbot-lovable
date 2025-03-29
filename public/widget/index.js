@@ -6,7 +6,7 @@ import { createWidgetElements, toggleWidget, renderMessages, showWelcomeMessage 
 // Main widget initialization function
 async function init(params) {
   if (!params.widget_id) {
-    console.error('Se requiere widget_id para inicializar el chatbot');
+    console.error('widget_id is required to initialize the chatbot');
     return;
   }
   
@@ -37,7 +37,7 @@ async function init(params) {
     }
     
   } catch (error) {
-    console.error('Error al inicializar widget:', error);
+    console.error('Error initializing widget:', error);
   }
 }
 

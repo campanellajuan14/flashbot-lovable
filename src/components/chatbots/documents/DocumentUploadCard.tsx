@@ -38,9 +38,9 @@ const DocumentUploadCard = ({
   return (
     <Card id="upload-card">
       <CardHeader>
-        <CardTitle>Subir documentos</CardTitle>
+        <CardTitle>Upload Documents</CardTitle>
         <CardDescription>
-          Sube documentos para mejorar las respuestas de tu chatbot. Formatos soportados: PDF, TXT, CSV.
+          Upload documents to improve your chatbot's responses. Supported formats: PDF, TXT, CSV.
         </CardDescription>
       </CardHeader>
       <CardContent>

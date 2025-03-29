@@ -22,15 +22,15 @@ serve(async (req) => {
     
     if (!query || !chatbotId) {
       return new Response(
-        JSON.stringify({ error: "Se requiere query y chatbotId" }),
+        JSON.stringify({ error: "Query and chatbotId are required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Inicializar cliente de Supabase
+    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // Obtener configuración de recuperación si existe
+    // Get retrieval settings if they exist
     let retrievalSettings = null;
     try {
       const { data: settings, error } = await supabase
@@ -43,7 +43,7 @@ serve(async (req) => {
         retrievalSettings = settings;
         console.log("Retrieved settings:", retrievalSettings);
       } else {
-        // Si no hay configuración, crear una predeterminada
+        // If no configuration exists, create a default one
         console.log("No retrieval settings found, creating default");
         const { data: chatbot } = await supabase
           .from('chatbots')
@@ -57,7 +57,7 @@ serve(async (req) => {
           .from('retrieval_settings')
           .insert({
             chatbot_id: chatbotId,
-            similarity_threshold: 0.65, // Más permisivo por defecto
+            similarity_threshold: 0.65, // More permissive by default
             max_results: 4,
             chunk_size: 1000,
             chunk_overlap: 200,
@@ -85,7 +85,7 @@ serve(async (req) => {
       console.error("Error handling retrieval settings:", settingsError);
     }
     
-    // Obtener embeddings para la consulta
+    // Get embeddings for the query
     const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -106,26 +106,26 @@ serve(async (req) => {
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
     
-    // Implementar umbral adaptativo - empezar con configuración o valor proporcionado
+    // Implement adaptive threshold - starting with configured or provided value
     let thresholds = [];
     let finalDocuments = [];
     
-    // Si adaptiveThreshold está activado, usamos diferentes umbrales
+    // If adaptiveThreshold is enabled, use different thresholds
     if (adaptiveThreshold) {
       thresholds = [
-        threshold || retrievalSettings?.similarity_threshold || 0.7, // Estricto (primera opción)
-        0.65, // Moderado
-        0.6,  // Permisivo
-        0.5   // Muy permisivo (último recurso)
+        threshold || retrievalSettings?.similarity_threshold || 0.7, // Strict (first option)
+        0.65, // Moderate
+        0.6,  // Permissive
+        0.5   // Very permissive (last resort)
       ];
     } else {
-      // Solo usar un umbral
+      // Only use one threshold
       thresholds = [threshold || retrievalSettings?.similarity_threshold || 0.7];
     }
     
     const maxResults = limit || retrievalSettings?.max_results || 5;
     
-    // Intentar con cada umbral hasta encontrar documentos o agotar opciones
+    // Try with each threshold until finding documents or exhausting options
     for (const currentThreshold of thresholds) {
       console.log(`Trying with threshold: ${currentThreshold}`);
       
@@ -147,14 +147,14 @@ serve(async (req) => {
       if (documents && documents.length > 0) {
         console.log(`Found ${documents.length} documents with threshold ${currentThreshold}`);
         finalDocuments = documents;
-        break; // Encontramos documentos, salir del bucle
+        break; // Found documents, exit the loop
       }
     }
     
-    // Registrar métricas si hay documentos (opcional)
+    // Log metrics if there are documents (optional)
     if (finalDocuments.length > 0) {
       try {
-        const responseTime = Date.now(); // Como aproximación
+        const responseTime = Date.now(); // As an approximation
         await supabase.from('retrieval_metrics').insert({
           chatbot_id: chatbotId,
           precision: finalDocuments[0]?.similarity || 0,
@@ -176,7 +176,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error en match-documents:', error);
+    console.error('Error in match-documents:', error);
     
     return new Response(
       JSON.stringify({ 

@@ -22,7 +22,7 @@ export async function fetchWidgetConfig(widgetId) {
       console.error(`Error fetching widget config: ${response.status} ${response.statusText}`);
       const errorText = await response.text();
       console.error(`Response body: ${errorText}`);
-      throw new Error('Error al cargar configuración');
+      throw new Error('Error loading configuration');
     }
     
     const data = await response.json();
@@ -56,7 +56,7 @@ export async function sendChatMessage(message, state) {
     
     if (!response.ok) {
       console.error(`Error sending message: ${response.status} ${response.statusText}`);
-      throw new Error('Error al enviar mensaje');
+      throw new Error('Error sending message');
     }
     
     const data = await response.json();

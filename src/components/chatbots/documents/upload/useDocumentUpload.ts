@@ -45,12 +45,12 @@ export const useDocumentUpload = ({
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) {
-      console.error("No hay archivos para subir");
+      console.error("No files to upload");
       return;
     }
     
     if (!userId) {
-      setErrorMessage("No se pudo encontrar la información del usuario.");
+      setErrorMessage("User information could not be found.");
       return;
     }
     
@@ -69,7 +69,7 @@ export const useDocumentUpload = ({
         });
       }, 300);
       
-      console.log(`Procesando ${files.length} archivos`);
+      console.log(`Processing ${files.length} files`);
       
       // Process files one by one
       const filePromises = Array.from(files).map(async (file) => {
@@ -142,8 +142,8 @@ export const useDocumentUpload = ({
       
       // Show success toast
       toast({
-        title: "Documentos procesados",
-        description: "Los documentos han sido procesados exitosamente.",
+        title: "Documents processed",
+        description: "The documents have been processed successfully.",
       });
       
       setTimeout(() => {
@@ -158,9 +158,9 @@ export const useDocumentUpload = ({
       // Check for specific OpenAI API error
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (errorMsg.includes("OpenAI API key not found")) {
-        setErrorMessage("No se ha configurado la clave de API de OpenAI. Contacte al administrador del sistema para configurar esta clave.");
+        setErrorMessage("OpenAI API key not found. Please contact the system administrator to configure this key.");
       } else {
-        setErrorMessage("Ocurrió un error al procesar los documentos. Por favor, inténtalo de nuevo.");
+        setErrorMessage("An error occurred while processing the documents. Please try again.");
       }
     }
   };

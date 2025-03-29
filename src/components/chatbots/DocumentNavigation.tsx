@@ -12,7 +12,7 @@ interface DocumentNavigationProps {
 }
 
 const DocumentNavigation: React.FC<DocumentNavigationProps> = ({ chatbotId }) => {
-  // Obtener el conteo de documentos para este chatbot
+  // Get document count for this chatbot
   const { data: documentCount, isLoading } = useQuery({
     queryKey: ["chatbot-documents-count", chatbotId],
     queryFn: async () => {
@@ -33,12 +33,12 @@ const DocumentNavigation: React.FC<DocumentNavigationProps> = ({ chatbotId }) =>
           <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-medium">Documentos</h3>
+          <h3 className="font-medium">Documents</h3>
           {isLoading ? (
             <Skeleton className="h-4 w-40 mt-1" />
           ) : (
             <p className="text-sm text-muted-foreground">
-              {documentCount ? `${documentCount} documento(s) subido(s)` : "Sin documentos. Añade para mejorar las respuestas"}
+              {documentCount ? `${documentCount} document(s) uploaded` : "No documents. Add some to improve responses"}
             </p>
           )}
         </div>
@@ -48,13 +48,13 @@ const DocumentNavigation: React.FC<DocumentNavigationProps> = ({ chatbotId }) =>
           <Button asChild size="sm" variant="outline">
             <Link to={`/chatbots/${chatbotId}/documents`}>
               <Plus className="mr-2 h-4 w-4" />
-              Añadir
+              Add
             </Link>
           </Button>
         )}
         <Button asChild size="sm" variant={documentCount ? "default" : "secondary"}>
           <Link to={`/chatbots/${chatbotId}/documents`}>
-            Administrar
+            Manage
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

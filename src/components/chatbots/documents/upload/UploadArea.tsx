@@ -44,10 +44,10 @@ const UploadArea: React.FC<UploadAreaProps> = ({
       <div className="flex flex-col items-center justify-center gap-2">
         <Upload className="h-10 w-10 text-muted-foreground" />
         <h3 className="text-lg font-medium">
-          Arrastra archivos aquí o haz clic para seleccionar
+          Drag files here or click to select
         </h3>
         <p className="text-sm text-muted-foreground">
-          Archivos compatibles: PDF, TXT, CSV, DOC, DOCX
+          Compatible files: PDF, TXT, CSV, DOC, DOCX
         </p>
         <input
           ref={fileInputRef}
@@ -65,14 +65,14 @@ const UploadArea: React.FC<UploadAreaProps> = ({
           className="mt-2"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Seleccionar archivos
+          Select files
         </Button>
       </div>
       
       {uploading && (
         <div className="mt-4">
           <p className="text-sm font-medium mb-1">
-            Subiendo... {uploadProgress}%
+            Uploading... {uploadProgress}%
           </p>
           <div className="w-full bg-secondary rounded-full h-2.5">
             <div

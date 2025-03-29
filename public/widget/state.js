@@ -30,7 +30,7 @@ export function restoreConversation(state) {
         state.conversationId = conversationId;
         return true;
       } catch (e) {
-        console.error('Error al restaurar conversación:', e);
+        console.error('Error restoring conversation:', e);
       }
     }
   }
