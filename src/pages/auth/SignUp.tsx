@@ -14,7 +14,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { MessageSquare, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
@@ -37,18 +37,14 @@ const SignUp = () => {
     
     // Validación básica
     if (!email || !password || !businessName) {
-      toast({
-        variant: "destructive",
-        title: "Campos obligatorios",
+      toast.error("Campos obligatorios", {
         description: "Por favor, completa todos los campos."
       });
       return;
     }
     
     if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Contraseña muy corta",
+      toast.error("Contraseña muy corta", {
         description: "La contraseña debe tener al menos 6 caracteres."
       });
       return;
@@ -64,18 +60,7 @@ const SignUp = () => {
     } catch (error: any) {
       console.error("Error de registro:", error);
       
-      let errorMessage = "No se pudo crear la cuenta. Intenta nuevamente.";
-      
-      // Check for specific error messages
-      if (error.message?.includes("already registered")) {
-        errorMessage = "Este email ya está registrado. Por favor, usa otro o inicia sesión.";
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Error de registro",
-        description: errorMessage
-      });
+      // Error message already shown by the signUp function
     } finally {
       setIsSubmitting(false);
     }

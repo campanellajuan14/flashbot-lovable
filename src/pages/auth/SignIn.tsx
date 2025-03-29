@@ -14,7 +14,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { MessageSquare, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -35,9 +35,7 @@ const SignIn = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "Campos obligatorios",
+      toast.error("Campos obligatorios", {
         description: "Por favor, ingresa tu email y contraseña."
       });
       return;
@@ -53,12 +51,7 @@ const SignIn = () => {
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error);
       
-      // Show user-friendly error message
-      toast({
-        variant: "destructive",
-        title: "Error de inicio de sesión",
-        description: error.message || "Credenciales inválidas. Por favor, verifica tu email y contraseña."
-      });
+      // Error message already shown by the signIn function
     } finally {
       setIsSubmitting(false);
     }

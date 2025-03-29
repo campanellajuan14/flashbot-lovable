@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { Session, User } from '@supabase/supabase-js';
 
 // Define the User type
@@ -38,84 +39,123 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
-  // Setup auth state listener first
+  // Setup auth state listener
   useEffect(() => {
-    const setupAuthListener = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            console.log("Auth state changed:", event, session?.user?.id);
-            
-            if (session) {
-              await handleSession(session);
-            } else {
-              setUser(null);
-            }
-          }
-        );
+    console.log("Setting up auth listener");
+    setIsLoading(true);
+    
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
         
-        // Check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          await handleSession(session);
+        // Use simple synchronous state updates in the callback
+        if (session?.user) {
+          const authUser: AuthUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            businessName: session.user.user_metadata?.business_name || '',
+            role: 'user',
+          };
+          
+          console.log("Setting user from auth event:", authUser);
+          setUser(authUser);
         } else {
           setUser(null);
         }
         
-        setIsLoading(false);
-        
-        return () => {
-          subscription.unsubscribe();
+        // Use setTimeout to defer any additional Supabase calls
+        if (session?.user) {
+          setTimeout(async () => {
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('business_name, role')
+                .eq('id', session.user.id)
+                .maybeSingle();
+                
+              if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                return;
+              }
+              
+              if (profileData) {
+                setUser(prev => {
+                  if (!prev) return null;
+                  return {
+                    ...prev,
+                    businessName: profileData.business_name || prev.businessName,
+                    role: (profileData.role as 'admin' | 'user') || prev.role,
+                  };
+                });
+              }
+            } catch (error) {
+              console.error('Error fetching additional user data:', error);
+            }
+          }, 0);
+        }
+      }
+    );
+    
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
+      
+      if (session?.user) {
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          businessName: session.user.user_metadata?.business_name || '',
+          role: 'user',
         };
-      } catch (error) {
-        console.error("Error setting up auth listener:", error);
+        
+        console.log("Setting initial user:", authUser);
+        setUser(authUser);
+        
+        // Use setTimeout for additional data fetch
+        setTimeout(async () => {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('business_name, role')
+              .eq('id', session.user.id)
+              .maybeSingle();
+              
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              return;
+            }
+            
+            if (profileData) {
+              setUser(prev => {
+                if (!prev) return null;
+                return {
+                  ...prev,
+                  businessName: profileData.business_name || prev.businessName,
+                  role: (profileData.role as 'admin' | 'user') || prev.role,
+                };
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching additional user data:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }, 0);
+      } else {
         setUser(null);
         setIsLoading(false);
       }
-    };
-    
-    setupAuthListener();
-  }, []);
-  
-  // Helper to process session data
-  const handleSession = async (session: Session) => {
-    try {
-      const supabaseUser = session.user;
-      console.log("Processing session for user:", supabaseUser.id);
-      
-      // Get profile data from profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('business_name, role')
-        .eq('id', supabaseUser.id)
-        .maybeSingle();
-      
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // Don't throw error here, continue with what we have
-      }
-      
-      console.log("Profile data:", profileData);
-      
-      // Create the user object
-      const authUser: AuthUser = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        businessName: profileData?.business_name || supabaseUser.user_metadata?.business_name || '',
-        role: (profileData?.role as 'admin' | 'user') || 'user',
-      };
-      
-      console.log("Setting user:", authUser);
-      setUser(authUser);
-    } catch (error) {
-      console.error('Session handling error:', error);
+    }).catch(error => {
+      console.error("Error checking session:", error);
       setUser(null);
-    }
-  };
+      setIsLoading(false);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Sign in function
   const signIn = async (email: string, password: string): Promise<void> => {
@@ -132,17 +172,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Sign in successful:", data);
       
-      toast({
-        title: "Inicio de sesión exitoso",
+      sonnerToast.success("Inicio de sesión exitoso", {
         description: `¡Bienvenido de nuevo, ${email}!`,
       });
       
       // No explicit return needed, the auth state change will trigger the onAuthStateChange listener
     } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
-      toast({
-        variant: "destructive",
-        title: "Fallo en la autenticación",
+      sonnerToast.error("Fallo en la autenticación", {
         description: error.message || "Por favor verifica tus credenciales e intenta nuevamente.",
       });
       throw error;
@@ -173,17 +210,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Sign up successful:", data);
       
-      toast({
-        title: "Cuenta creada con éxito",
+      sonnerToast.success("Cuenta creada con éxito", {
         description: `¡Bienvenido a ChatSimp, ${businessName}!`,
       });
       
       // No explicit return needed, the auth state change will trigger the onAuthStateChange listener
     } catch (error: any) {
       console.error('Error de registro:', error);
-      toast({
-        variant: "destructive",
-        title: "Fallo en el registro",
+      sonnerToast.error("Fallo en el registro", {
         description: error.message || "Por favor intenta nuevamente más tarde.",
       });
       throw error;
@@ -199,15 +233,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       setUser(null);
-      toast({
-        title: "Sesión cerrada",
+      sonnerToast.success("Sesión cerrada", {
         description: "Has cerrado sesión exitosamente.",
       });
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
+      sonnerToast.error("Error", {
         description: "No se pudo cerrar sesión. Intenta nuevamente.",
       });
     }
