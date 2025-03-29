@@ -7,7 +7,6 @@ import {
   Zap, 
   FileText, 
   Settings, 
-  Users, 
   BarChart 
 } from "lucide-react";
 
@@ -35,11 +34,6 @@ const Sidebar = () => {
       title: "Analytics",
       href: "/analytics",
       icon: BarChart,
-    },
-    {
-      title: "Team",
-      href: "/team",
-      icon: Users,
     },
     {
       title: "Settings",

@@ -44,7 +44,7 @@ export function UserButton() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/profile" className="flex items-center">
+          <Link to="/settings" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </Link>

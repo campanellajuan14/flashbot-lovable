@@ -144,7 +144,7 @@ const SettingsPage = () => {
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="businessName" className="text-sm font-medium">Business name</Label>
+                      <Label htmlFor="businessName" className="text-sm font-medium">Business or company name</Label>
                       <Input 
                         id="businessName"
                         name="businessName"
@@ -154,7 +154,7 @@ const SettingsPage = () => {
                         className="border-primary/20 focus-visible:ring-primary/30"
                       />
                       <p className="text-xs text-muted-foreground">
-                        This name will be visible to all users.
+                        This name will be visible to all users and appears across the platform.
                       </p>
                     </div>
                     <div className="space-y-2">
