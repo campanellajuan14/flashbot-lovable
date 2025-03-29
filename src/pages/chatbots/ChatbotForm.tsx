@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -19,6 +19,7 @@ const ChatbotForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>(id ? "basic" : "templates");
   
   const {
     form,
@@ -33,6 +34,14 @@ const ChatbotForm = () => {
     handleTemplateSelect,
     handleSubmit
   } = useChatbotForm({ id, userId: user?.id });
+
+  const handleStartFromScratch = () => {
+    setActiveTab("basic");
+  };
+
+  const handleContinueWithTemplate = () => {
+    setActiveTab("basic");
+  };
 
   if (isLoading) {
     return (
@@ -72,7 +81,7 @@ const ChatbotForm = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Tabs defaultValue={isEditing ? "basic" : "templates"}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4">
               {!isEditing && (
                 <TabsTrigger value="templates">Plantillas</TabsTrigger>
@@ -86,7 +95,11 @@ const ChatbotForm = () => {
               <TabsContent value="templates" className="space-y-4 pt-4">
                 <TemplateSelectionTab 
                   selectedTemplateId={selectedTemplateId}
-                  onSelectTemplate={handleTemplateSelect}
+                  onSelectTemplate={(template) => {
+                    handleTemplateSelect(template);
+                  }}
+                  onStartFromScratch={handleStartFromScratch}
+                  onContinue={handleContinueWithTemplate}
                 />
               </TabsContent>
             )}
