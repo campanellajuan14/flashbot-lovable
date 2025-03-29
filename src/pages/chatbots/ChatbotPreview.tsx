@@ -89,9 +89,49 @@ const ChatbotPreview = () => {
     console.log("Chatbot data:", chatbot);
   }, [chatbot]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const callClaudeAPI = async (messageHistory: ChatMessage[]) => {
+    if (!chatbot) return null;
+    
+    try {
+      // Format messages for Claude API
+      const formattedMessages = messageHistory.map(msg => ({
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.content
+      }));
+      
+      const response = await supabase.functions.invoke('claude-chat', {
+        body: {
+          messages: formattedMessages,
+          behavior: chatbot.behavior,
+          chatbotName: chatbot.name
+        }
+      });
+      
+      if (response.error) {
+        console.error("Error calling Claude API:", response.error);
+        toast({
+          title: "Error",
+          description: "No se pudo conectar con el asistente IA",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      return response.data.message;
+    } catch (error) {
+      console.error("Error calling Claude API:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al procesar tu mensaje",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !chatbot) return;
+    if (!message.trim() || !chatbot || isTyping) return;
     
     // Add user message
     const userMessage: ChatMessage = {
@@ -101,7 +141,8 @@ const ChatbotPreview = () => {
       timestamp: new Date(),
     };
     
-    setMessages((prev) => [...prev, userMessage]);
+    // Update messages state with the new user message
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setMessage("");
     setIsTyping(true);
     
@@ -110,91 +151,25 @@ const ChatbotPreview = () => {
       inputRef.current?.focus();
     }, 100);
 
-    // Simulate bot thinking and responding
-    setTimeout(() => {
-      let response = "";
+    try {
+      // Get all messages including the new one for context
+      const updatedMessages = [...messages, userMessage];
       
-      // Response logic based on chatbot behavior from Supabase
-      const lowercaseMessage = message.toLowerCase();
-      const tone = chatbot.behavior?.tone || "professional";
-      const style = chatbot.behavior?.style || "concise";
-      const language = chatbot.behavior?.language || "english";
-      const useEmojis = chatbot.behavior?.useEmojis || false;
-      const askQuestions = chatbot.behavior?.askQuestions || false;
-      const suggestSolutions = chatbot.behavior?.suggestSolutions || false;
-      const customInstructions = chatbot.behavior?.instructions || "";
+      // Call Claude API
+      const aiResponse = await callClaudeAPI(updatedMessages);
       
-      // Apply custom instructions if available
-      if (customInstructions) {
-        console.log("Applying custom instructions:", customInstructions);
-        // Here we could use a more advanced approach with a real AI API
-        // For now, we'll integrate the custom instructions into our responses
-      }
-      
-      if (lowercaseMessage.includes("hola") || lowercaseMessage.includes("hi")) {
-        response = `¡Hola! ${tone === "friendly" ? "¡Es un placer conocerte! " : ""}¿En qué puedo ayudarte hoy${useEmojis ? " 😊" : ""}?`;
-        
-        // Add custom greeting based on instructions if available
-        if (customInstructions.includes("te llamas")) {
-          const nameMatch = customInstructions.match(/te llamas (\w+)/i);
-          if (nameMatch && nameMatch[1]) {
-            response = `¡Hola! Me llamo ${nameMatch[1]}. ${tone === "friendly" ? "¡Es un placer conocerte! " : ""}¿En qué puedo ayudarte hoy${useEmojis ? " 😊" : ""}?`;
-          }
-        }
-      } else if (lowercaseMessage.includes("devol")) {
-        response = `Nuestra política de devoluciones permite devoluciones dentro de los 30 días posteriores a la compra. Puedes iniciar una devolución desde la página de historial de pedidos o contactar con nuestro equipo de soporte${useEmojis ? " 📦" : ""}.`;
-      } else if (lowercaseMessage.includes("envío") || lowercaseMessage.includes("envio") || lowercaseMessage.includes("entrega")) {
-        response = `Ofrecemos envío estándar (3-5 días hábiles) y envío express (1-2 días hábiles). El envío es gratuito para pedidos superiores a $50${useEmojis ? " 🚚" : ""}.`;
-      } else if (lowercaseMessage.includes("pago") || lowercaseMessage.includes("pagar")) {
-        response = `Aceptamos todas las tarjetas de crédito principales, PayPal y Apple Pay como métodos de pago${useEmojis ? " 💳" : ""}.`;
-      } else if (lowercaseMessage.includes("horario") || lowercaseMessage.includes("abierto")) {
-        response = `Nuestro equipo de atención al cliente está disponible de lunes a viernes, de 9 am a 6 pm${useEmojis ? " 🕙" : ""}.`;
+      if (aiResponse) {
+        handleBotResponse(aiResponse);
       } else {
-        // Base response with style considerations
-        const baseResponse = style === "detailed" 
-          ? `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}. Permíteme proporcionarte información detallada al respecto.` 
-          : `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}...`;
-          
-        response = baseResponse;
-        
-        // Add question if enabled
-        if (askQuestions) {
-          response += ` Para ayudarte mejor, ¿podrías proporcionar más detalles sobre tu pregunta?`;
-        } else {
-          response += ` Me encantaría ayudarte con eso. Házmelo saber si necesitas información más específica.`;
-        }
-        
-        // Add emoji if enabled
-        if (useEmojis) {
-          response += " 🤔";
-        }
-
-        // Add solution suggestion if enabled
-        if (suggestSolutions) {
-          response += ` ${useEmojis ? "💡 " : ""}Te sugiero que ${
-            lowercaseMessage.includes("producto") ? "revises nuestro catálogo de productos para encontrar opciones que se adapten a tus necesidades." :
-            lowercaseMessage.includes("problema") ? "nos brindes más detalles sobre el problema específico que estás experimentando para poder ofrecerte una solución más precisa." :
-            "explores nuestra sección de preguntas frecuentes donde podrías encontrar información útil sobre este tema."
-          }`;
-        }
-        
-        // Incorporate any specific custom instructions for general responses
-        if (customInstructions) {
-          // Simple implementation - in a real app, you'd use AI to integrate this more naturally
-          if (customInstructions.length < 50) {
-            // For short instructions, add them directly
-            response += ` (${customInstructions})`;
-          } else if (!response.includes(customInstructions.substring(0, 20))) {
-            // For longer instructions, try to integrate a portion if not already included
-            const shortInstruction = customInstructions.substring(0, 50) + "...";
-            response += ` Como mencionaste en tus instrucciones: "${shortInstruction}"`;
-          }
-        }
+        // Fallback response if API fails
+        handleBotResponse("Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.");
       }
-      
-      handleBotResponse(response, lowercaseMessage.includes("envío") ? ["Política de Envíos", "FAQ"] : undefined);
+    } catch (error) {
+      console.error("Error processing message:", error);
+      handleBotResponse("Ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo.");
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
   
   const handleBotResponse = (content: string, references?: string[]) => {
@@ -206,7 +181,7 @@ const ChatbotPreview = () => {
       references,
     };
     
-    setMessages((prev) => [...prev, botMessage]);
+    setMessages(prev => [...prev, botMessage]);
   };
 
   if (isLoading) {

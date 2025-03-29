@@ -1,0 +1,4 @@
+
+[functions.options]
+memory = 256
+timeout = 20
