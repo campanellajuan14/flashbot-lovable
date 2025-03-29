@@ -1,118 +1,64 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-
-// Pages
+import { Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
+import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/dashboard/Dashboard";
+import AnalyticsPage from "./pages/analytics/AnalyticsPage";
+import DocumentsPage from "./pages/documents/DocumentsPage";
 import ChatbotList from "./pages/chatbots/ChatbotList";
 import ChatbotForm from "./pages/chatbots/ChatbotForm";
-import ChatbotPreview from "./pages/chatbots/ChatbotPreview";
+import ChatbotDetail from "./pages/chatbots/ChatbotDetail";
 import ChatbotDocuments from "./pages/chatbots/ChatbotDocuments";
-import DocumentsPage from "./pages/documents/DocumentsPage";
-import AnalyticsPage from "./pages/analytics/AnalyticsPage";
-import NotFound from "./pages/NotFound";
+import ChatbotPreview from "./pages/chatbots/ChatbotPreview";
+import WidgetEmbed from "./pages/widget/WidgetEmbed";
+import AuthRequired from "./components/auth/AuthRequired";
+import { Toaster } from "./components/ui/toaster";
+import "./App.css";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
-
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
-  }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/sign-in" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/sign-in" element={<SignIn />} />
-            <Route path="/sign-up" element={<SignUp />} />
-            
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/chatbots" element={
-              <ProtectedRoute>
-                <ChatbotList />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/chatbots/new" element={
-              <ProtectedRoute>
-                <ChatbotForm />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/chatbots/:id" element={
-              <ProtectedRoute>
-                <ChatbotForm />
-              </ProtectedRoute>
-            } />
-            
-            {/* Nueva ruta para la página general de documentos */}
-            <Route path="/documents" element={
-              <ProtectedRoute>
-                <DocumentsPage />
-              </ProtectedRoute>
-            } />
-            
-            {/* Ruta para la página de analíticas */}
-            <Route path="/analytics" element={
-              <ProtectedRoute>
-                <AnalyticsPage />
-              </ProtectedRoute>
-            } />
-            
-            {/* Preview no necesita autenticación para que puedas compartir con usuarios */}
-            <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
-            
-            {/* Ruta a documentos - asegurarnos que esté protegida */}
-            <Route path="/chatbots/:id/documents" element={
-              <ProtectedRoute>
-                <ChatbotDocuments />
-              </ProtectedRoute>
-            } />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+// External widget route (no authentication required)
+const WidgetRoute = () => (
+  <Routes>
+    <Route path="/widget/:widgetId" element={<WidgetEmbed />} />
+  </Routes>
 );
+
+// Main application routes
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Index />} />
+    <Route path="/auth/signin" element={<SignIn />} />
+    <Route path="/auth/signup" element={<SignUp />} />
+    <Route path="/widget/:widgetId" element={<WidgetEmbed />} />
+    
+    <Route element={<AuthRequired />}>
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/analytics" element={<AnalyticsPage />} />
+      <Route path="/documents" element={<DocumentsPage />} />
+      
+      <Route path="/chatbots" element={<ChatbotList />} />
+      <Route path="/chatbots/new" element={<ChatbotForm />} />
+      <Route path="/chatbots/:id" element={<ChatbotDetail />} />
+      <Route path="/chatbots/:id/edit" element={<ChatbotForm />} />
+      <Route path="/chatbots/:id/documents" element={<ChatbotDocuments />} />
+      <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
+    </Route>
+    
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
+function App() {
+  // Check if we're on a widget route
+  const isWidgetRoute = window.location.pathname.startsWith('/widget/');
+  
+  return (
+    <>
+      {isWidgetRoute ? <WidgetRoute /> : <AppRoutes />}
+      <Toaster />
+    </>
+  );
+}
 
 export default App;

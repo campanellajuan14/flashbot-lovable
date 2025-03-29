@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Settings, Edit, Trash2, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Settings, Edit, Trash2, FileText, Loader2, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,9 +22,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ShareSettings from "@/components/chatbots/ShareSettings";
 
 interface BehaviorSettings {
   tone?: string;
@@ -50,6 +57,7 @@ const ChatbotDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("info");
 
   const {
     data: chatbot,
@@ -230,191 +238,253 @@ const ChatbotDetail = () => {
 
       <div className="flex-1 p-4">
         <div className="container max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {chatbot.name}
-                        {chatbot.is_active ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                            Activo
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-                            Inactivo
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {chatbot.description || "Sin descripción"}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Personalidad</h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+          <Tabs 
+            defaultValue="info" 
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="info">Información</TabsTrigger>
+              <TabsTrigger value="config">Configuración</TabsTrigger>
+              <TabsTrigger value="share">Compartir</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="info" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="col-span-1 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
                         <div>
-                          <span className="font-medium">Tono:</span>{" "}
-                          {behaviorSettings.tone || "No especificado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Estilo:</span>{" "}
-                          {behaviorSettings.style || "No especificado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Idioma:</span>{" "}
-                          {behaviorSettings.language === "es"
-                            ? "Español"
-                            : behaviorSettings.language === "en"
-                            ? "Inglés"
-                            : behaviorSettings.language || "No especificado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Emojis:</span>{" "}
-                          {behaviorSettings.useEmojis ? "Sí" : "No"}
+                          <CardTitle className="flex items-center gap-2">
+                            {chatbot.name}
+                            {chatbot.is_active ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                                Activo
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
+                                Inactivo
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            {chatbot.description || "Sin descripción"}
+                          </CardDescription>
                         </div>
                       </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">
-                        Comportamiento
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
                         <div>
-                          <span className="font-medium">Hace preguntas:</span>{" "}
-                          {behaviorSettings.askQuestions ? "Sí" : "No"}
-                        </div>
-                        <div>
-                          <span className="font-medium">
-                            Sugiere soluciones:
-                          </span>{" "}
-                          {behaviorSettings.suggestSolutions ? "Sí" : "No"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {behaviorSettings.instructions && (
-                      <>
-                        <Separator />
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">
-                            Instrucciones personalizadas
-                          </h3>
-                          <div className="text-sm bg-muted p-2 rounded">
-                            {behaviorSettings.instructions}
+                          <h3 className="text-sm font-medium mb-1">Personalidad</h3>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-medium">Tono:</span>{" "}
+                              {behaviorSettings.tone || "No especificado"}
+                            </div>
+                            <div>
+                              <span className="font-medium">Estilo:</span>{" "}
+                              {behaviorSettings.style || "No especificado"}
+                            </div>
+                            <div>
+                              <span className="font-medium">Idioma:</span>{" "}
+                              {behaviorSettings.language === "es"
+                                ? "Español"
+                                : behaviorSettings.language === "en"
+                                ? "Inglés"
+                                : behaviorSettings.language || "No especificado"}
+                            </div>
+                            <div>
+                              <span className="font-medium">Emojis:</span>{" "}
+                              {behaviorSettings.useEmojis ? "Sí" : "No"}
+                            </div>
                           </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/chatbots/${chatbotId}/documents`}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Documentos
-                    </Link>
-                  </Button>
-                  <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
+
+                        <Separator />
+
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">
+                            Comportamiento
+                          </h3>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-medium">Hace preguntas:</span>{" "}
+                              {behaviorSettings.askQuestions ? "Sí" : "No"}
+                            </div>
+                            <div>
+                              <span className="font-medium">
+                                Sugiere soluciones:
+                              </span>{" "}
+                              {behaviorSettings.suggestSolutions ? "Sí" : "No"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {behaviorSettings.instructions && (
+                          <>
+                            <Separator />
+                            <div>
+                              <h3 className="text-sm font-medium mb-1">
+                                Instrucciones personalizadas
+                              </h3>
+                              <div className="text-sm bg-muted p-2 rounded">
+                                {behaviorSettings.instructions}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/chatbots/${chatbotId}/documents`}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Documentos
+                        </Link>
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>¿Eliminar chatbot?</DialogTitle>
-                        <DialogDescription>
-                          Esta acción eliminará permanentemente el chatbot {chatbot.name} y no se puede deshacer.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowDeleteDialog(false)}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleDeleteChatbot}
-                          disabled={deleteChatbotMutation.isPending}
-                        >
-                          {deleteChatbotMutation.isPending && (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          )}
-                          Eliminar
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </CardFooter>
-              </Card>
-            </div>
+                      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>¿Eliminar chatbot?</DialogTitle>
+                            <DialogDescription>
+                              Esta acción eliminará permanentemente el chatbot {chatbot.name} y no se puede deshacer.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowDeleteDialog(false)}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDeleteChatbot}
+                              disabled={deleteChatbotMutation.isPending}
+                            >
+                              {deleteChatbotMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              )}
+                              Eliminar
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </CardFooter>
+                  </Card>
+                </div>
 
-            <div className="col-span-1 md:col-span-2 space-y-6">
+                <div className="col-span-1 md:col-span-2 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Configuración del modelo</CardTitle>
+                      <CardDescription>
+                        Configuración técnica del modelo de IA
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h3 className="text-sm font-medium mb-1">Modelo</h3>
+                            <div className="text-sm">
+                              {chatbotSettings.model || "claude-3-haiku-20240307"}
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium mb-1">
+                              Temperatura
+                            </h3>
+                            <div className="text-sm">
+                              {chatbotSettings.temperature || "0.7"}
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium mb-1">
+                              Tokens máximos
+                            </h3>
+                            <div className="text-sm">
+                              {chatbotSettings.maxTokens || "1000"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Estadísticas de uso</CardTitle>
+                      <CardDescription>
+                        Métricas de uso del chatbot
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center p-6 text-muted-foreground">
+                        <p>Las estadísticas estarán disponibles pronto</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="config">
               <Card>
                 <CardHeader>
-                  <CardTitle>Configuración del modelo</CardTitle>
+                  <CardTitle className="flex items-center">
+                    <Settings className="mr-2 h-5 w-5" />
+                    Configuración Avanzada
+                  </CardTitle>
                   <CardDescription>
-                    Configuración técnica del modelo de IA
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium mb-1">Modelo</h3>
-                        <div className="text-sm">
-                          {chatbotSettings.model || "claude-3-haiku-20240307"}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium mb-1">
-                          Temperatura
-                        </h3>
-                        <div className="text-sm">
-                          {chatbotSettings.temperature || "0.7"}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium mb-1">
-                          Tokens máximos
-                        </h3>
-                        <div className="text-sm">
-                          {chatbotSettings.maxTokens || "1000"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Estadísticas de uso</CardTitle>
-                  <CardDescription>
-                    Métricas de uso del chatbot
+                    Ajustes avanzados del chatbot
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center p-6 text-muted-foreground">
-                    <p>Las estadísticas estarán disponibles pronto</p>
+                    <p>Edite el chatbot para modificar la configuración avanzada</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      asChild
+                    >
+                      <Link to={`/chatbots/${chatbotId}/edit`}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Configuración
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="share">
+              <div className="space-y-4">
+                <Card className="mb-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Share2 className="mr-2 h-5 w-5" />
+                      Compartir Chatbot
+                    </CardTitle>
+                    <CardDescription>
+                      Configura cómo compartir tu chatbot en otros sitios web
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+                
+                <ShareSettings />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
