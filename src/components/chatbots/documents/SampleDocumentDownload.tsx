@@ -22,12 +22,22 @@ const SampleDocumentDownload = () => {
           how the AI responds to questions about the hackathon rules, prizes, and requirements.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
-          <a href="/sample-documents/hackaton_documentation.md" download="lovable_hackathon_documentation.md">
-            <Button variant="outline" className="w-full sm:w-auto gap-2">
-              <Download className="h-4 w-4" />
-              Download Markdown
-            </Button>
-          </a>
+          <Button 
+            variant="outline" 
+            className="w-full sm:w-auto gap-2"
+            onClick={() => {
+              // Create a link to download the file and trigger it
+              const link = document.createElement('a');
+              link.href = '/sample-documents/hackaton_documentation.md';
+              link.download = 'lovable_hackathon_documentation.md';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Download Markdown
+          </Button>
           <a href="/sample-documents/hackaton_documentation.md" target="_blank" rel="noopener noreferrer">
             <Button variant="secondary" className="w-full sm:w-auto gap-2">
               <FileText className="h-4 w-4" />
