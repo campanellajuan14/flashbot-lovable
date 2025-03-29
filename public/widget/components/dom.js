@@ -94,16 +94,11 @@ export function createWidgetElements(state) {
   `;
   
   // Branding footer
-  let footerHTML = '';
-  if (state.config.config.content.branding) {
-    footerHTML = `
-      <div style="padding: 8px 15px; font-size: 11px; text-align: center; color: #999; border-top: 1px solid #eee;">
-        <a href="https://flashbot.com" target="_blank" style="color: #999; text-decoration: none;">
-          Powered by Flashbot
-        </a>
-      </div>
-    `;
-  }
+  const footerHTML = `
+    <div style="padding: 8px 15px; font-size: 11px; text-align: center; color: #999; border-top: 1px solid #eee;">
+      <span>Made by Fran Conejos at Lovable Hackaton</span>
+    </div>
+  `;
   
   // Debug info container for easier troubleshooting
   const debugContainer = document.createElement('div');
@@ -120,11 +115,11 @@ export function createWidgetElements(state) {
   chatWindow.appendChild(messagesContainer);
   chatWindow.appendChild(inputContainer);
   chatWindow.appendChild(debugContainer);
-  if (footerHTML) {
-    const footer = document.createElement('div');
-    footer.innerHTML = footerHTML;
-    chatWindow.appendChild(footer);
-  }
+  
+  // Always add footer
+  const footer = document.createElement('div');
+  footer.innerHTML = footerHTML;
+  chatWindow.appendChild(footer);
   
   container.appendChild(button);
   container.appendChild(chatWindow);

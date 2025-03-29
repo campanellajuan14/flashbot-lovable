@@ -38,6 +38,11 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chatbotId, chatbotName }) => {
           </Button>
         </div>
       </div>
+      <div className="container max-w-4xl mx-auto mt-1">
+        <p className="text-xs text-muted-foreground text-center">
+          Made by Fran Conejos at Lovable Hackaton
+        </p>
+      </div>
     </header>
   );
 };
