@@ -13,11 +13,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("widget-config function called");
+  console.log("Request headers:", JSON.stringify(Object.fromEntries([...new Headers(req.headers)])));
+
   try {
     const url = new URL(req.url);
     const widgetId = url.searchParams.get('widget_id');
     
+    console.log(`Widget ID from request: ${widgetId}`);
+    
     if (!widgetId) {
+      console.error("Missing widget_id parameter");
       return new Response(
         JSON.stringify({ error: "Se requiere widget_id" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -27,6 +33,10 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
+    
+    console.log(`Supabase URL: ${supabaseUrl ? "Set" : "Not set"}`);
+    console.log(`Supabase Anon Key: ${supabaseAnonKey ? "Set" : "Not set"}`);
+    
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     console.log(`Looking for widget with ID: ${widgetId}`);
@@ -52,14 +62,20 @@ serve(async (req) => {
       const referer = req.headers.get('Referer');
       let isAllowed = false;
       
+      console.log(`Referer header: ${referer}`);
+      console.log(`Allowed domains: ${JSON.stringify(chatbot.share_settings.restrictions.allowed_domains)}`);
+      
       if (referer) {
         const refererDomain = new URL(referer).hostname;
         isAllowed = chatbot.share_settings.restrictions.allowed_domains.some(domain => 
           refererDomain === domain || refererDomain.endsWith(`.${domain}`)
         );
+        
+        console.log(`Referer domain: ${refererDomain}, Is allowed: ${isAllowed}`);
       }
       
       if (!isAllowed) {
+        console.error(`Domain not allowed for widget: ${widgetId}`);
         return new Response(
           JSON.stringify({ error: "Dominio no autorizado" }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
