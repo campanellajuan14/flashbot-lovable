@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ const ChatbotDetail = () => {
   } = useQuery({
     queryKey: ["chatbot", chatbotId],
     queryFn: async () => {
-      if (!chatbotId) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId) throw new Error("Chatbot ID required");
 
       const { data, error } = await supabase
         .from("chatbots")
@@ -88,7 +89,7 @@ const ChatbotDetail = () => {
 
   const deleteChatbotMutation = useMutation({
     mutationFn: async () => {
-      if (!chatbotId) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId) throw new Error("Chatbot ID required");
 
       const { error } = await supabase.from("chatbots").delete().eq("id", chatbotId);
 
@@ -97,17 +98,17 @@ const ChatbotDetail = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Chatbot eliminado",
-        description: "El chatbot ha sido eliminado correctamente.",
+        title: "Chatbot deleted",
+        description: "The chatbot has been successfully deleted.",
       });
       navigate("/chatbots");
     },
     onError: (error) => {
-      console.error("Error al eliminar chatbot:", error);
+      console.error("Error deleting chatbot:", error);
       toast({
         title: "Error",
         description:
-          "No se pudo eliminar el chatbot. Por favor, inténtalo de nuevo.",
+          "Failed to delete the chatbot. Please try again.",
         variant: "destructive",
       });
     },
@@ -115,7 +116,7 @@ const ChatbotDetail = () => {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async () => {
-      if (!chatbotId || !chatbot) throw new Error("Se requiere chatbot");
+      if (!chatbotId || !chatbot) throw new Error("Chatbot required");
 
       const { error } = await supabase
         .from("chatbots")
@@ -128,20 +129,20 @@ const ChatbotDetail = () => {
     onSuccess: (newActiveState) => {
       toast({
         title: newActiveState
-          ? "Chatbot activado"
-          : "Chatbot desactivado",
+          ? "Chatbot activated"
+          : "Chatbot deactivated",
         description: newActiveState
-          ? "El chatbot ha sido activado correctamente."
-          : "El chatbot ha sido desactivado correctamente.",
+          ? "The chatbot has been successfully activated."
+          : "The chatbot has been successfully deactivated.",
       });
       queryClient.invalidateQueries({ queryKey: ["chatbot", chatbotId] });
     },
     onError: (error) => {
-      console.error("Error al cambiar estado del chatbot:", error);
+      console.error("Error changing chatbot state:", error);
       toast({
         title: "Error",
         description:
-          "No se pudo cambiar el estado del chatbot. Por favor, inténtalo de nuevo.",
+          "Failed to change the chatbot state. Please try again.",
         variant: "destructive",
       });
     },
@@ -172,10 +173,10 @@ const ChatbotDetail = () => {
           <AlertDescription>
             {error instanceof Error
               ? error.message
-              : "Ocurrió un error al cargar el chatbot"}
+              : "An error occurred while loading the chatbot"}
           </AlertDescription>
         </Alert>
-        <Button onClick={() => navigate("/chatbots")}>Volver a Chatbots</Button>
+        <Button onClick={() => navigate("/chatbots")}>Back to Chatbots</Button>
       </div>
     );
   }
@@ -196,7 +197,7 @@ const ChatbotDetail = () => {
             <div>
               <h1 className="text-lg font-semibold">{chatbot.name}</h1>
               <p className="text-sm text-muted-foreground">
-                Detalles del chatbot
+                Chatbot details
               </p>
             </div>
           </div>
@@ -210,7 +211,7 @@ const ChatbotDetail = () => {
               {toggleActiveMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              {chatbot.is_active ? "Desactivar" : "Activar"}
+              {chatbot.is_active ? "Deactivate" : "Activate"}
             </Button>
             <Button
               variant="outline"
@@ -219,7 +220,7 @@ const ChatbotDetail = () => {
             >
               <Link to={`/chatbots/${chatbotId}/edit`}>
                 <Edit className="h-4 w-4 mr-2" />
-                Editar
+                Edit
               </Link>
             </Button>
             <Button
@@ -229,7 +230,7 @@ const ChatbotDetail = () => {
             >
               <Link to={`/chatbots/${chatbotId}/preview`}>
                 <Play className="h-4 w-4 mr-2" />
-                Vista Previa
+                Preview
               </Link>
             </Button>
           </div>
@@ -245,9 +246,9 @@ const ChatbotDetail = () => {
             className="w-full"
           >
             <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="info">Información</TabsTrigger>
-              <TabsTrigger value="config">Configuración</TabsTrigger>
-              <TabsTrigger value="share">Compartir</TabsTrigger>
+              <TabsTrigger value="info">Information</TabsTrigger>
+              <TabsTrigger value="config">Configuration</TabsTrigger>
+              <TabsTrigger value="share">Share</TabsTrigger>
             </TabsList>
             
             <TabsContent value="info" className="space-y-6">
@@ -261,16 +262,16 @@ const ChatbotDetail = () => {
                             {chatbot.name}
                             {chatbot.is_active ? (
                               <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                                Activo
+                                Active
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-                                Inactivo
+                                Inactive
                               </Badge>
                             )}
                           </CardTitle>
                           <CardDescription className="mt-1">
-                            {chatbot.description || "Sin descripción"}
+                            {chatbot.description || "No description"}
                           </CardDescription>
                         </div>
                       </div>
@@ -278,27 +279,27 @@ const ChatbotDetail = () => {
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-sm font-medium mb-1">Personalidad</h3>
+                          <h3 className="text-sm font-medium mb-1">Personality</h3>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="font-medium">Tono:</span>{" "}
-                              {behaviorSettings.tone || "No especificado"}
+                              <span className="font-medium">Tone:</span>{" "}
+                              {behaviorSettings.tone || "Not specified"}
                             </div>
                             <div>
-                              <span className="font-medium">Estilo:</span>{" "}
-                              {behaviorSettings.style || "No especificado"}
+                              <span className="font-medium">Style:</span>{" "}
+                              {behaviorSettings.style || "Not specified"}
                             </div>
                             <div>
-                              <span className="font-medium">Idioma:</span>{" "}
+                              <span className="font-medium">Language:</span>{" "}
                               {behaviorSettings.language === "es"
-                                ? "Español"
+                                ? "Spanish"
                                 : behaviorSettings.language === "en"
-                                ? "Inglés"
-                                : behaviorSettings.language || "No especificado"}
+                                ? "English"
+                                : behaviorSettings.language || "Not specified"}
                             </div>
                             <div>
                               <span className="font-medium">Emojis:</span>{" "}
-                              {behaviorSettings.useEmojis ? "Sí" : "No"}
+                              {behaviorSettings.useEmojis ? "Yes" : "No"}
                             </div>
                           </div>
                         </div>
@@ -307,18 +308,18 @@ const ChatbotDetail = () => {
 
                         <div>
                           <h3 className="text-sm font-medium mb-1">
-                            Comportamiento
+                            Behavior
                           </h3>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="font-medium">Hace preguntas:</span>{" "}
-                              {behaviorSettings.askQuestions ? "Sí" : "No"}
+                              <span className="font-medium">Ask questions:</span>{" "}
+                              {behaviorSettings.askQuestions ? "Yes" : "No"}
                             </div>
                             <div>
                               <span className="font-medium">
-                                Sugiere soluciones:
+                                Suggest solutions:
                               </span>{" "}
-                              {behaviorSettings.suggestSolutions ? "Sí" : "No"}
+                              {behaviorSettings.suggestSolutions ? "Yes" : "No"}
                             </div>
                           </div>
                         </div>
@@ -328,7 +329,7 @@ const ChatbotDetail = () => {
                             <Separator />
                             <div>
                               <h3 className="text-sm font-medium mb-1">
-                                Instrucciones personalizadas
+                                Custom instructions
                               </h3>
                               <div className="text-sm bg-muted p-2 rounded">
                                 {behaviorSettings.instructions}
@@ -342,21 +343,21 @@ const ChatbotDetail = () => {
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/chatbots/${chatbotId}/documents`}>
                           <FileText className="h-4 w-4 mr-2" />
-                          Documentos
+                          Documents
                         </Link>
                       </Button>
                       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
+                            Delete
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>¿Eliminar chatbot?</DialogTitle>
+                            <DialogTitle>Delete chatbot?</DialogTitle>
                             <DialogDescription>
-                              Esta acción eliminará permanentemente el chatbot {chatbot.name} y no se puede deshacer.
+                              This action will permanently delete the chatbot {chatbot.name} and cannot be undone.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogFooter>
@@ -364,7 +365,7 @@ const ChatbotDetail = () => {
                               variant="outline"
                               onClick={() => setShowDeleteDialog(false)}
                             >
-                              Cancelar
+                              Cancel
                             </Button>
                             <Button
                               variant="destructive"
@@ -374,7 +375,7 @@ const ChatbotDetail = () => {
                               {deleteChatbotMutation.isPending && (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               )}
-                              Eliminar
+                              Delete
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -386,23 +387,23 @@ const ChatbotDetail = () => {
                 <div className="col-span-1 md:col-span-2 space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Configuración del modelo</CardTitle>
+                      <CardTitle>Model Configuration</CardTitle>
                       <CardDescription>
-                        Configuración técnica del modelo de IA
+                        Technical configuration of the AI model
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <h3 className="text-sm font-medium mb-1">Modelo</h3>
+                            <h3 className="text-sm font-medium mb-1">Model</h3>
                             <div className="text-sm">
                               {chatbotSettings.model || "claude-3-haiku-20240307"}
                             </div>
                           </div>
                           <div>
                             <h3 className="text-sm font-medium mb-1">
-                              Temperatura
+                              Temperature
                             </h3>
                             <div className="text-sm">
                               {chatbotSettings.temperature || "0.7"}
@@ -410,7 +411,7 @@ const ChatbotDetail = () => {
                           </div>
                           <div>
                             <h3 className="text-sm font-medium mb-1">
-                              Tokens máximos
+                              Max Tokens
                             </h3>
                             <div className="text-sm">
                               {chatbotSettings.maxTokens || "1000"}
@@ -423,14 +424,14 @@ const ChatbotDetail = () => {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Estadísticas de uso</CardTitle>
+                      <CardTitle>Usage Statistics</CardTitle>
                       <CardDescription>
-                        Métricas de uso del chatbot
+                        Chatbot usage metrics
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="text-center p-6 text-muted-foreground">
-                        <p>Las estadísticas estarán disponibles pronto</p>
+                        <p>Statistics will be available soon</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -443,15 +444,15 @@ const ChatbotDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Settings className="mr-2 h-5 w-5" />
-                    Configuración Avanzada
+                    Advanced Configuration
                   </CardTitle>
                   <CardDescription>
-                    Ajustes avanzados del chatbot
+                    Advanced chatbot settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center p-6 text-muted-foreground">
-                    <p>Edite el chatbot para modificar la configuración avanzada</p>
+                    <p>Edit the chatbot to modify advanced configuration</p>
                     <Button 
                       variant="outline" 
                       className="mt-4"
@@ -459,7 +460,7 @@ const ChatbotDetail = () => {
                     >
                       <Link to={`/chatbots/${chatbotId}/edit`}>
                         <Edit className="h-4 w-4 mr-2" />
-                        Editar Configuración
+                        Edit Configuration
                       </Link>
                     </Button>
                   </div>
@@ -473,10 +474,10 @@ const ChatbotDetail = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Share2 className="mr-2 h-5 w-5" />
-                      Compartir Chatbot
+                      Share Chatbot
                     </CardTitle>
                     <CardDescription>
-                      Configura cómo compartir tu chatbot en otros sitios web
+                      Configure how to share your chatbot on other websites
                     </CardDescription>
                   </CardHeader>
                 </Card>

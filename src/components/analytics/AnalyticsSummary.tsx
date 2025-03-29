@@ -23,21 +23,21 @@ const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {
       bgColor: "bg-purple-100",
     },
     {
-      title: "Conversaciones",
+      title: "Conversations",
       value: data?.conversations || 0,
       icon: MessageSquare,
       color: "text-blue-500",
       bgColor: "bg-blue-100",
     },
     {
-      title: "Documentos",
+      title: "Documents",
       value: data?.documents || 0,
       icon: FileText,
       color: "text-amber-500",
       bgColor: "bg-amber-100",
     },
     {
-      title: "Mensajes",
+      title: "Messages",
       value: data?.messages || 0,
       icon: BarChart,
       color: "text-green-500",
@@ -58,7 +58,7 @@ const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {
           <CardContent>
             <div className="text-2xl font-bold">{item.value.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {index % 2 === 0 ? "Total acumulado" : "Últimos 30 días"}
+              {index % 2 === 0 ? "Total accumulated" : "Last 30 days"}
             </p>
           </CardContent>
         </Card>

@@ -37,7 +37,7 @@ const ChatbotList = () => {
   const { data: chatbots, isLoading, isError, refetch } = useQuery({
     queryKey: ['chatbots', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
       
       console.log("Fetching chatbots for user:", user.id);
       
@@ -85,16 +85,16 @@ const ChatbotList = () => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "Copiado al portapapeles",
-        description: "ID del chatbot copiado a tu portapapeles",
+        title: "Copied to clipboard",
+        description: "Chatbot ID copied to clipboard",
       });
     } catch (err) {
-      console.error("Falló la copia: ", err);
+      console.error("Copy failed: ", err);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar este chatbot?")) {
+    if (confirm("Are you sure you want to delete this chatbot?")) {
       try {
         const { error } = await supabase
           .from('chatbots')
@@ -104,17 +104,17 @@ const ChatbotList = () => {
         if (error) throw error;
         
         toast({
-          title: "Chatbot eliminado",
-          description: "El chatbot ha sido eliminado con éxito",
+          title: "Chatbot deleted",
+          description: "The chatbot has been successfully deleted",
         });
         
         refetch();
       } catch (err) {
-        console.error("Error al eliminar chatbot:", err);
+        console.error("Error deleting chatbot:", err);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "No se pudo eliminar el chatbot",
+          description: "Could not delete the chatbot",
         });
       }
     }
@@ -160,15 +160,15 @@ const ChatbotList = () => {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Tus Chatbots</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Your Chatbots</h1>
             <p className="text-muted-foreground">
-              Administra y monitorea todos tus chatbots en un solo lugar
+              Manage and monitor all your chatbots in one place
             </p>
           </div>
           <Button asChild>
             <Link to="/chatbots/new">
               <Plus className="mr-2 h-4 w-4" />
-              Crear Chatbot
+              Create Chatbot
             </Link>
           </Button>
         </div>
@@ -178,7 +178,7 @@ const ChatbotList = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar chatbots..."
+              placeholder="Search chatbots..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -192,8 +192,8 @@ const ChatbotList = () => {
           </div>
         ) : isError ? (
           <div className="text-center py-8">
-            <div className="text-destructive mb-2">Error al cargar chatbots</div>
-            <Button onClick={() => refetch()}>Intentar de nuevo</Button>
+            <div className="text-destructive mb-2">Error loading chatbots</div>
+            <Button onClick={() => refetch()}>Try again</Button>
           </div>
         ) : (
           <>
@@ -204,26 +204,26 @@ const ChatbotList = () => {
                     <CardHeader className="pb-2 relative">
                       <div className="flex items-center justify-between">
                         <Badge variant={chatbot.is_active ? "default" : "secondary"} className="mb-2">
-                          {chatbot.is_active ? "Activo" : "Inactivo"}
+                          {chatbot.is_active ? "Active" : "Inactive"}
                         </Badge>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Menú</span>
+                              <span className="sr-only">Menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
                               <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
                                 <Edit className="mr-2 h-4 w-4" />
-                                Editar
+                                Edit
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to={`/chatbots/${chatbot.id}/preview`} className="flex w-full cursor-pointer">
                                 <ExternalLink className="mr-2 h-4 w-4" />
-                                Vista previa
+                                Preview
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
@@ -231,14 +231,14 @@ const ChatbotList = () => {
                               onClick={() => copyToClipboard(chatbot.id)}
                             >
                               <Copy className="mr-2 h-4 w-4" />
-                              Copiar ID
+                              Copy ID
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="flex cursor-pointer text-destructive focus:text-destructive"
                               onClick={() => handleDelete(chatbot.id)}
                             >
                               <Trash className="mr-2 h-4 w-4" />
-                              Eliminar
+                              Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -248,7 +248,7 @@ const ChatbotList = () => {
                         <CardTitle className="text-xl">{chatbot.name}</CardTitle>
                       </div>
                       <CardDescription className="line-clamp-2 mt-1">
-                        {chatbot.description || "Sin descripción"}
+                        {chatbot.description || "No description"}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-2">
@@ -262,7 +262,7 @@ const ChatbotList = () => {
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Modelo de IA</p>
+                              <p>AI Model</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -276,11 +276,11 @@ const ChatbotList = () => {
                                   : "bg-gray-100 text-gray-600 hover:bg-gray-100"
                               }>
                                 <FileText className="mr-1 h-3 w-3" />
-                                {chatbot.documentCount} documento{chatbot.documentCount !== 1 ? 's' : ''}
+                                {chatbot.documentCount} document{chatbot.documentCount !== 1 ? 's' : ''}
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{chatbot.documentCount > 0 ? "Documentos conectados" : "Sin documentos"}</p>
+                              <p>{chatbot.documentCount > 0 ? "Connected documents" : "No documents"}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -288,15 +288,15 @@ const ChatbotList = () => {
                       
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <p className="text-muted-foreground">Conversaciones</p>
+                          <p className="text-muted-foreground">Conversations</p>
                           <p className="font-medium">{0}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Idioma</p>
+                          <p className="text-muted-foreground">Language</p>
                           <p className="font-medium">
-                            {chatbot.behavior?.language === 'es' ? 'Español' : 
-                             chatbot.behavior?.language === 'en' ? 'Inglés' : 
-                             chatbot.behavior?.language || 'No definido'}
+                            {chatbot.behavior?.language === 'es' ? 'Spanish' : 
+                             chatbot.behavior?.language === 'en' ? 'English' : 
+                             chatbot.behavior?.language || 'Not defined'}
                           </p>
                         </div>
                       </div>
@@ -305,13 +305,13 @@ const ChatbotList = () => {
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/chatbots/${chatbot.id}`}>
                           <Edit className="mr-2 h-4 w-4" />
-                          Editar
+                          Edit
                         </Link>
                       </Button>
                       <Button size="sm" asChild>
                         <Link to={`/chatbots/${chatbot.id}/preview`}>
                           <MessageSquare className="mr-2 h-4 w-4" />
-                          Probar
+                          Test
                         </Link>
                       </Button>
                     </CardFooter>
@@ -321,14 +321,14 @@ const ChatbotList = () => {
             ) : (
               <div className="text-center py-8">
                 <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-semibold">No se encontraron chatbots</h3>
+                <h3 className="mt-4 text-lg font-semibold">No chatbots found</h3>
                 <p className="mt-2 text-muted-foreground">
-                  {searchQuery ? "Intenta con otro término de búsqueda" : "Crea tu primer chatbot para comenzar"}
+                  {searchQuery ? "Try a different search term" : "Create your first chatbot to get started"}
                 </p>
                 <Button className="mt-4" asChild>
                   <Link to="/chatbots/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Crear Chatbot
+                    Create Chatbot
                   </Link>
                 </Button>
               </div>

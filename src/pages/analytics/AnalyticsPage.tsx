@@ -172,7 +172,7 @@ const AnalyticsPage = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              No se pudieron cargar los datos de análisis. Por favor, inténtalo de nuevo más tarde.
+              Failed to load analytics data. Please try again later.
             </AlertDescription>
           </Alert>
         </div>
@@ -184,9 +184,9 @@ const AnalyticsPage = () => {
     <DashboardLayout>
       <div className="container mx-auto py-8 space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analíticas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground mt-1">
-            Supervisa el rendimiento y uso de tus chatbots
+            Monitor your chatbots' performance and usage
           </p>
         </div>
 
@@ -204,8 +204,8 @@ const AnalyticsPage = () => {
 
         <Tabs defaultValue="performance" className="w-full">
           <TabsList>
-            <TabsTrigger value="performance">Rendimiento</TabsTrigger>
-            <TabsTrigger value="usage">Uso</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="usage">Usage</TabsTrigger>
             <TabsTrigger value="chatbots">Chatbots</TabsTrigger>
           </TabsList>
           

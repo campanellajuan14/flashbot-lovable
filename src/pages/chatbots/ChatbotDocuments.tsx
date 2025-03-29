@@ -78,7 +78,7 @@ const ChatbotDocuments = () => {
   } = useQuery({
     queryKey: ["chatbot", chatbotId],
     queryFn: async () => {
-      if (!chatbotId) throw new Error("ID de chatbot no válido");
+      if (!chatbotId) throw new Error("Invalid chatbot ID");
       
       console.log("Fetching chatbot with ID:", chatbotId);
       
@@ -107,7 +107,7 @@ const ChatbotDocuments = () => {
   } = useQuery({
     queryKey: ["chatbot-documents", chatbotId],
     queryFn: async () => {
-      if (!chatbotId) throw new Error("ID de chatbot no válido");
+      if (!chatbotId) throw new Error("Invalid chatbot ID");
       
       console.log("Fetching documents for chatbot:", chatbotId);
       
@@ -136,7 +136,7 @@ const ChatbotDocuments = () => {
   } = useQuery({
     queryKey: ["retrieval-settings", chatbotId],
     queryFn: async () => {
-      if (!chatbotId) throw new Error("ID de chatbot no válido");
+      if (!chatbotId) throw new Error("Invalid chatbot ID");
       
       const { data, error } = await supabase
         .from("retrieval_settings")
@@ -187,8 +187,8 @@ const ChatbotDocuments = () => {
     queryClient.invalidateQueries({ queryKey: ["chatbot-documents", chatbotId] });
     
     toast({
-      title: "Documentos procesados",
-      description: "Los documentos han sido procesados exitosamente.",
+      title: "Documents processed",
+      description: "Documents have been successfully processed.",
     });
   };
   
@@ -196,7 +196,7 @@ const ChatbotDocuments = () => {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-[calc(100vh-200px)]">
-          Cargando...
+          Loading...
         </div>
       </DashboardLayout>
     );
@@ -206,12 +206,12 @@ const ChatbotDocuments = () => {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center gap-4 p-8">
-          <h1 className="text-2xl font-bold">Chatbot no encontrado</h1>
+          <h1 className="text-2xl font-bold">Chatbot not found</h1>
           <p className="text-muted-foreground">
-            No pudimos encontrar el chatbot solicitado.
+            We couldn't find the requested chatbot.
           </p>
           <Button onClick={() => navigate("/chatbots")}>
-            Volver a Chatbots
+            Back to Chatbots
           </Button>
         </div>
       </DashboardLayout>
@@ -230,14 +230,14 @@ const ChatbotDocuments = () => {
               className="mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Back
             </Button>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                {chatbot.name} - Documentos
+                {chatbot.name} - Documents
               </h1>
               <p className="text-muted-foreground">
-                Gestiona los documentos y configuración de recuperación para tu chatbot
+                Manage documents and retrieval settings for your chatbot
               </p>
             </div>
           </div>
@@ -245,13 +245,13 @@ const ChatbotDocuments = () => {
             <Button variant="outline" size="sm" asChild>
               <Link to={`/chatbots/${chatbotId}/preview`}>
                 <FileText className="h-4 w-4 mr-2" />
-                Vista previa
+                Preview
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/chatbots/${chatbotId}`}>
                 <Settings className="h-4 w-4 mr-2" />
-                Configuración
+                Configuration
               </Link>
             </Button>
           </div>
@@ -261,8 +261,8 @@ const ChatbotDocuments = () => {
         
         <Tabs defaultValue="documents">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="documents">Documentos</TabsTrigger>
-            <TabsTrigger value="settings">Configuración de recuperación</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="settings">Retrieval Settings</TabsTrigger>
           </TabsList>
           
           <TabsContent value="documents" className="space-y-6 py-4">

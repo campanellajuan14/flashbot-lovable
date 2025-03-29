@@ -3,7 +3,6 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
-import { es } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface MetricsDataItem {
@@ -33,7 +32,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
         const date = subDays(new Date(), 6 - i);
         return {
           date: format(date, 'yyyy-MM-dd'),
-          formattedDate: format(date, 'd MMM', { locale: es }),
+          formattedDate: format(date, 'd MMM'),
           tokens: 0,
           queries: 0
         };
@@ -64,7 +63,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
     const result = [];
     for (let i = 6; i >= 0; i--) {
       const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
-      const formattedDate = format(subDays(new Date(), i), 'd MMM', { locale: es });
+      const formattedDate = format(subDays(new Date(), i), 'd MMM');
       
       if (groupedByDate[date]) {
         result.push({
@@ -91,9 +90,9 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Uso del Sistema</CardTitle>
+        <CardTitle>System Usage</CardTitle>
         <CardDescription>
-          Tokens y consultas por día
+          Tokens and queries per day
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -125,7 +124,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
                   yAxisId="right" 
                   orientation="right" 
                   tick={{ fontSize: 12 }}
-                  label={{ value: 'Consultas', angle: 90, position: 'insideRight', dx: 20 }}
+                  label={{ value: 'Queries', angle: 90, position: 'insideRight', dx: 20 }}
                 />
                 <Tooltip
                   formatter={(value, name) => {
@@ -133,7 +132,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
                       return [value, "Tokens"];
                     }
                     if (name === "queries") {
-                      return [value, "Consultas"];
+                      return [value, "Queries"];
                     }
                     return [value, name];
                   }}
@@ -149,7 +148,7 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
                 <Bar 
                   yAxisId="right"
                   dataKey="queries" 
-                  name="Consultas" 
+                  name="Queries" 
                   fill="#38BDF8" 
                   radius={[4, 4, 0, 0]} 
                 />
