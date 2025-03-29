@@ -19,6 +19,12 @@ const corsHeaders = {
 // Función para obtener embeddings de OpenAI
 async function getEmbeddings(text: string): Promise<number[]> {
   try {
+    if (!OPENAI_API_KEY) {
+      throw new Error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.");
+    }
+
+    console.log("Generating embeddings for text of length:", text.length);
+    
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -27,13 +33,13 @@ async function getEmbeddings(text: string): Promise<number[]> {
       },
       body: JSON.stringify({
         model: OPENAI_EMBEDDING_MODEL,
-        input: text.replace(/\n/g, " "),
+        input: text.replace(/\n/g, " ").slice(0, 8000), // Limit to 8000 chars for OpenAI
       }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Error en la API de OpenAI:", error);
+      const errorText = await response.text();
+      console.error("Error en la API de OpenAI:", errorText);
       throw new Error(`Error en la API de OpenAI: ${response.status}`);
     }
 
@@ -86,6 +92,10 @@ serve(async (req) => {
   }
   
   try {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase URL or service role key");
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Obtener datos de la solicitud
@@ -99,7 +109,7 @@ serve(async (req) => {
       retrievalSettings
     } = await req.json();
     
-    console.log(`Procesando documento para chatbot ${chatbotId}`);
+    console.log(`Procesando documento para chatbot ${chatbotId}, userId: ${userId}`);
     
     if (!chatbotId || !text || !fileName || !userId) {
       throw new Error("Faltan parámetros requeridos");
@@ -115,8 +125,8 @@ serve(async (req) => {
     }
     
     const settings = retrievalSettings || settingsResponse.data;
-    const chunkSize = settings.chunk_size || 1000;
-    const chunkOverlap = settings.chunk_overlap || 200;
+    const chunkSize = settings?.chunk_size || 1000;
+    const chunkOverlap = settings?.chunk_overlap || 200;
     
     console.log(`Usando configuración: chunkSize=${chunkSize}, chunkOverlap=${chunkOverlap}`);
     
@@ -124,7 +134,7 @@ serve(async (req) => {
     const documentEmbedding = await getEmbeddings(text.slice(0, 8000));
     const documentMetadata = {
       type: fileType,
-      source: fileType.split('/')[0],
+      source: fileType?.split('/')[0] || 'text',
       size: text.length,
       isChunk: false
     };
@@ -165,7 +175,7 @@ serve(async (req) => {
         // Crear metadata para el chunk
         const chunkMetadata = {
           type: fileType,
-          source: fileType.split('/')[0],
+          source: fileType?.split('/')[0] || 'text',
           isChunk: true,
           parentId: documentId,
           chunkIndex: chunkIndex,
@@ -204,7 +214,7 @@ serve(async (req) => {
         chunkResults.push({ 
           index: chunkIndex, 
           success: false, 
-          error: chunkError.message 
+          error: chunkError instanceof Error ? chunkError.message : String(chunkError)
         });
         chunkIndex++;
       }
@@ -233,7 +243,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error)
       }),
       { 
         status: 500,

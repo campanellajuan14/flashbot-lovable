@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -38,6 +37,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Define independent interfaces without circular references
+interface RecordRange {
+  start?: number;
+  end?: number;
+}
+
 interface DocumentMetadata {
   type?: string;
   source?: string;
@@ -45,11 +49,9 @@ interface DocumentMetadata {
   isChunk?: boolean;
   parentId?: string;
   recordId?: string;
-  chunkIndex?: string;
-  recordRange?: {
-    start?: number;
-    end?: number;
-  };
+  chunkIndex?: number;
+  totalChunks?: number;
+  recordRange?: RecordRange;
   [key: string]: any;
 }
 
@@ -310,8 +312,8 @@ const ChatbotDocuments = () => {
             text,
             fileName: file.name,
             fileType: file.type,
-            userId: chatbot?.user_id, 
-            retrievalSettings: retrievalSettings
+            userId: chatbot.user_id, 
+            retrievalSettings: retrievalSettings || settings
           }
         });
         
