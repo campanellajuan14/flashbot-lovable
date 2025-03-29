@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -27,6 +26,20 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+const defaultPersonality = {
+  tone: "professional",
+  style: "concise",
+  language: "english",
+  instructions: ""
+};
+
+const defaultSettings = {
+  model: "gpt-4o",
+  temperature: 0.7,
+  maxTokens: 2048,
+  includeReferences: true
+};
+
 const ChatbotForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,26 +49,14 @@ const ChatbotForm = () => {
   const { id } = useParams();
   const isEditing = !!id;
   
-  // Form state
   const [form, setForm] = useState({
     name: "",
     description: "",
     isActive: true,
-    personality: {
-      tone: "professional",
-      style: "concise",
-      language: "english",
-      instructions: ""
-    },
-    settings: {
-      model: "gpt-4o",
-      temperature: 0.7,
-      maxTokens: 2048,
-      includeReferences: true
-    }
+    personality: defaultPersonality,
+    settings: defaultSettings
   });
 
-  // Fetch chatbot data if editing
   useEffect(() => {
     if (isEditing && user) {
       setIsLoading(true);
@@ -72,21 +73,29 @@ const ChatbotForm = () => {
           if (error) throw error;
           
           if (data) {
+            const behavior = typeof data.behavior === 'object' && data.behavior !== null 
+              ? data.behavior 
+              : defaultPersonality;
+              
+            const settings = typeof data.settings === 'object' && data.settings !== null 
+              ? data.settings 
+              : defaultSettings;
+            
             setForm({
               name: data.name,
               description: data.description || "",
               isActive: data.is_active,
-              personality: data.behavior || {
-                tone: "professional",
-                style: "concise",
-                language: "english",
-                instructions: ""
+              personality: {
+                tone: behavior.tone || defaultPersonality.tone,
+                style: behavior.style || defaultPersonality.style,
+                language: behavior.language || defaultPersonality.language,
+                instructions: behavior.instructions || defaultPersonality.instructions
               },
-              settings: data.settings || {
-                model: "gpt-4o",
-                temperature: 0.7,
-                maxTokens: 2048,
-                includeReferences: true
+              settings: {
+                model: settings.model || defaultSettings.model,
+                temperature: settings.temperature || defaultSettings.temperature,
+                maxTokens: settings.maxTokens || defaultSettings.maxTokens,
+                includeReferences: settings.includeReferences ?? defaultSettings.includeReferences
               }
             });
           }
@@ -115,7 +124,6 @@ const ChatbotForm = () => {
   
   const handleNestedChange = (parent: string, field: string, value: any) => {
     setForm(prev => {
-      // Ensure the parent property exists and is an object before spreading it
       const parentValue = prev[parent as keyof typeof prev];
       if (typeof parentValue === 'object' && parentValue !== null) {
         return {
@@ -145,7 +153,6 @@ const ChatbotForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Prepare data for Supabase
       const chatbotData = {
         name: form.name,
         description: form.description,
@@ -160,14 +167,12 @@ const ChatbotForm = () => {
       let result;
       
       if (isEditing) {
-        // Update existing chatbot
         result = await supabase
           .from('chatbots')
           .update(chatbotData)
           .eq('id', id)
           .eq('user_id', user.id);
       } else {
-        // Create new chatbot
         result = await supabase
           .from('chatbots')
           .insert(chatbotData);
