@@ -19,7 +19,7 @@ serve(async (req) => {
   console.log("Request URL:", req.url);
   
   // Log all headers to debug authentication issues
-  const headers = Object.fromEntries([...new Headers(req.headers)]);
+  const headers = Object.fromEntries([...req.headers.entries()]);
   console.log("Request headers:", JSON.stringify(headers, null, 2));
 
   try {
@@ -37,21 +37,33 @@ serve(async (req) => {
     }
     
     // Initialize Supabase client with anon key for public access
+    // This allows the function to work without authentication
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
     
     console.log(`Supabase URL: ${supabaseUrl ? "Set" : "Not set"}`);
     console.log(`Supabase Anon Key: ${supabaseAnonKey ? "Set" : "Not set"}`);
     
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Missing Supabase environment variables");
+      return new Response(
+        JSON.stringify({ 
+          error: "Server configuration error", 
+          details: "Missing environment variables" 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     console.log(`Looking for widget with ID: ${widgetId}`);
     
-    // Try multiple approaches to find the chatbot
+    // Try multiple approaches to find the chatbot with specific widget ID
     let chatbot = null;
     let error = null;
     
-    // 1. Search by widget_id in share_settings
+    // 1. First approach: Search by widget_id in share_settings
     console.log("Method 1: Searching by widget_id in share_settings");
     const { data: widgetData, error: widgetError } = await supabase
       .from('chatbots')
@@ -65,7 +77,7 @@ serve(async (req) => {
     } else {
       console.log("Not found by widget_id in share_settings. Error:", widgetError?.message);
       
-      // 2. Search directly by chatbot ID (in case widget_id is actually the chatbot ID)
+      // 2. Second approach: Search directly by chatbot ID (in case widget_id is actually a chatbot ID)
       console.log("Method 2: Searching directly by chatbot ID");
       const { data: directData, error: directError } = await supabase
         .from('chatbots')
@@ -79,7 +91,7 @@ serve(async (req) => {
       } else {
         console.log("Not found by direct ID. Error:", directError?.message);
         
-        // 3. Search by checking all chatbots with 'enabled' widgets for any matching widget_id
+        // 3. Third approach: Search all enabled widgets
         console.log("Method 3: Searching all enabled widgets");
         const { data: allChatbots, error: allChatbotsError } = await supabase
           .from('chatbots')
@@ -89,7 +101,9 @@ serve(async (req) => {
         if (!allChatbotsError && allChatbots) {
           console.log(`Found ${allChatbots.length} chatbots with enabled widgets`);
           
+          // Manually check each chatbot for matching widget_id
           for (const bot of allChatbots) {
+            console.log(`Checking chatbot ${bot.id} with widget_id:`, bot.share_settings?.widget_id);
             if (bot.share_settings?.widget_id === widgetId) {
               chatbot = bot;
               console.log("Found widget in enabled widgets list:", chatbot.id);
@@ -123,12 +137,10 @@ serve(async (req) => {
     // Ensure share_settings exists and has minimum required structure
     if (!chatbot.share_settings) {
       chatbot.share_settings = {
-        enabled: true
+        enabled: true,
+        widget_id: widgetId
       };
     }
-    
-    // IMPORTANT: Make widget publicly accessible without auth
-    // This is a public endpoint that should work for any visitor
     
     // Prepare response (remove sensitive data)
     const response = {

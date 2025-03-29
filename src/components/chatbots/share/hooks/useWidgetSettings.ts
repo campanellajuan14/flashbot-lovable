@@ -25,7 +25,12 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
           .eq("id", chatbotId)
           .single();
         
-        if (chatbotError) throw chatbotError;
+        if (chatbotError) {
+          console.error('Error fetching chatbot:', chatbotError);
+          throw chatbotError;
+        }
+        
+        console.log("Retrieved chatbot data:", chatbot);
         
         const shareSettings = chatbot?.share_settings as ShareSettings | null;
         
@@ -47,12 +52,17 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
           console.log("Updating chatbot with new widget ID");
           
           // Update chatbot with new widget_id and default settings
-          await supabase
+          const { error: updateError } = await supabase
             .from("chatbots")
             .update({ 
-              share_settings: defaultConfig as any
+              share_settings: defaultConfig
             })
             .eq("id", chatbotId);
+            
+          if (updateError) {
+            console.error('Error updating chatbot with new widget ID:', updateError);
+            throw updateError;
+          }
             
           console.log("Chatbot updated with new widget ID");
         }
@@ -83,7 +93,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
       const { error } = await supabase
         .from("chatbots")
         .update({ 
-          share_settings: widgetConfig as any
+          share_settings: widgetConfig
         })
         .eq("id", chatbotId);
       

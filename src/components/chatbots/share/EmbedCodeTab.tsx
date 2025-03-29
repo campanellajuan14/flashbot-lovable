@@ -1,13 +1,8 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Eye, CheckCircle2, Code, Frame } from "lucide-react";
-import { getIframeEmbedCode } from "./utils";
-import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
+import { CopyCheck, Copy, Code, ExternalLink } from "lucide-react";
 import { ShareSettings } from "./types";
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
 
 interface EmbedCodeTabProps {
   widgetId: string | null;
@@ -17,218 +12,118 @@ interface EmbedCodeTabProps {
 
 const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, chatbotId }) => {
   const [copied, setCopied] = useState(false);
-  const [copiedIframe, setCopiedIframe] = useState(false);
-  const [embedType, setEmbedType] = useState<"script" | "iframe">("script");
-  const { toast } = useToast();
+  
+  // Base script URL - in production this would come from your config
+  const scriptBaseUrl = "https://chatbot-platform.lovable.app";
+  
+  // The ID to use in the embed code - make sure we're using the correct ID
+  const embedWidgetId = widgetConfig?.widget_id || widgetId;
 
-  // Get the widget ID from the config or use the provided widgetId
-  const effectiveWidgetId = widgetConfig?.widget_id || widgetId;
+  const embedCode = `<script 
+  src="${scriptBaseUrl}/widget.js" 
+  data-widget-id="${embedWidgetId || 'missing-id'}"
+  async>
+</script>`;
 
-  // Function to get the script code with the correct widget ID
-  const getScriptCode = () => {
-    // Use the effective widget ID from the config, or fall back to chatbot ID
-    const idToUse = effectiveWidgetId || chatbotId;
-    return `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${idToUse}"></script>`;
+  const handleCopy = () => {
+    navigator.clipboard.writeText(embedCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCopy = (type: "script" | "iframe") => {
-    if (type === "script") {
-      try {
-        const scriptCode = getScriptCode();
-        navigator.clipboard.writeText(scriptCode);
-        setCopied(true);
-        toast({
-          title: "Código copiado",
-          description: "El código del script ha sido copiado al portapapeles",
-        });
-        setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        console.error('Failed to copy script code:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo copiar el código",
-          variant: "destructive",
-        });
-      }
-    } else {
-      const iframeCode = getIframeEmbedCode(chatbotId);
-      try {
-        navigator.clipboard.writeText(iframeCode);
-        setCopiedIframe(true);
-        toast({
-          title: "Código copiado",
-          description: "El código del iframe ha sido copiado al portapapeles",
-        });
-        setTimeout(() => setCopiedIframe(false), 2000);
-      } catch (error) {
-        console.error('Failed to copy iframe code:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo copiar el código",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  // Function to show information about the current widget ID
-  const getWidgetInfo = () => {
-    if (effectiveWidgetId) {
-      return (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4 text-sm text-blue-800">
-          <p className="font-medium mb-1">Widget ID configurado: <span className="font-mono select-all">{effectiveWidgetId}</span></p>
-          <p className="text-xs text-blue-700">
-            Este ID es diferente del ID del chatbot y es el que se usará para el acceso público.
-          </p>
-        </div>
-      );
-    }
-    return (
-      <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mt-4 text-sm text-amber-800">
-        <p className="font-medium mb-1">Usando el ID del chatbot como widget ID</p>
-        <p className="text-xs text-amber-700">
-          No se ha configurado un widget ID específico, se usará el ID del chatbot: <span className="font-mono select-all">{chatbotId}</span>
-        </p>
-      </div>
-    );
-  };
+  // Generate the preview URL for the widget
+  const previewUrl = `${window.location.origin}/widget/${embedWidgetId}`;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Embed Code</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Copy and paste this code into your website's HTML where you want the chatbot to appear.
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium flex items-center">
+          <Code className="mr-2 h-5 w-5 text-primary" />
+          Embed Your Chatbot
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-lg">
+          Copy this code and paste it into your website to add the chatbot widget.
         </p>
       </div>
-
-      {getWidgetInfo()}
-
-      <Tabs value={embedType} onValueChange={(v) => setEmbedType(v as "script" | "iframe")} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-4 w-[250px]">
-          <TabsTrigger value="script" className="flex items-center gap-2">
-            <Code className="h-4 w-4" />
-            Script
-          </TabsTrigger>
-          <TabsTrigger value="iframe" className="flex items-center gap-2">
-            <Frame className="h-4 w-4" />
-            iFrame
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="script" className="mt-0 space-y-4">
-          <div className="relative">
-            <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
-              <code className="select-all">{getScriptCode()}</code>
-            </pre>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-3 right-3 p-2 h-8 w-8"
-              onClick={() => handleCopy("script")}
-              type="button"
-            >
-              {copied ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-            <p>
-              <strong>Note:</strong> The script embed creates a floating chat widget that appears in the bottom corner of your website.
-            </p>
-            <p className="mt-2">
-              <strong>Important:</strong> For the widget to work properly, make sure it's enabled in the configuration and your domain is added to the allowed domains list in the Access tab.
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="iframe" className="mt-0 space-y-4">
-          <div className="relative">
-            <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
-              <code className="select-all">
-                {getIframeEmbedCode(chatbotId)}
-              </code>
-            </pre>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-3 right-3 p-2 h-8 w-8"
-              onClick={() => handleCopy("iframe")}
-              type="button"
-            >
-              {copiedIframe ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-            <p>
-              <strong>Note:</strong> The iframe embed creates a fixed chat window within your website's content.
-            </p>
-            <p className="mt-2">
-              <strong>Direct URL:</strong> <a href={`https://chatbot-platform.lovable.app/widget/${chatbotId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                https://chatbot-platform.lovable.app/widget/{chatbotId}
-              </a>
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
       
-      <div className="bg-muted/30 rounded-lg p-6 border border-dashed border-muted">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <h4 className="text-base font-medium">Preview Your Widget</h4>
-            <p className="text-sm text-muted-foreground mt-1">
-              See how your chatbot will appear when embedded on your website.
-            </p>
-          </div>
-          
-          <ChatbotPreviewDialog 
-            chatbotId={chatbotId}
-            widgetConfig={widgetConfig}
+      <div className="relative">
+        <div className="p-3 border rounded-md bg-black">
+          <pre className="overflow-x-auto p-2 text-xs text-white font-mono">
+            {embedCode}
+          </pre>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="absolute top-2 right-2"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <>
+              <CopyCheck className="h-4 w-4 mr-1" /> Copied
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4 mr-1" /> Copy
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="bg-muted/30 p-4 rounded-lg border">
+        <h4 className="text-sm font-medium mb-2">Widget ID</h4>
+        <div className="flex items-center gap-2">
+          <code className="bg-muted p-2 rounded text-xs font-mono break-all flex-1">
+            {embedWidgetId || 'No widget ID generated yet'}
+          </code>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(embedWidgetId || '');
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
           >
-            <Button variant="outline" size="sm" className="gap-2 group whitespace-nowrap">
-              <Eye className="h-4 w-4 group-hover:animate-pulse" /> 
-              Preview Widget
-            </Button>
-          </ChatbotPreviewDialog>
+            {copied ? <CopyCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
         </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-blue-100 rounded-lg p-6">
-        <h4 className="text-base font-medium text-blue-800 mb-2">
-          Widget Visibility
-        </h4>
-        <p className="text-sm text-blue-700 mb-4">
-          Make sure your widget is <strong>enabled</strong> for it to be accessible publicly. 
-          Check the "enabled" setting in the widget configuration.
+        <p className="text-xs text-muted-foreground mt-2">
+          This is the unique identifier for your chatbot widget. Keep it safe.
         </p>
-        <div className="flex flex-col gap-2 text-sm text-blue-700">
-          <p className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            Your widget is public and doesn't require authentication
-          </p>
-          <p className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            Domain restrictions are optional and can be configured in the Access tab
-          </p>
-        </div>
       </div>
 
-      <div className="bg-sky-50 border border-sky-100 rounded-lg p-4 text-sky-800 text-sm">
-        <h4 className="font-medium mb-2">Debugging Access Issues</h4>
-        <p className="mb-2">If you're experiencing widget access issues:</p>
-        <ol className="list-decimal ml-5 space-y-1">
-          <li>Make sure the widget is <strong>enabled</strong> in the configuration</li>
-          <li>Check that the correct widget ID is being used in the embed code</li>
-          <li>Verify that your domain is allowed or domain restrictions are disabled</li>
-          <li>Check the browser console for detailed error messages</li>
-        </ol>
+      <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">
+        <h4 className="text-sm font-medium mb-2 flex items-center">
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Preview Your Chatbot
+        </h4>
+        <p className="text-xs text-muted-foreground mb-3">
+          Use this URL to preview how your chatbot will look on your website:
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="bg-muted p-2 rounded text-xs font-mono break-all flex-1">
+            {previewUrl}
+          </code>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(previewUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+          >
+            {copied ? <CopyCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(previewUrl, '_blank')}
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
