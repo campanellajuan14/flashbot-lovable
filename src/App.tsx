@@ -1,3 +1,4 @@
+
 import { Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import SignIn from "./pages/auth/SignIn";
@@ -42,11 +43,7 @@ const AppRoutes = () => (
       <Route path="/chatbots/:id/documents" element={<ChatbotDocuments />} />
       <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
       
-      <Route path="/settings" element={
-        <AuthRequired>
-          <SettingsPage />
-        </AuthRequired>
-      } />
+      <Route path="/settings" element={<SettingsPage />} />
     </Route>
     
     <Route path="*" element={<NotFound />} />
