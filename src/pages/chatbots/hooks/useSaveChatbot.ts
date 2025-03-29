@@ -14,12 +14,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
   const { toast } = useToast();
   const isEditing = !!id;
   
-  const handleSubmit = async (e: React.FormEvent, form: ChatbotFormData) => {
-    if (e) {
-      e.preventDefault(); // Ensure we prevent form submission
-      e.stopPropagation(); // Stop event propagation
-    }
-    
+  const handleSubmit = async (form: ChatbotFormData) => {
     if (!userId) {
       toast({
         variant: "destructive",
@@ -109,10 +104,10 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         description: `${form.name} has been ${isEditing ? "updated" : "created"} successfully.`,
       });
       
-      // Use a small timeout to ensure the toast shows before navigation
+      // Use a timeout to ensure the toast shows before navigation
       setTimeout(() => {
         navigate("/chatbots");
-      }, 100);
+      }, 200);
     } catch (error: any) {
       console.error("Error saving chatbot:", error);
       toast({

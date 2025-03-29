@@ -85,8 +85,7 @@ const ChatbotForm = () => {
   // Explicit function to handle form submission with prevent default
   const onSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    handleSubmit(e);
+    handleSubmit();
   };
 
   return (

@@ -64,8 +64,8 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
     }
   };
   
-  // Wrap the handleSubmit function to pass the form data
-  const handleSubmit = (e: React.FormEvent) => submitChatbot(e, form);
+  // Simplified handleSubmit function that doesn't require an event parameter
+  const handleSubmit = () => submitChatbot(form);
 
   return {
     form,
