@@ -1,24 +1,27 @@
-
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { 
-  Button, 
-  Input,
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+} from "@/components/ui/card";
+import {
   Alert,
   AlertDescription,
   AlertTitle,
+} from "@/components/ui/alert";
+import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Separator
-} from "@/components/ui";
+} from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, 
   Upload,
@@ -34,7 +37,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface Document {
   id: string;
@@ -73,11 +76,9 @@ const ChatbotDocuments = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Estado para la configuración de recuperación
   const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState<boolean>(false);
 
-  // Fetch chatbot data
   const { data: chatbot, isLoading: isLoadingChatbot } = useQuery({
     queryKey: ['chatbot', id],
     queryFn: async () => {
@@ -94,7 +95,6 @@ const ChatbotDocuments = () => {
     },
   });
 
-  // Fetch chatbot documents
   const { 
     data: documents, 
     isLoading: isLoadingDocuments,
@@ -117,7 +117,6 @@ const ChatbotDocuments = () => {
     },
   });
 
-  // Fetch retrieval settings
   const { 
     data: settings, 
     isLoading: isLoadingSettings 
@@ -131,13 +130,11 @@ const ChatbotDocuments = () => {
       
       if (error) throw error;
       
-      // Inicializar el estado local con los valores obtenidos
       setRetrievalSettings(data);
       return data as RetrievalSettings;
     },
   });
 
-  // Mutation para eliminar un documento
   const deleteDocumentMutation = useMutation({
     mutationFn: async (documentId: string) => {
       const { error } = await supabase
@@ -154,7 +151,6 @@ const ChatbotDocuments = () => {
         description: "El documento ha sido eliminado correctamente.",
       });
       
-      // Invalidar consultas para actualizar la UI
       queryClient.invalidateQueries({ queryKey: ['chatbot-documents', id] });
     },
     onError: (error) => {
@@ -167,7 +163,6 @@ const ChatbotDocuments = () => {
     },
   });
 
-  // Mutation para actualizar la configuración de recuperación
   const updateSettingsMutation = useMutation({
     mutationFn: async (settings: RetrievalSettings) => {
       const { error } = await supabase
@@ -205,12 +200,10 @@ const ChatbotDocuments = () => {
     },
   });
 
-  // Manejador para activar el input de archivo
   const handleFileButtonClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Manejador para subir archivos
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     
@@ -218,7 +211,6 @@ const ChatbotDocuments = () => {
     setUploadProgress(0);
     
     try {
-      // Aquí simularemos el progreso mientras implementamos la función real
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 95) {
@@ -229,8 +221,6 @@ const ChatbotDocuments = () => {
         });
       }, 300);
       
-      // Aquí implementaremos la llamada a la función de Edge para procesar y subir documentos
-      // Por ahora, simularemos que sube correctamente
       setTimeout(() => {
         clearInterval(interval);
         setUploadProgress(100);
@@ -240,7 +230,6 @@ const ChatbotDocuments = () => {
           description: `Se subieron ${files.length} documento(s) correctamente.`,
         });
         
-        // Invalidar consulta para actualizar la lista
         queryClient.invalidateQueries({ queryKey: ['chatbot-documents', id] });
         
         setTimeout(() => {
@@ -260,7 +249,6 @@ const ChatbotDocuments = () => {
     }
   };
 
-  // Manejadores para drag and drop
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -282,21 +270,18 @@ const ChatbotDocuments = () => {
     }
   };
 
-  // Manejador para eliminar un documento
   const handleDeleteDocument = (documentId: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este documento? Esta acción no se puede deshacer.")) {
       deleteDocumentMutation.mutate(documentId);
     }
   };
 
-  // Manejador para guardar configuración de recuperación
   const handleSaveSettings = () => {
     if (retrievalSettings) {
       updateSettingsMutation.mutate(retrievalSettings);
     }
   };
 
-  // Si hay error al cargar documentos
   if (isErrorDocuments) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -378,7 +363,6 @@ const ChatbotDocuments = () => {
             </TabsList>
             
             <TabsContent value="documents" className="space-y-6">
-              {/* Área de carga de documentos */}
               <Card>
                 <CardHeader>
                   <CardTitle>Subir documentos</CardTitle>
@@ -442,7 +426,6 @@ const ChatbotDocuments = () => {
                 </CardContent>
               </Card>
               
-              {/* Lista de documentos */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle>Documentos subidos</CardTitle>
@@ -537,7 +520,6 @@ const ChatbotDocuments = () => {
                           variant="outline" 
                           onClick={() => {
                             setIsEditingSettings(false);
-                            // Restaurar valores originales
                             if (settings) {
                               setRetrievalSettings(settings);
                             }

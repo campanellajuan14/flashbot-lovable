@@ -27,6 +27,25 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Definir interfaces para los tipos de Json
+interface BehaviorSettings {
+  tone?: string;
+  style?: string;
+  language?: string;
+  useEmojis?: boolean;
+  askQuestions?: boolean;
+  suggestSolutions?: boolean;
+  instructions?: string;
+  [key: string]: any;
+}
+
+interface ChatbotSettings {
+  model?: string;
+  temperature?: string | number;
+  maxTokens?: string | number;
+  [key: string]: any;
+}
+
 const ChatbotDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -52,6 +71,13 @@ const ChatbotDetail = () => {
         .single();
 
       if (error) throw error;
+      
+      // Asegurar que behavior y settings sean objetos
+      if (data) {
+        data.behavior = data.behavior || {};
+        data.settings = data.settings || {};
+      }
+      
       return data;
     },
   });
@@ -154,6 +180,10 @@ const ChatbotDetail = () => {
     );
   }
 
+  // Type casting para acceder a las propiedades de behavior y settings
+  const behaviorSettings = chatbot.behavior as BehaviorSettings;
+  const chatbotSettings = chatbot.settings as ChatbotSettings;
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -242,23 +272,23 @@ const ChatbotDetail = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="font-medium">Tono:</span>{" "}
-                          {chatbot.behavior?.tone || "No especificado"}
+                          {behaviorSettings.tone || "No especificado"}
                         </div>
                         <div>
                           <span className="font-medium">Estilo:</span>{" "}
-                          {chatbot.behavior?.style || "No especificado"}
+                          {behaviorSettings.style || "No especificado"}
                         </div>
                         <div>
                           <span className="font-medium">Idioma:</span>{" "}
-                          {chatbot.behavior?.language === "es"
+                          {behaviorSettings.language === "es"
                             ? "Español"
-                            : chatbot.behavior?.language === "en"
+                            : behaviorSettings.language === "en"
                             ? "Inglés"
-                            : chatbot.behavior?.language || "No especificado"}
+                            : behaviorSettings.language || "No especificado"}
                         </div>
                         <div>
                           <span className="font-medium">Emojis:</span>{" "}
-                          {chatbot.behavior?.useEmojis ? "Sí" : "No"}
+                          {behaviorSettings.useEmojis ? "Sí" : "No"}
                         </div>
                       </div>
                     </div>
@@ -272,18 +302,18 @@ const ChatbotDetail = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="font-medium">Hace preguntas:</span>{" "}
-                          {chatbot.behavior?.askQuestions ? "Sí" : "No"}
+                          {behaviorSettings.askQuestions ? "Sí" : "No"}
                         </div>
                         <div>
                           <span className="font-medium">
                             Sugiere soluciones:
                           </span>{" "}
-                          {chatbot.behavior?.suggestSolutions ? "Sí" : "No"}
+                          {behaviorSettings.suggestSolutions ? "Sí" : "No"}
                         </div>
                       </div>
                     </div>
 
-                    {chatbot.behavior?.instructions && (
+                    {behaviorSettings.instructions && (
                       <>
                         <Separator />
                         <div>
@@ -291,7 +321,7 @@ const ChatbotDetail = () => {
                             Instrucciones personalizadas
                           </h3>
                           <div className="text-sm bg-muted p-2 rounded">
-                            {chatbot.behavior.instructions}
+                            {behaviorSettings.instructions}
                           </div>
                         </div>
                       </>
@@ -359,7 +389,7 @@ const ChatbotDetail = () => {
                       <div>
                         <h3 className="text-sm font-medium mb-1">Modelo</h3>
                         <div className="text-sm">
-                          {chatbot.settings?.model || "claude-3-haiku-20240307"}
+                          {chatbotSettings.model || "claude-3-haiku-20240307"}
                         </div>
                       </div>
                       <div>
@@ -367,7 +397,7 @@ const ChatbotDetail = () => {
                           Temperatura
                         </h3>
                         <div className="text-sm">
-                          {chatbot.settings?.temperature || "0.7"}
+                          {chatbotSettings.temperature || "0.7"}
                         </div>
                       </div>
                       <div>
@@ -375,7 +405,7 @@ const ChatbotDetail = () => {
                           Tokens máximos
                         </h3>
                         <div className="text-sm">
-                          {chatbot.settings?.maxTokens || "1000"}
+                          {chatbotSettings.maxTokens || "1000"}
                         </div>
                       </div>
                     </div>
