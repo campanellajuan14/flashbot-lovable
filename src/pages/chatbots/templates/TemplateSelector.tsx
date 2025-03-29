@@ -64,15 +64,15 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <CardContent className="pt-0">
                 <div className="text-xs text-muted-foreground space-y-1">
                   <div className="flex items-center justify-between">
-                    <span>Modelo:</span>
+                    <span>Model:</span>
                     <span className="font-medium">{template.settings.model}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Tono:</span>
+                    <span>Tone:</span>
                     <span className="font-medium capitalize">{template.personality.tone}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Estilo:</span>
+                    <span>Style:</span>
                     <span className="font-medium capitalize">{template.personality.style}</span>
                   </div>
                 </div>

@@ -49,7 +49,7 @@ export const useFormState = () => {
   
   const handleProviderChange = (provider: "claude" | "openai") => {
     setAiProvider(provider);
-    // Establecer un modelo predeterminado según el proveedor
+    // Set a default model based on the provider
     const defaultModel = provider === "claude" 
       ? "claude-3-haiku-20240307" 
       : "gpt-4o";

@@ -19,9 +19,9 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Seleccionar Plantilla</CardTitle>
+        <CardTitle>Select Template</CardTitle>
         <CardDescription>
-          Elige una plantilla preconfigurada para tu chatbot o comienza desde cero
+          Choose a preconfigured template for your chatbot or start from scratch
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -33,9 +33,9 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
               <PlusCircle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-medium">Comenzar desde cero</h3>
+              <h3 className="font-medium">Start from scratch</h3>
               <p className="text-sm text-muted-foreground">
-                Crea un chatbot personalizado sin usar una plantilla predefinida
+                Create a custom chatbot without using a predefined template
               </p>
             </div>
           </div>

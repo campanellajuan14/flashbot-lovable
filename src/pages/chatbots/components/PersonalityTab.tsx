@@ -86,7 +86,7 @@ const PersonalityTab: React.FC<PersonalityTabProps> = ({ form, handleNestedChang
           <Label htmlFor="greeting">Initial Greeting</Label>
           <Textarea
             id="greeting"
-            placeholder="¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?"
+            placeholder="Hello! I'm a virtual assistant. How can I help you today?"
             rows={3}
             value={form.personality.greeting}
             onChange={(e) => handleNestedChange("personality", "greeting", e.target.value)}

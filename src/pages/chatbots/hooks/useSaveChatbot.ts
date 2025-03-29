@@ -21,7 +21,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Debes iniciar sesión para crear un chatbot",
+        description: "You must be logged in to create a chatbot",
       });
       return;
     }
@@ -88,8 +88,8 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
             
             if (processResult && processResult.processed > 0) {
               toast({
-                title: "Documentos procesados",
-                description: `${processResult.processed} documentos han sido procesados exitosamente.`,
+                title: "Documents processed",
+                description: `${processResult.processed} documents have been successfully processed.`,
               });
             }
           }
@@ -102,8 +102,8 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       }
       
       toast({
-        title: isEditing ? "Chatbot actualizado" : "Chatbot creado",
-        description: `${form.name} ha sido ${isEditing ? "actualizado" : "creado"} exitosamente.`,
+        title: isEditing ? "Chatbot updated" : "Chatbot created",
+        description: `${form.name} has been ${isEditing ? "updated" : "created"} successfully.`,
       });
       
       navigate("/chatbots");
@@ -112,7 +112,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "No se pudo guardar el chatbot. Inténtalo de nuevo.",
+        description: error.message || "Could not save chatbot. Please try again.",
       });
     } finally {
       setIsSubmitting(false);

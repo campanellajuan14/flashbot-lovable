@@ -93,38 +93,38 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Información Básica</CardTitle>
+          <CardTitle>Basic Information</CardTitle>
           <CardDescription>
-            Configura el nombre y descripción para tu chatbot
+            Configure the name and description for your chatbot
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
-              placeholder="ej., Asistente de Soporte al Cliente"
+              placeholder="e.g., Customer Support Assistant"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
               required
             />
             <p className="text-xs text-muted-foreground">
-              Un nombre claro y descriptivo para tu chatbot
+              A clear and descriptive name for your chatbot
             </p>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="¿Qué hace este chatbot?"
+              placeholder="What does this chatbot do?"
               rows={3}
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
               required
             />
             <p className="text-xs text-muted-foreground">
-              Una breve descripción del propósito y capacidades del chatbot
+              A brief description of the chatbot's purpose and capabilities
             </p>
           </div>
           
@@ -134,7 +134,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               checked={form.isActive}
               onCheckedChange={(checked) => handleChange("isActive", checked)}
             />
-            <Label htmlFor="active">Activo</Label>
+            <Label htmlFor="active">Active</Label>
           </div>
         </CardContent>
       </Card>
@@ -144,10 +144,10 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <CloudUpload className="h-5 w-5 text-primary" />
-              Base de Conocimiento
+              Knowledge Base
             </CardTitle>
             <CardDescription>
-              Sube documentos para entrenar a tu chatbot y mejorar sus respuestas
+              Upload documents to train your chatbot and improve its responses
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,12 +162,12 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               onUploadComplete={handleDocumentUploadComplete}
             />
             
-            {/* Mostrar documentos temporales */}
+            {/* Show temporary documents */}
             {isLoadingDocs ? (
-              <div className="mt-4 text-center text-muted-foreground">Cargando documentos...</div>
+              <div className="mt-4 text-center text-muted-foreground">Loading documents...</div>
             ) : tempDocuments.length > 0 ? (
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Documentos subidos ({tempDocuments.length})</h3>
+                <h3 className="text-sm font-medium mb-2">Uploaded documents ({tempDocuments.length})</h3>
                 <div className="border rounded-md divide-y">
                   {tempDocuments.map((doc, index) => (
                     <div key={index} className="p-2 flex items-center gap-2">
@@ -177,7 +177,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Estos documentos serán procesados cuando guardes el chatbot.
+                  These documents will be processed when you save the chatbot.
                 </p>
               </div>
             ) : null}
