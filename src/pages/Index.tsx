@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -470,21 +469,17 @@ const Index = () => {
       
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center mb-4">
               <Zap className="h-6 w-6 text-primary mr-2" />
               <span className="text-xl font-bold">Flashbot</span>
             </div>
-            <div className="flex flex-wrap gap-6">
-              <Link to="/about" className="text-muted-foreground hover:text-foreground">About</Link>
-              <Link to="/docs" className="text-muted-foreground hover:text-foreground">Documentation</Link>
-              <Link to="/pricing" className="text-muted-foreground hover:text-foreground">Pricing</Link>
-              <Link to="/blog" className="text-muted-foreground hover:text-foreground">Blog</Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-foreground">Contact</Link>
+            <p className="text-center text-sm text-muted-foreground mb-2">
+              Made by Fran Conejos at Lovable Hackaton
+            </p>
+            <div className="text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Flashbot. All rights reserved.
             </div>
-          </div>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Flashbot. All rights reserved.
           </div>
         </div>
       </footer>
