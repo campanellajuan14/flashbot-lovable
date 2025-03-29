@@ -38,7 +38,8 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   ? "border-2 border-primary shadow-md" 
                   : "border border-border"
               )}
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault(); // Prevent any default behavior
                 if (onTemplateClick) {
                   onTemplateClick(template);
                 } else {

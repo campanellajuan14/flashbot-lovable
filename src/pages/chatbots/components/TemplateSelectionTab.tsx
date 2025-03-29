@@ -25,8 +25,12 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
-          onClick={onStartFromScratch}
+        <div 
+          className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+          onClick={(e) => {
+            e.preventDefault(); // Prevent default behavior
+            onStartFromScratch();
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-md bg-primary/20 text-primary">
@@ -45,6 +49,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
           selectedTemplateId={selectedTemplateId} 
           onSelectTemplate={onSelectTemplate} 
           onTemplateClick={(template) => {
+            // Prevent default behavior and avoid refreshes
             onSelectTemplate(template);
             onStartFromScratch(); // Navigate to the next tab on template selection
           }}

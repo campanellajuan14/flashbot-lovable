@@ -40,12 +40,15 @@ const ChatbotForm = () => {
     handleSubmit
   } = useChatbotForm({ id, userId: user?.id });
 
-  const handleStartFromScratch = () => {
+  const handleStartFromScratch = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault(); // Prevent default if event is passed
     setShowInitialDialog(false);
     setActiveTab("basic");
   };
   
-  const handleSelectTemplateFromDialog = (templateId: string) => {
+  const handleSelectTemplateFromDialog = (templateId: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault(); // Prevent default if event is passed
+    
     if (templateId === "") {
       // View all templates
       setShowInitialDialog(false);
@@ -78,6 +81,11 @@ const ChatbotForm = () => {
     );
   }
 
+  const onSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault(); // Ensure we prevent default form submission
+    handleSubmit(e);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
@@ -93,7 +101,10 @@ const ChatbotForm = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate(-1)}
+            onClick={(e) => {
+              e.preventDefault(); // Prevent default button behavior
+              navigate(-1);
+            }}
             className="mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -113,7 +124,7 @@ const ChatbotForm = () => {
           <DocumentNavigation chatbotId={id || ""} />
         )}
 
-        <form onSubmit={handleSubmit} className="text-left">
+        <form onSubmit={onSubmitForm} className="text-left">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full grid grid-cols-3 mb-2">
               <TabsTrigger value="basic">Basic Information</TabsTrigger>
@@ -162,7 +173,10 @@ const ChatbotForm = () => {
             <Button 
               type="button" 
               variant="outline"
-              onClick={() => navigate("/chatbots")}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent default button behavior
+                navigate("/chatbots");
+              }}
             >
               Cancel
             </Button>
