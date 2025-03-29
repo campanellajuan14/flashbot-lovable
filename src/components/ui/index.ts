@@ -21,4 +21,5 @@ export { Slider } from "./slider";
 export { Toast, ToastAction } from "./toast";
 export { useToast } from "./use-toast";
 export { Toaster } from "./toaster";
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 export * from "./form";
