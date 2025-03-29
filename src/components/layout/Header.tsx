@@ -27,12 +27,15 @@ const Header = () => {
               <UserButton />
             </>
           ) : (
-            <div className="flex gap-2">
-              <Button variant="ghost" asChild>
-                <Link to="/auth/signin">Sign In</Link>
-              </Button>
+            <div className="flex gap-4">
+              <Link
+                to="/auth/signin"
+                className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                Login
+              </Link>
               <Button asChild>
-                <Link to="/auth/signup">Sign Up</Link>
+                <Link to="/chatbots/new">Create free bot</Link>
               </Button>
             </div>
           )}

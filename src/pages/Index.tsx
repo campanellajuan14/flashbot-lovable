@@ -23,7 +23,29 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <header
+        className={`sticky top-0 z-40 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200 ${isScrolled ? "bg-background/95 shadow-sm" : "bg-transparent border-transparent"}`}
+      >
+        <div className="container mx-auto px-4 flex h-16 items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <Zap className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">Flashbot</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/auth/signin"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Login
+            </Link>
+            <Button size="sm" className="shadow-md hover:shadow-lg transition-all" asChild>
+              <Link to="/chatbots/new">
+                Create free bot
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </header>
       
       <main className="flex-1">
         {/* Hero Section */}
@@ -37,13 +59,13 @@ const Index = () => {
             <div className="absolute top-1/3 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
           </div>
 
-          <div className="container mx-auto max-w-6xl px-4">
+          <div className="container mx-auto px-4">
             <div className="grid gap-8 lg:grid-cols-[1fr_600px] lg:gap-16 xl:grid-cols-[1fr_700px]">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="flex flex-col justify-center space-y-6"
+                className="flex flex-col justify-center space-y-6 text-left"
               >
                 <div className="space-y-4">
                   <motion.div
@@ -71,7 +93,7 @@ const Index = () => {
                   className="flex flex-col gap-3 min-[400px]:flex-row"
                 >
                   <Button size="lg" className="gap-1 shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all" asChild>
-                    <Link to="/sign-up">
+                    <Link to="/auth/signup">
                       Get Started <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -279,7 +301,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* How It Works Section */}
+        {/* How It Works Section - Improved without the line */}
         <section id="how-it-works" className="w-full py-20 md:py-28 lg:py-32 bg-background">
           <div className="container mx-auto max-w-6xl px-4">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -297,8 +319,6 @@ const Index = () => {
               </motion.div>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 md:grid-cols-3 lg:gap-16 relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-primary/20 -translate-y-1/2 hidden md:block"></div>
-
               {steps.map((step, index) => (
                 <motion.div
                   key={step.title}
@@ -391,7 +411,7 @@ const Index = () => {
                 </ul>
                 <div className="flex flex-col gap-3 min-[400px]:flex-row">
                   <Button size="lg" className="gap-1 shadow-md hover:shadow-lg hover:translate-y-[-2px] transition-all" asChild>
-                    <Link to="/sign-up">
+                    <Link to="/auth/signup">
                       Start Building <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -438,7 +458,7 @@ const Index = () => {
                   className="gap-1 shadow-md hover:shadow-lg hover:translate-y-[-2px] transition-all"
                   asChild
                 >
-                  <Link to="/sign-up">
+                  <Link to="/auth/signup">
                     Get Started Now <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -452,7 +472,7 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <MessageSquare className="h-6 w-6 text-primary mr-2" />
+              <Zap className="h-6 w-6 text-primary mr-2" />
               <span className="text-xl font-bold">Flashbot</span>
             </div>
             <div className="flex flex-wrap gap-6">
