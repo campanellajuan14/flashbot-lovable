@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Code, Palette, Layout, Type, ShieldAlert, Share2 } from "lucide-react";
 import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import EmbedCodeTab from "./EmbedCodeTab";
 import AppearanceTab from "./AppearanceTab";
@@ -35,14 +36,17 @@ const ShareSettings = () => {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
+      <Card className="overflow-hidden border-2 border-border/50">
+        <CardContent className="p-0">
+          <div className="p-6 bg-accent/30">
             <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium">Widget for your website</h3>
-                <p className="text-sm text-muted-foreground">
-                  Configure and get the code to embed the chatbot on your website
+              <div className="space-y-1">
+                <h3 className="text-xl font-semibold flex items-center">
+                  <Share2 className="mr-2 h-5 w-5 text-primary" />
+                  Widget Configuration
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Configure how your chatbot appears and behaves when embedded on your website
                 </p>
               </div>
               
@@ -53,28 +57,60 @@ const ShareSettings = () => {
                 />
               </div>
             </div>
+          </div>
             
-            {isLoading ? (
-              <div className="h-[100px] flex items-center justify-center">
-                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : (
-              <>
-                <Tabs 
-                  defaultValue="embed" 
-                  value={activeTab}
-                  onValueChange={setActiveTab}
-                  className="w-full mt-4"
-                >
-                  <TabsList className="grid grid-cols-5 mb-4">
-                    <TabsTrigger value="embed">Code</TabsTrigger>
-                    <TabsTrigger value="appearance">Appearance</TabsTrigger>
-                    <TabsTrigger value="content">Content</TabsTrigger>
-                    <TabsTrigger value="colors">Colors</TabsTrigger>
-                    <TabsTrigger value="restrictions">Restrictions</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="embed">
+          {isLoading ? (
+            <div className="h-[250px] flex items-center justify-center">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : (
+            <div className="px-6 pb-6">
+              <Tabs 
+                defaultValue="embed" 
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full mt-4"
+              >
+                <TabsList className="grid grid-cols-5 mb-6 bg-muted/50 p-1 rounded-lg">
+                  <TabsTrigger 
+                    value="embed" 
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Code className="h-4 w-4" />
+                    <span className="hidden sm:inline">Code</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="appearance" 
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Layout className="h-4 w-4" />
+                    <span className="hidden sm:inline">Appearance</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="content" 
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Type className="h-4 w-4" />
+                    <span className="hidden sm:inline">Content</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="colors" 
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Palette className="h-4 w-4" />
+                    <span className="hidden sm:inline">Colors</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="restrictions" 
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                    <span className="hidden sm:inline">Restrictions</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="bg-accent/20 rounded-lg p-6 transition-all duration-200 min-h-[350px]">
+                  <TabsContent value="embed" className="mt-0 animate-in fade-in-50 duration-300">
                     <EmbedCodeTab 
                       widgetId={widgetId} 
                       widgetConfig={widgetConfig} 
@@ -82,48 +118,53 @@ const ShareSettings = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="appearance">
+                  <TabsContent value="appearance" className="mt-0 animate-in fade-in-50 duration-300">
                     <AppearanceTab 
                       widgetConfig={widgetConfig}
                       onAppearanceChange={handleAppearanceChange}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="content">
+                  <TabsContent value="content" className="mt-0 animate-in fade-in-50 duration-300">
                     <ContentTab 
                       widgetConfig={widgetConfig}
                       onContentChange={handleContentChange}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="colors">
+                  <TabsContent value="colors" className="mt-0 animate-in fade-in-50 duration-300">
                     <ColorsTab 
                       widgetConfig={widgetConfig}
                       onColorChange={handleColorChange}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="restrictions">
+                  <TabsContent value="restrictions" className="mt-0 animate-in fade-in-50 duration-300">
                     <RestrictionsTab 
                       widgetConfig={widgetConfig}
                       setWidgetConfig={setWidgetConfig}
                     />
                   </TabsContent>
-                </Tabs>
-                
-                <div className="flex justify-end mt-6">
-                  <Button 
-                    disabled={isSaving} 
-                    onClick={updateSettings}
-                    className="gap-2"
-                  >
-                    {isSaving && <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>}
-                    Save configuration
-                  </Button>
                 </div>
-              </>
-            )}
-          </div>
+              </Tabs>
+              
+              <div className="flex justify-end mt-6">
+                <Button 
+                  disabled={isSaving} 
+                  onClick={updateSettings}
+                  className="gap-2 relative overflow-hidden group"
+                  type="button"
+                >
+                  {isSaving && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-primary">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
+                  <span className={isSaving ? 'opacity-0' : 'opacity-100'}>Save configuration</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -15,54 +15,80 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
   if (!widgetConfig) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input 
-            id="title" 
-            value={widgetConfig?.content?.title || ''} 
-            onChange={(e) => onContentChange('title', e.target.value)}
-            placeholder="Chat with us"
-          />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium">Widget Content</h3>
+        <p className="text-sm text-muted-foreground">
+          Customize the text and content displayed in your chat widget.
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="font-medium">Chat Title</Label>
+            <Input 
+              id="title" 
+              value={widgetConfig?.content?.title || ''} 
+              onChange={(e) => onContentChange('title', e.target.value)}
+              placeholder="Chat with us"
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Main heading shown at the top of the chat window
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="subtitle" className="font-medium">Subtitle</Label>
+            <Input 
+              id="subtitle" 
+              value={widgetConfig?.content?.subtitle || ''} 
+              onChange={(e) => onContentChange('subtitle', e.target.value)}
+              placeholder="We'll answer your questions"
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional subheading shown below the title
+            </p>
+          </div>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="subtitle">Subtitle</Label>
-          <Input 
-            id="subtitle" 
-            value={widgetConfig?.content?.subtitle || ''} 
-            onChange={(e) => onContentChange('subtitle', e.target.value)}
-            placeholder="We'll answer your questions"
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="placeholder_text" className="font-medium">Input Placeholder</Label>
+            <Input 
+              id="placeholder_text" 
+              value={widgetConfig?.content?.placeholder_text || ''} 
+              onChange={(e) => onContentChange('placeholder_text', e.target.value)}
+              placeholder="Type a message..."
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Text shown in the message input field
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="welcome_message" className="font-medium">Welcome Message</Label>
+            <Textarea 
+              id="welcome_message" 
+              value={widgetConfig?.content?.welcome_message || ''} 
+              onChange={(e) => onContentChange('welcome_message', e.target.value)}
+              placeholder="Hi! How can I help you today?"
+              rows={3}
+              className="w-full resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              First message shown from the chatbot when conversation starts
+            </p>
+          </div>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="placeholder_text">Placeholder text</Label>
-          <Input 
-            id="placeholder_text" 
-            value={widgetConfig?.content?.placeholder_text || ''} 
-            onChange={(e) => onContentChange('placeholder_text', e.target.value)}
-            placeholder="Type a message..."
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="welcome_message">Welcome message</Label>
-          <Textarea 
-            id="welcome_message" 
-            value={widgetConfig?.content?.welcome_message || ''} 
-            onChange={(e) => onContentChange('welcome_message', e.target.value)}
-            placeholder="Hi! How can I help you today?"
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            This message will be shown at the start of the conversation. If the chatbot has a custom greeting configured, that will take priority.
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="branding" className="block mb-2">Show "Powered by Lovable"</Label>
+      </div>
+      
+      <div className="pt-4 border-t border-border/30">
+        <div className="space-y-3">
+          <Label htmlFor="branding" className="font-medium block">Branding</Label>
           <div className="flex items-center">
             <Switch 
               id="branding" 
@@ -70,9 +96,12 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               onCheckedChange={(checked) => onContentChange('branding', checked)}
             />
             <Label htmlFor="branding" className="ml-2">
-              {widgetConfig?.content?.branding ? "Enabled" : "Disabled"}
+              Show "Powered by Lovable" footer
             </Label>
           </div>
+          <p className="text-xs text-muted-foreground max-w-md">
+            Display a small "Powered by Lovable" text at the bottom of the chat window
+          </p>
         </div>
       </div>
     </div>

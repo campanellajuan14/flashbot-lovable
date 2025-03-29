@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { ShareSettingsType } from "./ShareSettings";
 
 interface ChatbotPreviewDialogProps {
@@ -29,21 +29,27 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant="outline" className="gap-2">
-            <Eye className="h-4 w-4" /> Vista Previa
+          <Button variant="outline" className="gap-2 group" type="button">
+            <Eye className="h-4 w-4 group-hover:animate-pulse" /> 
+            Preview
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Vista Previa del Chatbot</DialogTitle>
-          <DialogDescription>
-            Así se verá tu chatbot cuando sea incrustado en un sitio web
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 overflow-hidden">
+        <div className="p-4 bg-muted/30 border-b">
+          <DialogHeader className="text-left">
+            <DialogTitle className="flex items-center">
+              <Eye className="h-5 w-5 mr-2 text-primary" /> 
+              Widget Preview
+            </DialogTitle>
+            <DialogDescription>
+              This is how your chatbot will appear when embedded on your website
+            </DialogDescription>
+          </DialogHeader>
+        </div>
         
-        <div className="flex-1 mt-4 border rounded-md overflow-hidden">
-          <div className="h-full" 
+        <div className="flex-1 p-6 overflow-auto">
+          <div className="h-full border rounded-md overflow-hidden shadow-md" 
             style={{ 
               backgroundColor: colors?.background || '#ffffff',
               color: colors?.text || '#333333',
@@ -59,6 +65,9 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                   <h3 className="font-medium">{content?.title || 'Chat'}</h3>
                   {content?.subtitle && <p className="text-sm opacity-90">{content?.subtitle}</p>}
                 </div>
+                <button className="text-white/80 hover:text-white transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
             
