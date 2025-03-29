@@ -1,8 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { ResponsiveBar } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,24 +86,6 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
   };
   
   const usageData = getUsageData();
-  
-  // Configuración de color para los gráficos
-  const config = {
-    tokens: {
-      label: "Tokens",
-      theme: {
-        light: "#7E69AB",
-        dark: "#9b87f5",
-      }
-    },
-    queries: {
-      label: "Consultas",
-      theme: {
-        light: "#0EA5E9",
-        dark: "#38BDF8",
-      }
-    }
-  };
 
   return (
     <Card>
@@ -119,59 +100,60 @@ const UsageChart: React.FC<UsageChartProps> = ({ data, isLoading }) => {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <div className="h-[300px]">
-            <ChartContainer config={config}>
-              <ResponsiveBar
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
                 data={usageData}
-                keys={["tokens", "queries"]}
-                indexBy="formattedDate"
                 margin={{ top: 20, right: 20, bottom: 40, left: 60 }}
-                padding={0.3}
-                valueScale={{ type: "linear" }}
-                indexScale={{ type: "band", round: true }}
-                colors={["#9b87f5", "#38BDF8"]}
-                borderRadius={4}
-                axisTop={null}
-                axisRight={null}
-                axisBottom={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: "Fecha",
-                  legendPosition: "middle",
-                  legendOffset: 32
-                }}
-                axisLeft={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: "Cantidad",
-                  legendPosition: "middle",
-                  legendOffset: -50
-                }}
-                labelSkipWidth={12}
-                labelSkipHeight={12}
-                labelTextColor={{
-                  from: "color",
-                  modifiers: [["darker", 1.6]]
-                }}
-                groupMode="grouped"
-              />
-              <ChartTooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <ChartTooltipContent
-                        className="bg-background"
-                        label={label}
-                        labelClassName="font-medium text-foreground"
-                        payload={payload}
-                      />
-                    );
-                  }
-                  return null;
-                }}
-              />
-            </ChartContainer>
+                barGap={8}
+                barSize={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="formattedDate" 
+                  tick={{ fontSize: 12 }}
+                  tickMargin={10}
+                />
+                <YAxis 
+                  yAxisId="left" 
+                  orientation="left" 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => value}
+                  label={{ value: 'Tokens', angle: -90, position: 'insideLeft', dx: -20 }}
+                />
+                <YAxis 
+                  yAxisId="right" 
+                  orientation="right" 
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'Consultas', angle: 90, position: 'insideRight', dx: 20 }}
+                />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "tokens") {
+                      return [value, "Tokens"];
+                    }
+                    if (name === "queries") {
+                      return [value, "Consultas"];
+                    }
+                    return [value, name];
+                  }}
+                />
+                <Legend />
+                <Bar 
+                  yAxisId="left"
+                  dataKey="tokens" 
+                  name="Tokens" 
+                  fill="#9b87f5" 
+                  radius={[4, 4, 0, 0]} 
+                />
+                <Bar 
+                  yAxisId="right"
+                  dataKey="queries" 
+                  name="Consultas" 
+                  fill="#38BDF8" 
+                  radius={[4, 4, 0, 0]} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </CardContent>

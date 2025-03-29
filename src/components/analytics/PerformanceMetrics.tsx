@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { ResponsiveLine } from "recharts";
+import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Activity, Clock, Zap } from "lucide-react";
@@ -200,80 +200,58 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
             <Skeleton className="h-[300px] w-full" />
           ) : (
             <div className="h-[300px]">
-              <ChartContainer config={config}>
-                <ResponsiveLine
-                  data={[
-                    {
-                      id: "precision",
-                      data: chartData.map(item => ({
-                        x: item.formattedDate,
-                        y: parseFloat((item.precision * 100).toFixed(1)),
-                      }))
-                    },
-                    {
-                      id: "response_time",
-                      data: chartData.map(item => ({
-                        x: item.formattedDate,
-                        y: parseFloat((item.response_time / 100).toFixed(1)),
-                      }))
-                    }
-                  ]}
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
                   margin={{ top: 20, right: 20, bottom: 40, left: 40 }}
-                  xScale={{ type: "point" }}
-                  yScale={{ type: "linear", min: 0, max: "auto" }}
-                  curve="monotoneX"
-                  axisTop={null}
-                  axisRight={null}
-                  axisBottom={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    legendOffset: 36,
-                    legendPosition: "middle"
-                  }}
-                  axisLeft={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    format: (value) => `${value}`,
-                    legendOffset: -40,
-                    legendPosition: "middle"
-                  }}
-                  enableGridX={false}
-                  enablePoints={true}
-                  pointSize={8}
-                  pointColor={{ theme: "background" }}
-                  pointBorderWidth={2}
-                  pointBorderColor={{ from: "serieColor" }}
-                  enableCrosshair={false}
-                  useMesh={true}
-                />
-                <ChartTooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <ChartTooltipContent
-                          className="bg-background"
-                          label={`${data.x}`}
-                          labelClassName="font-medium text-foreground"
-                          payload={payload}
-                          formatter={(value, name) => {
-                            if (name === "precision") {
-                              return `${value}%`;
-                            }
-                            if (name === "response_time") {
-                              return `${(value * 100).toFixed(0)} ms`;
-                            }
-                            return value;
-                          }}
-                        />
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </ChartContainer>
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="formattedDate" 
+                    tick={{ fontSize: 12 }}
+                    tickMargin={10}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `${value * 100}%`}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `${value} ms`}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === "precision") {
+                        return [`${(Number(value) * 100).toFixed(1)}%`, "Precisión"];
+                      }
+                      if (name === "response_time") {
+                        return [`${Number(value).toFixed(0)} ms`, "Tiempo de Respuesta"];
+                      }
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="precision"
+                    name="Precisión"
+                    stroke="#9b87f5"
+                    activeDot={{ r: 8 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="response_time"
+                    name="Tiempo de Respuesta"
+                    stroke="#ea384c"
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
         </CardContent>
