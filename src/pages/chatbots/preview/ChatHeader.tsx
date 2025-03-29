@@ -34,7 +34,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <div className="font-semibold">{chatbotName}</div>
       </div>
       
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-3">
         {toggleVoiceMode && (
           <VoiceChatButton 
             isVoiceMode={isVoiceMode} 
