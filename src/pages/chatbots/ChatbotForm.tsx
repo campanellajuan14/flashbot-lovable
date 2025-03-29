@@ -14,6 +14,7 @@ import PersonalityTab from "./components/PersonalityTab";
 import AdvancedSettingsTab from "./components/AdvancedSettingsTab";
 import TemplateSelectionTab from "./components/TemplateSelectionTab";
 import { useChatbotForm } from "./hooks/useChatbotForm";
+import LoadingState from "./components/LoadingState";
 
 const ChatbotForm = () => {
   const { id } = useParams();
@@ -43,7 +44,7 @@ const ChatbotForm = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <LoadingState />
         </div>
       </DashboardLayout>
     );

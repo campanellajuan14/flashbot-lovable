@@ -28,6 +28,9 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
   handleNestedChange,
   handleProviderChange
 }) => {
+  // Prevent any unexpected string to number conversion issues
+  const currentMaxTokens = form.settings.maxTokens?.toString() || "1000";
+  
   return (
     <Card>
       <CardHeader>
@@ -107,8 +110,8 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
           <div className="space-y-2">
             <Label htmlFor="maxTokens">Max Response Length</Label>
             <Select
-              value={form.settings.maxTokens.toString()}
-              onValueChange={(value) => handleNestedChange("settings", "maxTokens", parseInt(value))}
+              value={currentMaxTokens}
+              onValueChange={(value) => handleNestedChange("settings", "maxTokens", parseInt(value, 10))}
             >
               <SelectTrigger id="maxTokens">
                 <SelectValue placeholder="Select length" />

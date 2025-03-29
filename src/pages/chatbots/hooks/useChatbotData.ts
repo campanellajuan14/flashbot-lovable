@@ -43,25 +43,34 @@ export const useChatbotData = (
           let settingsData = { ...defaultSettings };
           if (data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)) {
             settingsData = parseSettingsData(data.settings as Record<string, unknown>);
+            
+            // Ensure maxTokens is a number
+            if (typeof settingsData.maxTokens === 'string') {
+              settingsData.maxTokens = parseInt(settingsData.maxTokens, 10);
+            }
+            
+            // Ensure temperature is a number
+            if (typeof settingsData.temperature === 'string') {
+              settingsData.temperature = parseFloat(settingsData.temperature);
+            }
           }
           
           setForm({
-            name: data.name,
+            name: data.name || "",
             description: data.description || "",
-            isActive: data.is_active,
+            isActive: data.is_active ?? true,
             personality: personalityData,
             settings: settingsData
           });
           
-          // Determinar el proveedor basado en el modelo
-          if (settingsData.model && settingsData.model.includes('claude')) {
-            setAiProvider("claude");
-          } else if (settingsData.model) {
-            setAiProvider("openai");
+          // Determine the provider based on the model
+          if (settingsData.model) {
+            const provider = settingsData.model.includes('claude') ? "claude" : "openai";
+            setAiProvider(provider);
           } else {
-            // Si no hay modelo definido, usar Claude por defecto
+            // If no model defined, use Claude by default
             setAiProvider("claude");
-            // Establecer un modelo Claude por defecto si no hay ninguno
+            // Set a default Claude model if there is none
             handleNestedChange("settings", "model", "claude-3-haiku-20240307");
           }
         }
@@ -70,7 +79,7 @@ export const useChatbotData = (
         toast({
           variant: "destructive",
           title: "Error",
-          description: "No se pudo cargar el chatbot",
+          description: "Could not load chatbot data",
         });
       } finally {
         setIsLoading(false);
