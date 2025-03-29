@@ -3,11 +3,27 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileUp, FileText, Trash2 } from "lucide-react";
-import { Document } from "@/pages/chatbots/ChatbotDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import SampleDocumentDownload from "./SampleDocumentDownload";
+
+// Define Document interface locally instead of importing it
+interface Document {
+  id: string;
+  name: string;
+  content?: string;
+  created_at: string;
+  chatbot_id: string;
+  metadata?: {
+    type?: string;
+    source?: string;
+    size?: number;
+    isChunk?: boolean;
+    parentId?: string;
+    [key: string]: any;
+  };
+}
 
 interface DocumentListCardProps {
   documents?: Document[];

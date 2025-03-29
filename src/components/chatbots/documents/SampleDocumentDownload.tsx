@@ -10,10 +10,10 @@ const SampleDocumentDownload = () => {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5 text-primary" />
-          Sample Document
+          Sample Hackathon Document
         </CardTitle>
         <CardDescription>
-          Download a sample document to test the knowledge base functionality
+          Download the Lovable Hackathon documentation to test the knowledge base
         </CardDescription>
       </CardHeader>
       <CardContent>

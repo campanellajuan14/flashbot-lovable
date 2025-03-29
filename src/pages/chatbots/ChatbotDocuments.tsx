@@ -31,7 +31,8 @@ interface DocumentMetadata {
   [key: string]: any;
 }
 
-interface Document {
+// Export the Document interface so it can be imported elsewhere
+export interface Document {
   id: string;
   name: string;
   content: string;
