@@ -161,12 +161,12 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                 style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
               >
                 <a 
-                  href="https://chatsimp.com" 
+                  href="https://flashbot.com" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   style={{ color: '#999', textDecoration: 'none' }}
                 >
-                  Powered by Chatsimp
+                  Powered by Flashbot
                 </a>
               </div>
             )}

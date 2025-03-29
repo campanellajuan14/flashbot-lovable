@@ -96,7 +96,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
                 Branding
               </Label>
               <p className="text-sm text-muted-foreground">
-                Show "Powered by Chatsimp" footer at the bottom of the chat window
+                Show "Powered by Flashbot" footer at the bottom of the chat window
               </p>
             </div>
           </div>

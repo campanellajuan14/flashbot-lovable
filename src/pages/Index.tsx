@@ -21,7 +21,7 @@ const Index = () => {
                   Build smarter AI chatbots with your data
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl">
-                  ChatSimp helps you create AI-powered chatbots trained on your documents, knowledge base, and FAQs in minutes, not weeks.
+                  Flashbot helps you create AI-powered chatbots trained on your documents, knowledge base, and FAQs in minutes, not weeks.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Button size="lg" asChild>
@@ -42,18 +42,18 @@ const Index = () => {
                   <CardHeader className="bg-primary text-primary-foreground rounded-t-lg space-y-1">
                     <div className="flex items-center">
                       <Bot className="h-5 w-5 mr-2" />
-                      <span className="font-medium">ChatSimp Assistant</span>
+                      <span className="font-medium">Flashbot Assistant</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
                     <div className="chat-bubble-bot ml-0">
-                      Hello! I'm your AI assistant powered by ChatSimp. How can I help you today?
+                      Hello! I'm your AI assistant powered by Flashbot. How can I help you today?
                     </div>
                     <div className="chat-bubble-user mr-0">
-                      What makes ChatSimp different from other chatbot platforms?
+                      What makes Flashbot different from other chatbot platforms?
                     </div>
                     <div className="chat-bubble-bot ml-0">
-                      ChatSimp stands out with its powerful document-based knowledge system. You can easily upload your documents, and our AI will automatically understand and reference them to provide accurate answers based on your specific content. It's also incredibly easy to set up - no coding required!
+                      Flashbot stands out with its powerful document-based knowledge system. You can easily upload your documents, and our AI will automatically understand and reference them to provide accurate answers based on your specific content. It's also incredibly easy to set up - no coding required!
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       <div className="inline-flex items-center bg-secondary rounded-full px-2 py-1">
@@ -161,7 +161,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
               <MessageSquare className="h-6 w-6 text-primary mr-2" />
-              <span className="text-xl font-bold">ChatSimp</span>
+              <span className="text-xl font-bold">Flashbot</span>
             </div>
             <div className="flex flex-wrap gap-6">
               <Link to="/about" className="text-muted-foreground hover:text-foreground">About</Link>
@@ -172,7 +172,7 @@ const Index = () => {
             </div>
           </div>
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ChatSimp. All rights reserved.
+            © {new Date().getFullYear()} Flashbot. All rights reserved.
           </div>
         </div>
       </footer>
