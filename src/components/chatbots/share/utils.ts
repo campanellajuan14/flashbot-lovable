@@ -54,7 +54,7 @@ export const createDefaultWidgetConfig = (widgetId: string): ShareSettings => {
 export const copyEmbedCode = (widgetId: string | null): boolean => {
   if (!widgetId) return false;
   
-  const embedCode = `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${widgetId}"></script>`;
+  const embedCode = `<script src="https://flashbot.lovable.app/widget.js" data-widget-id="${widgetId}"></script>`;
   
   try {
     navigator.clipboard.writeText(embedCode);
