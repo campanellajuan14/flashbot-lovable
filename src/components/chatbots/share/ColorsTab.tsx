@@ -41,7 +41,7 @@ const ColorField = ({
       <Input 
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1"
+        className="max-w-xs"
       />
     </div>
     {description && <p className="text-xs text-muted-foreground">{description}</p>}
@@ -53,14 +53,14 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
   
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      <div>
         <h3 className="text-lg font-medium">Widget Colors</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Customize the colors of your chat widget to match your brand.
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <ColorField 
           id="primary" 
           label="Primary Color" 
@@ -102,28 +102,28 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         />
       </div>
       
-      <div className="pt-4 bg-muted/30 p-5 rounded-lg mt-6 border border-dashed border-muted">
+      <div className="pt-4 bg-muted/30 p-5 rounded-lg mt-6 border border-dashed border-muted max-w-md">
         <h4 className="font-medium mb-2">Color Preview</h4>
-        <div className="flex gap-3 items-start">
+        <div className="flex flex-col gap-3">
           <div 
             style={{ 
               background: widgetConfig?.colors?.primary || '#2563eb',
               color: '#ffffff',
               borderRadius: '8px 8px 8px 0',
               padding: '12px',
-              maxWidth: '200px'
+              maxWidth: '100%'
             }}
           >
             Header Background
           </div>
-          <div className="space-y-3 flex-1">
+          <div className="space-y-3">
             <div 
               style={{ 
                 background: widgetConfig?.colors?.bot_bubble || '#f1f0f0',
                 color: widgetConfig?.colors?.text || '#333333',
                 borderRadius: '8px 8px 8px 0',
                 padding: '8px 12px',
-                maxWidth: '200px',
+                maxWidth: '80%',
                 alignSelf: 'flex-start'
               }}
             >
@@ -135,7 +135,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
                 color: '#ffffff',
                 borderRadius: '8px 8px 0 8px',
                 padding: '8px 12px',
-                maxWidth: '200px',
+                maxWidth: '80%',
                 marginLeft: 'auto'
               }}
             >

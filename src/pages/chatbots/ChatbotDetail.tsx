@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Settings, Edit, Trash2, FileText, Loader2, Share2 } from "lucide-react";
+import { ArrowLeft, Play, Edit, Trash2, Loader2, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -21,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -29,19 +27,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ShareSettings from "@/components/chatbots/share/ShareSettings";
 import ChatbotInformation from "./components/detail/ChatbotInformation";
 import ChatbotConfiguration from "./components/detail/ChatbotConfiguration";
-
-interface ChatbotSettings {
-  model?: string;
-  temperature?: string | number;
-  maxTokens?: string | number;
-  [key: string]: any;
-}
 
 const ChatbotDetail = () => {
   const { id: chatbotId } = useParams<{ id: string }>();
@@ -256,10 +245,10 @@ const ChatbotDetail = () => {
             
             <TabsContent value="share" className="animate-fade-in">
               <div className="space-y-4">
-                <Card className="mb-4">
-                  <CardHeader>
+                <Card>
+                  <CardHeader className="pb-3">
                     <CardTitle className="flex items-center">
-                      <Share2 className="mr-2 h-5 w-5" />
+                      <Share2 className="mr-2 h-5 w-5 text-primary" />
                       Share Chatbot
                     </CardTitle>
                     <CardDescription>

@@ -26,9 +26,9 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      <div>
         <h3 className="text-lg font-medium">Embed Code</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Copy and paste this code into your website's HTML where you want the chatbot to appear.
         </p>
       </div>
@@ -55,17 +55,19 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
       </div>
       
       <div className="bg-muted/30 rounded-lg p-6 border border-dashed border-muted">
-        <div className="text-center space-y-4">
-          <h4 className="text-base font-medium">Preview Your Widget</h4>
-          <p className="text-sm text-muted-foreground">
-            See how your chatbot will appear when embedded on your website.
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <h4 className="text-base font-medium">Preview Your Widget</h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              See how your chatbot will appear when embedded on your website.
+            </p>
+          </div>
           
           <ChatbotPreviewDialog 
             chatbotId={chatbotId}
             widgetConfig={widgetConfig}
           >
-            <Button variant="outline" size="lg" className="gap-2 group">
+            <Button variant="outline" size="sm" className="gap-2 group whitespace-nowrap">
               <Eye className="h-4 w-4 group-hover:animate-pulse" /> 
               Preview Widget
             </Button>

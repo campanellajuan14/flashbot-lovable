@@ -16,14 +16,14 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      <div>
         <h3 className="text-lg font-medium">Widget Content</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Customize the text and content displayed in your chat widget.
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title" className="font-medium">Chat Title</Label>
@@ -32,7 +32,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               value={widgetConfig?.content?.title || ''} 
               onChange={(e) => onContentChange('title', e.target.value)}
               placeholder="Chat with us"
-              className="w-full"
+              className="max-w-md"
             />
             <p className="text-xs text-muted-foreground">
               Main heading shown at the top of the chat window
@@ -46,15 +46,13 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               value={widgetConfig?.content?.subtitle || ''} 
               onChange={(e) => onContentChange('subtitle', e.target.value)}
               placeholder="We'll answer your questions"
-              className="w-full"
+              className="max-w-md"
             />
             <p className="text-xs text-muted-foreground">
               Optional subheading shown below the title
             </p>
           </div>
-        </div>
         
-        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="placeholder_text" className="font-medium">Input Placeholder</Label>
             <Input 
@@ -62,7 +60,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               value={widgetConfig?.content?.placeholder_text || ''} 
               onChange={(e) => onContentChange('placeholder_text', e.target.value)}
               placeholder="Type a message..."
-              className="w-full"
+              className="max-w-md"
             />
             <p className="text-xs text-muted-foreground">
               Text shown in the message input field
@@ -77,7 +75,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               onChange={(e) => onContentChange('welcome_message', e.target.value)}
               placeholder="Hi! How can I help you today?"
               rows={3}
-              className="w-full resize-none"
+              className="max-w-md resize-none"
             />
             <p className="text-xs text-muted-foreground">
               First message shown from the chatbot when conversation starts
@@ -87,7 +85,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
       </div>
       
       <div className="pt-4 border-t border-border/30">
-        <div className="space-y-3">
+        <div className="space-y-3 max-w-md">
           <Label htmlFor="branding" className="font-medium block">Branding</Label>
           <div className="flex items-center">
             <Switch 
@@ -99,7 +97,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ widgetConfig, onContentChange }
               Show "Powered by Lovable" footer
             </Label>
           </div>
-          <p className="text-xs text-muted-foreground max-w-md">
+          <p className="text-xs text-muted-foreground">
             Display a small "Powered by Lovable" text at the bottom of the chat window
           </p>
         </div>

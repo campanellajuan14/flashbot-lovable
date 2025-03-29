@@ -17,14 +17,14 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
   
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      <div>
         <h3 className="text-lg font-medium">Widget Appearance</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Configure how the widget appears and behaves on your website.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="position" className="font-medium">Position</Label>
@@ -32,7 +32,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
               value={widgetConfig?.appearance?.position || 'right'} 
               onValueChange={(value) => onAppearanceChange('position', value)}
             >
-              <SelectTrigger id="position" className="w-full">
+              <SelectTrigger id="position" className="max-w-md">
                 <SelectValue placeholder="Select a position" />
               </SelectTrigger>
               <SelectContent>
@@ -49,7 +49,7 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
               value={widgetConfig?.appearance?.initial_state || 'closed'} 
               onValueChange={(value) => onAppearanceChange('initial_state', value)}
             >
-              <SelectTrigger id="initial_state" className="w-full">
+              <SelectTrigger id="initial_state" className="max-w-md">
                 <SelectValue placeholder="Select an initial state" />
               </SelectTrigger>
               <SelectContent>
@@ -61,110 +61,100 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({ widgetConfig, onAppearanc
           </div>
         </div>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="width" className="font-medium">Dimensions</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground w-12">Width</span>
-                  <Input 
-                    id="width" 
-                    type="number" 
-                    value={widgetConfig?.appearance?.width || 350} 
-                    onChange={(e) => onAppearanceChange('width', e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="ml-2 text-xs text-muted-foreground">px</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground w-12">Height</span>
-                  <Input 
-                    id="height" 
-                    type="number" 
-                    value={widgetConfig?.appearance?.height || 500} 
-                    onChange={(e) => onAppearanceChange('height', e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="ml-2 text-xs text-muted-foreground">px</span>
-                </div>
+        <div className="space-y-2">
+          <Label className="font-medium">Dimensions</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">Width</span>
+                <Input 
+                  type="number" 
+                  value={widgetConfig?.appearance?.width || 350} 
+                  onChange={(e) => onAppearanceChange('width', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">px</span>
               </div>
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="offset_x" className="font-medium">Margin/Offset</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground w-12">Horizontal</span>
-                  <Input 
-                    id="offset_x" 
-                    type="number" 
-                    value={widgetConfig?.appearance?.offset_x || 20} 
-                    onChange={(e) => onAppearanceChange('offset_x', e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="ml-2 text-xs text-muted-foreground">px</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground w-12">Vertical</span>
-                  <Input 
-                    id="offset_y" 
-                    type="number" 
-                    value={widgetConfig?.appearance?.offset_y || 20} 
-                    onChange={(e) => onAppearanceChange('offset_y', e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="ml-2 text-xs text-muted-foreground">px</span>
-                </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">Height</span>
+                <Input 
+                  type="number" 
+                  value={widgetConfig?.appearance?.height || 500} 
+                  onChange={(e) => onAppearanceChange('height', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">px</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="border_radius" className="font-medium">Border Radius</Label>
-            <div className="flex items-center">
-              <Input 
-                id="border_radius" 
-                type="number" 
-                value={widgetConfig?.appearance?.border_radius || 10} 
-                onChange={(e) => onAppearanceChange('border_radius', e.target.value)}
-                className="w-32"
-              />
-              <span className="ml-2 text-xs text-muted-foreground">px</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Corner roundness of the widget</p>
           </div>
         </div>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="box_shadow" className="font-medium block mb-2">Shadow Effect</Label>
-            <div className="flex items-center">
-              <Switch 
-                id="box_shadow" 
-                checked={widgetConfig?.appearance?.box_shadow || false}
-                onCheckedChange={(checked) => onAppearanceChange('box_shadow', checked)}
-              />
-              <Label htmlFor="box_shadow" className="ml-2">
-                {widgetConfig?.appearance?.box_shadow ? "Shadow enabled" : "No shadow"}
-              </Label>
+        <div className="space-y-2">
+          <Label className="font-medium">Margin/Offset</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">Horizontal</span>
+                <Input 
+                  type="number" 
+                  value={widgetConfig?.appearance?.offset_x || 20} 
+                  onChange={(e) => onAppearanceChange('offset_x', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">px</span>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Adds a subtle shadow to the widget</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">Vertical</span>
+                <Input 
+                  type="number" 
+                  value={widgetConfig?.appearance?.offset_y || 20} 
+                  onChange={(e) => onAppearanceChange('offset_y', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">px</span>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="border_radius" className="font-medium">Border Radius</Label>
+          <div className="flex items-center gap-2 max-w-xs">
+            <Input 
+              id="border_radius" 
+              type="number" 
+              value={widgetConfig?.appearance?.border_radius || 10} 
+              onChange={(e) => onAppearanceChange('border_radius', e.target.value)}
+              className="flex-1"
+            />
+            <span className="text-sm text-muted-foreground">px</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Corner roundness of the widget</p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="box_shadow" className="font-medium block">Shadow Effect</Label>
+          <div className="flex items-center">
+            <Switch 
+              id="box_shadow" 
+              checked={widgetConfig?.appearance?.box_shadow || false}
+              onCheckedChange={(checked) => onAppearanceChange('box_shadow', checked)}
+            />
+            <Label htmlFor="box_shadow" className="ml-2">
+              {widgetConfig?.appearance?.box_shadow ? "Shadow enabled" : "No shadow"}
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground">Adds a subtle shadow to the widget</p>
         </div>
       </div>
 
-      <div className="pt-4">
-        <div className="bg-muted/30 rounded-lg p-4 border border-dashed border-muted flex items-center gap-4 text-sm text-muted-foreground">
-          <Smartphone className="h-5 w-5" />
+      <div className="pt-2">
+        <div className="bg-muted/30 rounded-lg p-4 border border-dashed border-muted flex items-center gap-3 text-sm text-muted-foreground max-w-md">
+          <Smartphone className="h-5 w-5 shrink-0" />
           <p>The widget will automatically adjust to smaller screens on mobile devices.</p>
         </div>
       </div>
