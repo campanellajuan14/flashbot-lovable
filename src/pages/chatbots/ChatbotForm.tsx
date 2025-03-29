@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,17 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const ChatbotForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { id } = useParams();
+  const isEditing = !!id;
   
   // Form state
   const [form, setForm] = useState({
@@ -47,6 +54,57 @@ const ChatbotForm = () => {
       includeReferences: true
     }
   });
+
+  // Fetch chatbot data if editing
+  useEffect(() => {
+    if (isEditing && user) {
+      setIsLoading(true);
+      
+      const fetchChatbot = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('chatbots')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            setForm({
+              name: data.name,
+              description: data.description || "",
+              isActive: data.is_active,
+              personality: data.behavior || {
+                tone: "professional",
+                style: "concise",
+                language: "english",
+                instructions: ""
+              },
+              settings: data.settings || {
+                model: "gpt-4o",
+                temperature: 0.7,
+                maxTokens: 2048,
+                includeReferences: true
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching chatbot:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudo cargar el chatbot",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchChatbot();
+    }
+  }, [id, isEditing, user, toast]);
   
   const handleChange = (field: string, value: any) => {
     setForm(prev => ({
@@ -74,29 +132,78 @@ const ChatbotForm = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Debes iniciar sesión para crear un chatbot",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Prepare data for Supabase
+      const chatbotData = {
+        name: form.name,
+        description: form.description,
+        is_active: form.isActive,
+        behavior: form.personality,
+        settings: form.settings,
+        user_id: user.id
+      };
+      
+      console.log("Saving chatbot with data:", chatbotData);
+      
+      let result;
+      
+      if (isEditing) {
+        // Update existing chatbot
+        result = await supabase
+          .from('chatbots')
+          .update(chatbotData)
+          .eq('id', id)
+          .eq('user_id', user.id);
+      } else {
+        // Create new chatbot
+        result = await supabase
+          .from('chatbots')
+          .insert(chatbotData);
+      }
+      
+      const { error } = result;
+      
+      if (error) throw error;
       
       toast({
-        title: "Chatbot created",
-        description: `${form.name} has been created successfully.`,
+        title: isEditing ? "Chatbot actualizado" : "Chatbot creado",
+        description: `${form.name} ha sido ${isEditing ? "actualizado" : "creado"} exitosamente.`,
       });
       
       navigate("/chatbots");
-    } catch (error) {
-      console.error("Error creating chatbot:", error);
+    } catch (error: any) {
+      console.error("Error saving chatbot:", error);
       toast({
         variant: "destructive",
-        title: "Failed to create chatbot",
-        description: "Please try again later.",
+        title: "Error",
+        description: error.message || "No se pudo guardar el chatbot. Inténtalo de nuevo.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -109,12 +216,14 @@ const ChatbotForm = () => {
             className="mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Volver
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Create New Chatbot</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {isEditing ? "Editar Chatbot" : "Crear Nuevo Chatbot"}
+            </h1>
             <p className="text-muted-foreground">
-              Configure your chatbot's personality and behavior
+              Configura la personalidad y comportamiento de tu chatbot
             </p>
           </div>
         </div>
@@ -122,9 +231,9 @@ const ChatbotForm = () => {
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="personality">Personality</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
+              <TabsTrigger value="basic">Información Básica</TabsTrigger>
+              <TabsTrigger value="personality">Personalidad</TabsTrigger>
+              <TabsTrigger value="advanced">Configuración Avanzada</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4 pt-4">
@@ -355,7 +464,7 @@ const ChatbotForm = () => {
               variant="outline"
               onClick={() => navigate("/chatbots")}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -364,12 +473,12 @@ const ChatbotForm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {isEditing ? "Actualizando..." : "Creando..."}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Create Chatbot
+                  {isEditing ? "Actualizar Chatbot" : "Crear Chatbot"}
                 </>
               )}
             </Button>

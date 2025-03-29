@@ -167,87 +167,87 @@ const ChatbotList = () => {
           </div>
         ) : (
           <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredChatbots.map((chatbot) => (
-                <Card key={chatbot.id} className="dashboard-card">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant={chatbot.is_active ? "default" : "secondary"}>
-                        {chatbot.is_active ? "Activo" : "Inactivo"}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Menú</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/chatbots/${chatbot.id}/preview`} className="flex w-full cursor-pointer">
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              Vista previa
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="flex cursor-pointer"
-                            onClick={() => copyToClipboard(chatbot.id)}
-                          >
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copiar ID
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="flex cursor-pointer text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(chatbot.id)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <CardTitle className="text-xl">{chatbot.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {chatbot.description || "Sin descripción"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Conversaciones</p>
-                        <p className="font-medium">{0}</p>
+            {filteredChatbots.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredChatbots.map((chatbot) => (
+                  <Card key={chatbot.id} className="dashboard-card">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant={chatbot.is_active ? "default" : "secondary"}>
+                          {chatbot.is_active ? "Activo" : "Inactivo"}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Menú</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/chatbots/${chatbot.id}/preview`} className="flex w-full cursor-pointer">
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Vista previa
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="flex cursor-pointer"
+                              onClick={() => copyToClipboard(chatbot.id)}
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copiar ID
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="flex cursor-pointer text-destructive focus:text-destructive"
+                              onClick={() => handleDelete(chatbot.id)}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground">Creado</p>
-                        <p className="font-medium">{new Date(chatbot.created_at).toLocaleDateString()}</p>
+                      <CardTitle className="text-xl">{chatbot.name}</CardTitle>
+                      <CardDescription className="line-clamp-2">
+                        {chatbot.description || "Sin descripción"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Conversaciones</p>
+                          <p className="font-medium">{0}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Creado</p>
+                          <p className="font-medium">{new Date(chatbot.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/chatbots/${chatbot.id}`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <Link to={`/chatbots/${chatbot.id}/preview`}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Probar
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-            
-            {filteredChatbots.length === 0 && (
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/chatbots/${chatbot.id}`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </Link>
+                      </Button>
+                      <Button size="sm" asChild>
+                        <Link to={`/chatbots/${chatbot.id}/preview`}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Probar
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : (
               <div className="text-center py-8">
                 <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
                 <h3 className="mt-4 text-lg font-semibold">No se encontraron chatbots</h3>
