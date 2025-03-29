@@ -28,6 +28,12 @@ const SampleDocumentDownload = () => {
               Download Markdown
             </Button>
           </a>
+          <a href="/sample-documents/hackaton_documentation.md" target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" className="w-full sm:w-auto gap-2">
+              <FileText className="h-4 w-4" />
+              Preview
+            </Button>
+          </a>
         </div>
       </CardContent>
     </Card>
