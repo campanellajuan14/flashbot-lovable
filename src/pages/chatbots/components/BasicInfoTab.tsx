@@ -37,7 +37,17 @@ const BasicInfoTab = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Basic Information
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium mr-2">Status: {form.isActive ? 'Active' : 'Inactive'}</span>
+            <Switch 
+              id="isActive" 
+              checked={form.isActive} 
+              onCheckedChange={(checked) => handleChange("isActive", checked)} 
+            />
+          </div>
+        </CardTitle>
         <CardDescription>Enter the basic details for your chatbot</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -71,19 +81,6 @@ const BasicInfoTab = ({
                 <p className="text-xs text-red-500">Chatbot description is required.</p>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Status toggle */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="isActive" className="text-sm font-medium">Status</Label>
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="isActive" 
-              checked={form.isActive} 
-              onCheckedChange={(checked) => handleChange("isActive", checked)} 
-            />
-            <span className="text-sm">{form.isActive ? 'Active' : 'Inactive'}</span>
           </div>
         </div>
 
