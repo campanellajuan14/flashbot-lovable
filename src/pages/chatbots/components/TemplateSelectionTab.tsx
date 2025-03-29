@@ -29,6 +29,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
           className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
           onClick={(e) => {
             e.preventDefault(); // Prevent default behavior
+            e.stopPropagation(); // Stop event propagation
             onStartFromScratch();
           }}
         >
@@ -49,7 +50,6 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
           selectedTemplateId={selectedTemplateId} 
           onSelectTemplate={onSelectTemplate} 
           onTemplateClick={(template) => {
-            // Prevent default behavior and avoid refreshes
             onSelectTemplate(template);
             onStartFromScratch(); // Navigate to the next tab on template selection
           }}

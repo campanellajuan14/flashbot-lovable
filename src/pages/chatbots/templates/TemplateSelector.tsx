@@ -39,7 +39,8 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   : "border border-border"
               )}
               onClick={(e) => {
-                e.preventDefault(); // Prevent any default behavior
+                e.preventDefault(); // Prevent default behavior
+                e.stopPropagation(); // Stop propagation
                 if (onTemplateClick) {
                   onTemplateClick(template);
                 } else {

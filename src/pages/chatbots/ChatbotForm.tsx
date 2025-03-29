@@ -41,13 +41,19 @@ const ChatbotForm = () => {
   } = useChatbotForm({ id, userId: user?.id });
 
   const handleStartFromScratch = (e?: React.MouseEvent) => {
-    if (e) e.preventDefault(); // Prevent default if event is passed
+    if (e) {
+      e.preventDefault(); // Prevent default if event is passed
+      e.stopPropagation(); // Stop event propagation
+    }
     setShowInitialDialog(false);
     setActiveTab("basic");
   };
   
   const handleSelectTemplateFromDialog = (templateId: string, e?: React.MouseEvent) => {
-    if (e) e.preventDefault(); // Prevent default if event is passed
+    if (e) {
+      e.preventDefault(); // Prevent default if event is passed
+      e.stopPropagation(); // Stop event propagation
+    }
     
     if (templateId === "") {
       // View all templates
@@ -81,9 +87,23 @@ const ChatbotForm = () => {
     );
   }
 
+  // Dedicated function to handle form submission
   const onSubmitForm = (e: React.FormEvent) => {
     e.preventDefault(); // Ensure we prevent default form submission
+    e.stopPropagation(); // Stop event propagation
     handleSubmit(e);
+  };
+
+  const handleBackClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default button behavior
+    e.stopPropagation(); // Stop event propagation
+    navigate(-1);
+  };
+
+  const handleCancelClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default button behavior
+    e.stopPropagation(); // Stop event propagation
+    navigate("/chatbots");
   };
 
   return (
@@ -101,11 +121,9 @@ const ChatbotForm = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={(e) => {
-              e.preventDefault(); // Prevent default button behavior
-              navigate(-1);
-            }}
+            onClick={handleBackClick}
             className="mr-4"
+            type="button"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -127,9 +145,9 @@ const ChatbotForm = () => {
         <form onSubmit={onSubmitForm} className="text-left">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full grid grid-cols-3 mb-2">
-              <TabsTrigger value="basic">Basic Information</TabsTrigger>
-              <TabsTrigger value="personality">Personality</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
+              <TabsTrigger value="basic" type="button">Basic Information</TabsTrigger>
+              <TabsTrigger value="personality" type="button">Personality</TabsTrigger>
+              <TabsTrigger value="advanced" type="button">Advanced Settings</TabsTrigger>
             </TabsList>
             
             {/* Templates tab is now hidden by default but can still be accessed */}
@@ -173,10 +191,7 @@ const ChatbotForm = () => {
             <Button 
               type="button" 
               variant="outline"
-              onClick={(e) => {
-                e.preventDefault(); // Prevent default button behavior
-                navigate("/chatbots");
-              }}
+              onClick={handleCancelClick}
             >
               Cancel
             </Button>
