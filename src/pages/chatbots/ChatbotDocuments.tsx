@@ -36,19 +36,22 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+interface DocumentMetadata {
+  type?: string;
+  source?: string;
+  size?: number;
+  isChunk?: boolean;
+  parentId?: string;
+  [key: string]: any;
+}
+
 interface Document {
   id: string;
   name: string;
   content: string;
   created_at: string;
-  metadata: {
-    type?: string;
-    source?: string;
-    size?: number;
-    isChunk?: boolean;
-    parentId?: string;
-    [key: string]: any;
-  };
+  chatbot_id: string;
+  metadata: DocumentMetadata;
 }
 
 interface RetrievalSettings {
@@ -66,7 +69,9 @@ interface Chatbot {
   id: string;
   name: string;
   user_id: string;
-  [key: string]: any;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const ChatbotDocuments = () => {
