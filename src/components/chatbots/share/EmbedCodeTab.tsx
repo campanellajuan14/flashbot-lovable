@@ -15,8 +15,8 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
   
-  // Base script URL - in production this would come from your config
-  const scriptBaseUrl = "https://chatbot-platform.lovable.app";
+  // Base script URL - actualizado al nuevo dominio
+  const scriptBaseUrl = "https://flashbot.lovable.app";
   
   // The ID to use in the embed code - make sure we're using the correct ID
   const embedWidgetId = widgetConfig?.widget_id || widgetId;
@@ -43,8 +43,8 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate the preview URL for the widget
-  const previewUrl = `${window.location.origin}/widget/${embedWidgetId}`;
+  // Generate the preview URL for the widget con el nuevo dominio
+  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
 
   return (
     <div className="space-y-6">
