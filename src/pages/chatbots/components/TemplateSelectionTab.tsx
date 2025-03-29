@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, AwardIcon } from "lucide-react";
 import TemplateSelector from "../templates/TemplateSelector";
 import { ChatbotTemplate } from "../templates/types";
+import { getTemplateById } from "../templates/data";
 
 interface TemplateSelectionTabProps {
   selectedTemplateId: string | null;
@@ -27,6 +28,9 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
     onStartFromScratch(); // Navigate to the next tab on template selection
   };
 
+  // Get the Lovable Hackathon Expert template for featured section
+  const featuredTemplate = getTemplateById("lovable-hackathon-expert");
+
   return (
     <Card className="text-left">
       <CardHeader>
@@ -36,6 +40,32 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Featured Template - Lovable Hackathon Expert */}
+        {featuredTemplate && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
+              <AwardIcon className="h-4 w-4 mr-2 text-primary" />
+              Featured Template
+            </h3>
+            <div 
+              className="p-4 border-2 border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+              onClick={() => handleTemplateClick(featuredTemplate)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/20 text-primary">
+                  <AwardIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-lg">{featuredTemplate.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {featuredTemplate.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div 
           className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
           onClick={handleStartFromScratch}
@@ -53,11 +83,14 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
           </div>
         </div>
         
-        <TemplateSelector 
-          selectedTemplateId={selectedTemplateId} 
-          onSelectTemplate={onSelectTemplate} 
-          onTemplateClick={handleTemplateClick}
-        />
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">All Templates</h3>
+          <TemplateSelector 
+            selectedTemplateId={selectedTemplateId} 
+            onSelectTemplate={onSelectTemplate} 
+            onTemplateClick={handleTemplateClick}
+          />
+        </div>
       </CardContent>
     </Card>
   );

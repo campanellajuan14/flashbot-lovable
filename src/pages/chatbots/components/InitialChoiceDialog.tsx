@@ -7,8 +7,8 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wand2, MessageCircle } from "lucide-react";
-import { chatbotTemplates } from "../templates/data";
+import { PlusCircle, Wand2, MessageCircle, AwardIcon } from "lucide-react";
+import { chatbotTemplates, TEMPLATE_ICONS } from "../templates/data";
 
 interface InitialChoiceDialogProps {
   open: boolean;
@@ -23,11 +23,25 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
   onStartFromScratch,
   onSelectTemplate
 }) => {
-  // Select just 3 featured templates
-  const featuredTemplates = chatbotTemplates.slice(0, 3);
+  // Get Lovable Hackathon Expert as first template
+  const lovableHackathonTemplate = chatbotTemplates.find(t => t.id === "lovable-hackathon-expert");
+  
+  // Select just 2 other featured templates
+  const otherTemplates = chatbotTemplates
+    .filter(t => t.id !== "lovable-hackathon-expert")
+    .slice(0, 2);
+  
+  // Combine templates with Lovable Hackathon Expert first
+  const featuredTemplates = lovableHackathonTemplate 
+    ? [lovableHackathonTemplate, ...otherTemplates]
+    : otherTemplates;
   
   // Helper function to get the correct icon component
   const getIconComponent = (iconName: string) => {
+    if (iconName === "lovable") {
+      return <AwardIcon className="h-5 w-5 text-primary" />;
+    }
+    
     switch(iconName) {
       case "messageCircle":
         return <MessageCircle className="h-5 w-5 text-primary" />;
@@ -36,7 +50,8 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
       case "plusCircle":
         return <PlusCircle className="h-5 w-5 text-primary" />;
       default:
-        return <MessageCircle className="h-5 w-5 text-primary" />;
+        const IconComponent = TEMPLATE_ICONS[iconName as keyof typeof TEMPLATE_ICONS];
+        return IconComponent ? <IconComponent className="h-5 w-5 text-primary" /> : <MessageCircle className="h-5 w-5 text-primary" />;
     }
   };
   
@@ -75,18 +90,30 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
             </div>
             
             <div className="grid grid-cols-3 gap-3">
-              {featuredTemplates.map(template => (
-                <div 
-                  key={template.id}
-                  className="border rounded-lg p-3 hover:border-primary cursor-pointer hover:bg-accent/50 transition-all flex flex-col items-center text-center"
-                  onClick={() => onSelectTemplate(template.id)}
-                >
-                  <div className="p-2 bg-primary/10 rounded-full mb-2">
-                    {getIconComponent(template.icon)}
+              {featuredTemplates.map((template, index) => {
+                // Apply special styling to the Lovable Hackathon Expert template
+                const isLovableTemplate = template.id === "lovable-hackathon-expert";
+                
+                return (
+                  <div 
+                    key={template.id}
+                    className={`border rounded-lg p-3 hover:border-primary cursor-pointer hover:bg-accent/50 transition-all flex flex-col items-center text-center ${
+                      isLovableTemplate ? 'border-primary border-2 bg-primary/5 ring-1 ring-primary/20' : ''
+                    }`}
+                    onClick={() => onSelectTemplate(template.id)}
+                  >
+                    <div className={`p-2 ${isLovableTemplate ? 'bg-primary/20' : 'bg-primary/10'} rounded-full mb-2`}>
+                      {getIconComponent(template.icon)}
+                    </div>
+                    <h4 className="text-sm font-medium">
+                      {template.name}
+                      {isLovableTemplate && (
+                        <span className="block text-xs text-primary mt-0.5">Recommended</span>
+                      )}
+                    </h4>
                   </div>
-                  <h4 className="text-sm font-medium">{template.name}</h4>
-                </div>
-              ))}
+                );
+              })}
             </div>
             
             <Button 

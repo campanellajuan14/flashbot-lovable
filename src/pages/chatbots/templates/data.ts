@@ -1,11 +1,11 @@
-
 import { ChatbotTemplate } from "./types";
 import { 
   HeadphonesIcon, 
   ShoppingCartIcon, 
   WrenchIcon, 
   MessageCircleIcon,
-  BrainCircuitIcon
+  BrainCircuitIcon,
+  AwardIcon
 } from "lucide-react";
 
 export const TEMPLATE_ICONS = {
@@ -13,10 +13,31 @@ export const TEMPLATE_ICONS = {
   sales: ShoppingCartIcon,
   technical: WrenchIcon,
   general: MessageCircleIcon,
-  ai: BrainCircuitIcon
+  ai: BrainCircuitIcon,
+  lovable: AwardIcon
 };
 
 export const chatbotTemplates: ChatbotTemplate[] = [
+  {
+    id: "lovable-hackathon-expert",
+    name: "Lovable Hackathon Expert",
+    description: "Specialized assistant for solving hackathon questions and providing guidance with Lovable's knowledge base integration.",
+    icon: "lovable",
+    category: "technical",
+    personality: {
+      tone: "enthusiastic",
+      style: "helpful",
+      language: "english",
+      instructions: "You are the Lovable Hackathon Expert, specialized in helping participants succeed in hackathons. Your goals are to:\n1. Answer technical questions about app development\n2. Provide guidance on using Lovable's features effectively\n3. Help solve common problems participants encounter\n4. Share best practices and creative solutions\n\nSpecific guidelines:\n- Maintain a positive, enthusiastic tone\n- Provide specific, actionable advice\n- Reference knowledge base documents when relevant\n- Suggest creative approaches to problems\n- Help participants maximize their use of Lovable's features",
+      greeting: "Hello! I'm your Lovable Hackathon Expert. I'm here to help you succeed in the hackathon with technical guidance and creative solutions. What can I help you with today?"
+    },
+    settings: {
+      model: "claude-3-sonnet-20240229",
+      temperature: 0.7,
+      maxTokens: 800,
+      includeReferences: true
+    }
+  },
   {
     id: "customer-service",
     name: "Customer Service",
