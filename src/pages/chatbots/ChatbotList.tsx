@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -34,14 +34,21 @@ const ChatbotList = () => {
   const { data: chatbots, isLoading, isError, refetch } = useQuery({
     queryKey: ['chatbots', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error("Usuario no autenticado");
+      
+      console.log("Fetching chatbots for user:", user.id);
       
       const { data, error } = await supabase
         .from('chatbots')
         .select('*')
         .eq('user_id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching chatbots:", error);
+        throw error;
+      }
+      
+      console.log("Fetched chatbots:", data);
       return data as Chatbot[];
     },
     enabled: !!user,
@@ -52,17 +59,17 @@ const ChatbotList = () => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "Copied to clipboard",
-        description: "Chatbot ID has been copied to your clipboard",
+        title: "Copiado al portapapeles",
+        description: "ID del chatbot copiado a tu portapapeles",
       });
     } catch (err) {
-      console.error("Failed to copy: ", err);
+      console.error("Falló la copia: ", err);
     }
   };
 
   // Function to delete a chatbot
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this chatbot?")) {
+    if (confirm("¿Estás seguro de que quieres eliminar este chatbot?")) {
       try {
         const { error } = await supabase
           .from('chatbots')
@@ -72,18 +79,18 @@ const ChatbotList = () => {
         if (error) throw error;
         
         toast({
-          title: "Chatbot deleted",
-          description: "The chatbot has been successfully deleted",
+          title: "Chatbot eliminado",
+          description: "El chatbot ha sido eliminado con éxito",
         });
         
         // Refetch chatbots to update the list
         refetch();
       } catch (err) {
-        console.error("Error deleting chatbot:", err);
+        console.error("Error al eliminar chatbot:", err);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to delete the chatbot",
+          description: "No se pudo eliminar el chatbot",
         });
       }
     }
@@ -95,27 +102,43 @@ const ChatbotList = () => {
     (chatbot.description && chatbot.description.toLowerCase().includes(searchQuery.toLowerCase()))
   ) || [];
 
-  // Calculate conversation count (mocked for now)
-  const getConversationCount = (chatbotId: string) => {
-    // In a real implementation, you might want to query the conversations table
-    // For now, let's return a random number
-    return Math.floor(Math.random() * 100);
+  // Calculate conversation count from Supabase
+  const getConversationCount = async (chatbotId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('conversations')
+        .select('id', { count: 'exact' })
+        .eq('chatbot_id', chatbotId);
+      
+      if (error) throw error;
+      return count || 0;
+    } catch (err) {
+      console.error("Error al contar conversaciones:", err);
+      return 0;
+    }
   };
+
+  // Debugging logs
+  useEffect(() => {
+    console.log("Current user:", user);
+    console.log("Is loading:", isLoading);
+    console.log("Current chatbots:", chatbots);
+  }, [user, isLoading, chatbots]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Your Chatbots</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Tus Chatbots</h1>
             <p className="text-muted-foreground">
-              Manage and monitor all your chatbots in one place
+              Administra y monitorea todos tus chatbots en un solo lugar
             </p>
           </div>
           <Button asChild>
             <Link to="/chatbots/new">
               <Plus className="mr-2 h-4 w-4" />
-              Create Chatbot
+              Crear Chatbot
             </Link>
           </Button>
         </div>
@@ -125,7 +148,7 @@ const ChatbotList = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search chatbots..."
+              placeholder="Buscar chatbots..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,8 +162,8 @@ const ChatbotList = () => {
           </div>
         ) : isError ? (
           <div className="text-center py-8">
-            <div className="text-destructive mb-2">Error loading chatbots</div>
-            <Button onClick={() => refetch()}>Try Again</Button>
+            <div className="text-destructive mb-2">Error al cargar chatbots</div>
+            <Button onClick={() => refetch()}>Intentar de nuevo</Button>
           </div>
         ) : (
           <>
@@ -150,26 +173,26 @@ const ChatbotList = () => {
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <Badge variant={chatbot.is_active ? "default" : "secondary"}>
-                        {chatbot.is_active ? "Active" : "Inactive"}
+                        {chatbot.is_active ? "Activo" : "Inactivo"}
                       </Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Menu</span>
+                            <span className="sr-only">Menú</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
                             <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
                               <Edit className="mr-2 h-4 w-4" />
-                              Edit
+                              Editar
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link to={`/chatbots/${chatbot.id}/preview`} className="flex w-full cursor-pointer">
                               <ExternalLink className="mr-2 h-4 w-4" />
-                              Preview
+                              Vista previa
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem 
@@ -177,31 +200,31 @@ const ChatbotList = () => {
                             onClick={() => copyToClipboard(chatbot.id)}
                           >
                             <Copy className="mr-2 h-4 w-4" />
-                            Copy ID
+                            Copiar ID
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="flex cursor-pointer text-destructive focus:text-destructive"
                             onClick={() => handleDelete(chatbot.id)}
                           >
                             <Trash className="mr-2 h-4 w-4" />
-                            Delete
+                            Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     <CardTitle className="text-xl">{chatbot.name}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {chatbot.description || "No description provided"}
+                      {chatbot.description || "Sin descripción"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Conversations</p>
-                        <p className="font-medium">{getConversationCount(chatbot.id)}</p>
+                        <p className="text-muted-foreground">Conversaciones</p>
+                        <p className="font-medium">{0}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Created</p>
+                        <p className="text-muted-foreground">Creado</p>
                         <p className="font-medium">{new Date(chatbot.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
@@ -210,13 +233,13 @@ const ChatbotList = () => {
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/chatbots/${chatbot.id}`}>
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit
+                        Editar
                       </Link>
                     </Button>
                     <Button size="sm" asChild>
                       <Link to={`/chatbots/${chatbot.id}/preview`}>
                         <MessageSquare className="mr-2 h-4 w-4" />
-                        Try It
+                        Probar
                       </Link>
                     </Button>
                   </CardFooter>
@@ -227,14 +250,14 @@ const ChatbotList = () => {
             {filteredChatbots.length === 0 && (
               <div className="text-center py-8">
                 <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-semibold">No chatbots found</h3>
+                <h3 className="mt-4 text-lg font-semibold">No se encontraron chatbots</h3>
                 <p className="mt-2 text-muted-foreground">
-                  {searchQuery ? "Try a different search term" : "Create your first chatbot to get started"}
+                  {searchQuery ? "Intenta con otro término de búsqueda" : "Crea tu primer chatbot para comenzar"}
                 </p>
                 <Button className="mt-4" asChild>
                   <Link to="/chatbots/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Chatbot
+                    Crear Chatbot
                   </Link>
                 </Button>
               </div>

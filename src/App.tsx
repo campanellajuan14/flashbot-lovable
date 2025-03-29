@@ -16,14 +16,21 @@ import ChatbotForm from "./pages/chatbots/ChatbotForm";
 import ChatbotPreview from "./pages/chatbots/ChatbotPreview";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
   }
   
   if (!isAuthenticated) {
@@ -71,6 +78,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             
+            {/* Preview no necesita autenticación para que puedas compartir con usuarios */}
             <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
             
             {/* Catch-all route */}

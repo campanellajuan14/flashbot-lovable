@@ -6,10 +6,12 @@ import {
   useEffect, 
   ReactNode 
 } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Session, User } from '@supabase/supabase-js';
 
 // Define the User type
-export interface User {
+export interface AuthUser {
   id: string;
   email: string;
   businessName?: string;
@@ -19,7 +21,7 @@ export interface User {
 
 // Define the context type
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -32,59 +34,102 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Auth Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Check for existing session on mount
   useEffect(() => {
-    const checkSession = () => {
-      const storedUser = localStorage.getItem('chatsimp-user');
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (error) {
-          console.error('Failed to parse stored user:', error);
-          localStorage.removeItem('chatsimp-user');
-        }
+    const checkSession = async () => {
+      setIsLoading(true);
+      
+      // Check for an active session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Error checking session:', sessionError);
+        setIsLoading(false);
+        return;
       }
+      
+      if (session) {
+        await handleSession(session);
+      }
+      
       setIsLoading(false);
+      
+      // Set up auth state listener
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session) {
+            await handleSession(session);
+          } else {
+            setUser(null);
+          }
+        }
+      );
+      
+      return () => {
+        subscription.unsubscribe();
+      };
     };
-
+    
     checkSession();
   }, []);
+  
+  // Helper to process session data
+  const handleSession = async (session: Session) => {
+    try {
+      const supabaseUser = session.user;
+      
+      // Get profile data from profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('business_name, role')
+        .eq('id', supabaseUser.id)
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+      }
+      
+      // Create the user object
+      const authUser: AuthUser = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        businessName: profileData?.business_name || '',
+        role: (profileData?.role as 'admin' | 'user') || 'user',
+      };
+      
+      setUser(authUser);
+    } catch (error) {
+      console.error('Session handling error:', error);
+      setUser(null);
+    }
+  };
 
-  // Sign in function (Mock implementation for now)
+  // Sign in function
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would call an API
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, we're creating a mock user
-      const mockUser: User = {
-        id: '123456',
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        businessName: email.split('@')[0] + "'s Business",
-        role: 'admin',
-      };
+        password
+      });
       
-      // Save user to local storage and state
-      localStorage.setItem('chatsimp-user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (error) throw error;
       
       toast({
-        title: "Signed in successfully",
-        description: `Welcome back, ${mockUser.email}!`,
+        title: "Inicio de sesión exitoso",
+        description: `Bienvenido de nuevo, ${email}!`,
       });
-    } catch (error) {
-      console.error('Sign in error:', error);
+    } catch (error: any) {
+      console.error('Error de inicio de sesión:', error);
       toast({
         variant: "destructive",
-        title: "Authentication failed",
-        description: "Please check your credentials and try again.",
+        title: "Fallo en la autenticación",
+        description: error.message || "Por favor verifica tus credenciales e intenta nuevamente.",
       });
       throw error;
     } finally {
@@ -92,37 +137,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Sign up function (Mock implementation for now)
+  // Sign up function
   const signUp = async (email: string, password: string, businessName: string) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would call an API
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, we're creating a mock user
-      const mockUser: User = {
-        id: '123456',
+      // Register the user
+      const { data, error } = await supabase.auth.signUp({
         email,
-        businessName,
-        role: 'admin',
-      };
+        password,
+        options: {
+          data: {
+            business_name: businessName,
+          }
+        }
+      });
       
-      // Save user to local storage and state
-      localStorage.setItem('chatsimp-user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (error) throw error;
       
       toast({
-        title: "Account created successfully",
-        description: `Welcome to ChatSimp, ${businessName}!`,
+        title: "Cuenta creada con éxito",
+        description: `Bienvenido a ChatSimp, ${businessName}!`,
       });
-    } catch (error) {
-      console.error('Sign up error:', error);
+    } catch (error: any) {
+      console.error('Error de registro:', error);
       toast({
         variant: "destructive",
-        title: "Registration failed",
-        description: "Please try again later.",
+        title: "Fallo en el registro",
+        description: error.message || "Por favor intenta nuevamente más tarde.",
       });
       throw error;
     } finally {
@@ -131,13 +173,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Sign out function
-  const signOut = () => {
-    localStorage.removeItem('chatsimp-user');
-    setUser(null);
-    toast({
-      title: "Signed out successfully",
-      description: "You have been signed out of your account.",
-    });
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo cerrar sesión. Intenta nuevamente.",
+      });
+    }
   };
 
   return (
@@ -160,7 +213,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
 };

@@ -3,13 +3,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send, Bot, Copy, User, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ChatMessage {
   id: string;
@@ -43,12 +43,15 @@ const ChatbotPreview = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Fetch chatbot data from Supabase
   const { data: chatbot, isLoading, isError } = useQuery({
     queryKey: ['chatbot', id],
     queryFn: async () => {
-      if (!id) throw new Error("Chatbot ID is required");
+      if (!id) throw new Error("Se requiere ID del chatbot");
+      
+      console.log("Fetching chatbot with ID:", id);
       
       const { data, error } = await supabase
         .from('chatbots')
@@ -56,7 +59,12 @@ const ChatbotPreview = () => {
         .eq('id', id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching chatbot:", error);
+        throw error;
+      }
+      
+      console.log("Fetched chatbot:", data);
       return data as Chatbot;
     },
     retry: 1,
@@ -70,9 +78,14 @@ const ChatbotPreview = () => {
     scrollToBottom();
     if (messages.length === 0 && chatbot) {
       // Add initial bot message
-      handleBotResponse(`Hi there! I'm ${chatbot.name}. ${chatbot.description ? chatbot.description : "How can I help you today?"}`);
+      handleBotResponse(`¡Hola! Soy ${chatbot.name}. ${chatbot.description ? chatbot.description : "¿En qué puedo ayudarte hoy?"}`);
     }
   }, [messages, chatbot]);
+
+  // For debugging
+  useEffect(() => {
+    console.log("Chatbot data:", chatbot);
+  }, [chatbot]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,29 +112,39 @@ const ChatbotPreview = () => {
     setTimeout(() => {
       let response = "";
       
-      // Simple response logic based on chatbot behavior if available
+      // Response logic based on chatbot behavior from Supabase
       const lowercaseMessage = message.toLowerCase();
       const tone = chatbot.behavior?.tone || "professional";
       const useEmojis = chatbot.behavior?.useEmojis || false;
+      const askQuestions = chatbot.behavior?.askQuestions || false;
+      const suggestSolutions = chatbot.behavior?.suggestSolutions || false;
       
-      if (lowercaseMessage.includes("hello") || lowercaseMessage.includes("hi")) {
-        response = `Hello! ${tone === "friendly" ? "It's great to meet you! " : ""}How can I assist you today${useEmojis ? " 😊" : ""}?`;
-      } else if (lowercaseMessage.includes("return")) {
-        response = `Our return policy allows returns within 30 days of purchase. You can initiate a return from your order history page or contact our support team${useEmojis ? " 📦" : ""}.`;
-      } else if (lowercaseMessage.includes("shipping") || lowercaseMessage.includes("delivery")) {
-        response = `We offer standard shipping (3-5 business days) and express shipping (1-2 business days). Shipping is free for orders over $50${useEmojis ? " 🚚" : ""}.`;
-      } else if (lowercaseMessage.includes("payment") || lowercaseMessage.includes("pay")) {
-        response = `We accept all major credit cards, PayPal, and Apple Pay as payment methods${useEmojis ? " 💳" : ""}.`;
-      } else if (lowercaseMessage.includes("hours") || lowercaseMessage.includes("open")) {
-        response = `Our customer service team is available Monday to Friday, 9am to 6pm EST${useEmojis ? " 🕙" : ""}.`;
+      if (lowercaseMessage.includes("hola") || lowercaseMessage.includes("hi")) {
+        response = `¡Hola! ${tone === "friendly" ? "¡Es un placer conocerte! " : ""}¿En qué puedo ayudarte hoy${useEmojis ? " 😊" : ""}?`;
+      } else if (lowercaseMessage.includes("devol")) {
+        response = `Nuestra política de devoluciones permite devoluciones dentro de los 30 días posteriores a la compra. Puedes iniciar una devolución desde la página de historial de pedidos o contactar con nuestro equipo de soporte${useEmojis ? " 📦" : ""}.`;
+      } else if (lowercaseMessage.includes("envío") || lowercaseMessage.includes("envio") || lowercaseMessage.includes("entrega")) {
+        response = `Ofrecemos envío estándar (3-5 días hábiles) y envío express (1-2 días hábiles). El envío es gratuito para pedidos superiores a $50${useEmojis ? " 🚚" : ""}.`;
+      } else if (lowercaseMessage.includes("pago") || lowercaseMessage.includes("pagar")) {
+        response = `Aceptamos todas las tarjetas de crédito principales, PayPal y Apple Pay como métodos de pago${useEmojis ? " 💳" : ""}.`;
+      } else if (lowercaseMessage.includes("horario") || lowercaseMessage.includes("abierto")) {
+        response = `Nuestro equipo de atención al cliente está disponible de lunes a viernes, de 9 am a 6 pm${useEmojis ? " 🕙" : ""}.`;
       } else {
-        response = `I understand you're asking about ${message.split(" ").slice(0, 3).join(" ")}... ${
-          chatbot.behavior?.askQuestions ? "To best assist you, could you provide more details about your question?" : 
-          "I'd be happy to help with that. Please let me know if you need more specific information."
+        response = `Entiendo que estás preguntando sobre ${message.split(" ").slice(0, 3).join(" ")}... ${
+          askQuestions ? "Para ayudarte mejor, ¿podrías proporcionar más detalles sobre tu pregunta?" : 
+          "Me encantaría ayudarte con eso. Házmelo saber si necesitas información más específica."
         }${useEmojis ? " 🤔" : ""}`;
+
+        if (suggestSolutions) {
+          response += ` ${useEmojis ? "💡 " : ""}Te sugiero que ${
+            lowercaseMessage.includes("producto") ? "revises nuestro catálogo de productos para encontrar opciones que se adapten a tus necesidades." :
+            lowercaseMessage.includes("problema") ? "nos brindes más detalles sobre el problema específico que estás experimentando para poder ofrecerte una solución más precisa." :
+            "explores nuestra sección de preguntas frecuentes donde podrías encontrar información útil sobre este tema."
+          }`;
+        }
       }
       
-      handleBotResponse(response, lowercaseMessage.includes("shipping") ? ["Shipping Policy", "FAQ"] : undefined);
+      handleBotResponse(response, lowercaseMessage.includes("envío") ? ["Política de Envíos", "FAQ"] : undefined);
       setIsTyping(false);
     }, 1500);
   };
@@ -149,9 +172,9 @@ const ChatbotPreview = () => {
   if (isError || !chatbot) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <div className="text-xl font-semibold">Chatbot not found</div>
+        <div className="text-xl font-semibold">Chatbot no encontrado</div>
         <Button onClick={() => navigate('/chatbots')}>
-          Return to Chatbots
+          Volver a Chatbots
         </Button>
       </div>
     );
@@ -173,13 +196,13 @@ const ChatbotPreview = () => {
             </Button>
             <div>
               <h1 className="text-lg font-semibold">{chatbot.name}</h1>
-              <p className="text-sm text-muted-foreground">Preview Mode</p>
+              <p className="text-sm text-muted-foreground">Modo Vista Previa</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to={`/chatbots/${id}`}>
-                Edit Chatbot
+                Editar Chatbot
               </Link>
             </Button>
           </div>
@@ -276,7 +299,7 @@ const ChatbotPreview = () => {
           <form onSubmit={handleSendMessage} className="flex items-end gap-2">
             <Input
               ref={inputRef}
-              placeholder="Type your message..."
+              placeholder="Escribe tu mensaje..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="flex-1"
@@ -287,7 +310,7 @@ const ChatbotPreview = () => {
             </Button>
           </form>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            This is a preview of how your chatbot will appear to users.
+            Esta es una vista previa de cómo aparecerá tu chatbot para los usuarios.
           </p>
         </div>
       </div>
