@@ -16,6 +16,7 @@ import ChatbotForm from "./pages/chatbots/ChatbotForm";
 import ChatbotPreview from "./pages/chatbots/ChatbotPreview";
 import ChatbotDocuments from "./pages/chatbots/ChatbotDocuments";
 import DocumentsPage from "./pages/documents/DocumentsPage";
+import AnalyticsPage from "./pages/analytics/AnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -85,6 +86,13 @@ const App = () => (
             <Route path="/documents" element={
               <ProtectedRoute>
                 <DocumentsPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Ruta para la página de analíticas */}
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <AnalyticsPage />
               </ProtectedRoute>
             } />
             
