@@ -43,33 +43,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const setupAuthListener = async () => {
       setIsLoading(true);
       
-      // Set up auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log("Auth state changed:", event, session?.user?.id);
-          
-          if (session) {
-            await handleSession(session);
-          } else {
-            setUser(null);
+      try {
+        // Set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log("Auth state changed:", event, session?.user?.id);
+            
+            if (session) {
+              await handleSession(session);
+            } else {
+              setUser(null);
+            }
           }
+        );
+        
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          await handleSession(session);
+        } else {
+          setUser(null);
         }
-      );
-      
-      // Check for existing session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        await handleSession(session);
-      } else {
+        
+        setIsLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error setting up auth listener:", error);
         setUser(null);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-      
-      return () => {
-        subscription.unsubscribe();
-      };
     };
     
     setupAuthListener();
@@ -86,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('business_name, role')
         .eq('id', supabaseUser.id)
-        .single();
+        .maybeSingle();
       
       if (profileError) {
         console.error('Error fetching profile:', profileError);
@@ -131,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: `¡Bienvenido de nuevo, ${email}!`,
       });
       
-      // No return needed, this function returns void
+      // No explicit return needed, the auth state change will trigger the onAuthStateChange listener
     } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
       toast({
@@ -172,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: `¡Bienvenido a ChatSimp, ${businessName}!`,
       });
       
-      // No return needed, this function returns void
+      // No explicit return needed, the auth state change will trigger the onAuthStateChange listener
     } catch (error: any) {
       console.error('Error de registro:', error);
       toast({

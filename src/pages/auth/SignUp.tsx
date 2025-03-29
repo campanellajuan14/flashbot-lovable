@@ -21,12 +21,13 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, isAuthenticated } = useAuth();
+  const { signUp, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
@@ -56,8 +57,10 @@ const SignUp = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("Attempting to sign up with:", { email, businessName });
       await signUp(email, password, businessName);
-      // No need to navigate here as the useEffect will handle it when isAuthenticated changes
+      console.log("Sign up successful, auth state will update and redirect");
+      // No explicit navigation here - the useEffect will handle it when isAuthenticated changes
     } catch (error: any) {
       console.error("Error de registro:", error);
       
@@ -138,7 +141,7 @@ const SignUp = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoading}
               >
                 {isSubmitting ? (
                   <>

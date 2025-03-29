@@ -20,12 +20,13 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
@@ -45,8 +46,10 @@ const SignIn = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("Attempting to sign in with:", email);
       await signIn(email, password);
-      // No need to navigate here as the useEffect will handle it when isAuthenticated changes
+      console.log("Sign in successful, auth state will update and redirect");
+      // No navigation here, the useEffect will handle it when isAuthenticated changes
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error);
       
@@ -116,7 +119,7 @@ const SignIn = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoading}
               >
                 {isSubmitting ? (
                   <>
