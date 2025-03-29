@@ -18,6 +18,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           settings: Json | null
+          share_settings: Json | null
           updated_at: string
           user_id: string
         }
@@ -29,6 +30,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           settings?: Json | null
+          share_settings?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -40,6 +42,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           settings?: Json | null
+          share_settings?: Json | null
           updated_at?: string
           user_id?: string
         }
