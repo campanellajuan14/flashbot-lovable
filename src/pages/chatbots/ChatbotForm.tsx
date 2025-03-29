@@ -12,6 +12,7 @@ import DocumentNavigation from "@/components/chatbots/DocumentNavigation";
 import BasicInfoTab from "./components/BasicInfoTab";
 import PersonalityTab from "./components/PersonalityTab";
 import AdvancedSettingsTab from "./components/AdvancedSettingsTab";
+import TemplateSelectionTab from "./components/TemplateSelectionTab";
 import { useChatbotForm } from "./hooks/useChatbotForm";
 
 const ChatbotForm = () => {
@@ -25,9 +26,11 @@ const ChatbotForm = () => {
     isSubmitting,
     isLoading,
     isEditing,
+    selectedTemplateId,
     handleChange,
     handleNestedChange,
     handleProviderChange,
+    handleTemplateSelect,
     handleSubmit
   } = useChatbotForm({ id, userId: user?.id });
 
@@ -69,12 +72,24 @@ const ChatbotForm = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Tabs defaultValue="basic">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs defaultValue={isEditing ? "basic" : "templates"}>
+            <TabsList className="grid w-full grid-cols-4">
+              {!isEditing && (
+                <TabsTrigger value="templates">Plantillas</TabsTrigger>
+              )}
               <TabsTrigger value="basic">Información Básica</TabsTrigger>
               <TabsTrigger value="personality">Personalidad</TabsTrigger>
               <TabsTrigger value="advanced">Configuración Avanzada</TabsTrigger>
             </TabsList>
+            
+            {!isEditing && (
+              <TabsContent value="templates" className="space-y-4 pt-4">
+                <TemplateSelectionTab 
+                  selectedTemplateId={selectedTemplateId}
+                  onSelectTemplate={handleTemplateSelect}
+                />
+              </TabsContent>
+            )}
             
             <TabsContent value="basic" className="space-y-4 pt-4">
               <BasicInfoTab 

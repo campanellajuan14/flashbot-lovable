@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { defaultPersonality, defaultSettings } from "../constants";
 import { ChatbotFormData, ChatbotData, Personality, Settings } from "../types";
+import { ChatbotTemplate } from "../templates/types";
 
 interface UseChatbotFormProps {
   id?: string;
@@ -17,6 +18,7 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isEditing = !!id;
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   
   const [form, setForm] = useState<ChatbotFormData>({
     name: "",
@@ -96,6 +98,24 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
       fetchChatbot();
     }
   }, [id, isEditing, userId, toast]);
+  
+  const handleTemplateSelect = (template: ChatbotTemplate) => {
+    setSelectedTemplateId(template.id);
+    
+    setForm(prev => ({
+      ...prev,
+      name: prev.name || template.name,
+      description: prev.description || template.description,
+      personality: template.personality,
+      settings: template.settings
+    }));
+    
+    if (template.settings.model.includes('claude')) {
+      setAiProvider("claude");
+    } else {
+      setAiProvider("openai");
+    }
+  };
   
   const handleChange = (field: string, value: any) => {
     setForm(prev => ({
@@ -197,9 +217,11 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
     isSubmitting,
     isLoading,
     isEditing,
+    selectedTemplateId,
     handleChange,
     handleNestedChange,
     handleProviderChange,
+    handleTemplateSelect,
     handleSubmit
   };
 };
