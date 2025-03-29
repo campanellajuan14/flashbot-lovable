@@ -19,6 +19,7 @@
     // Debug info for troubleshooting
     console.log('Script base path:', document.currentScript ? document.currentScript.src : 'Unknown');
     console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
+    console.log('Widget initialization with anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'); // Log truncated for security
     
     modules.forEach(src => {
       const script = document.createElement('script');

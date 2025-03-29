@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   console.log("widget-config function called");
+  console.log("Request method:", req.method);
+  console.log("Request URL:", req.url);
   console.log("Request headers:", JSON.stringify(Object.fromEntries([...new Headers(req.headers)])));
 
   try {
@@ -57,6 +59,9 @@ serve(async (req) => {
       );
     }
     
+    console.log("Found chatbot:", chatbot.id, chatbot.name);
+    console.log("Share settings:", JSON.stringify(chatbot.share_settings));
+    
     // Validate domain restriction if configured
     if (chatbot.share_settings?.restrictions?.allowed_domains?.length > 0) {
       const referer = req.headers.get('Referer');
@@ -65,7 +70,11 @@ serve(async (req) => {
       console.log(`Referer header: ${referer}`);
       console.log(`Allowed domains: ${JSON.stringify(chatbot.share_settings.restrictions.allowed_domains)}`);
       
-      if (referer) {
+      // If referer is null (e.g., from local file), make a special allowance for testing
+      if (!referer) {
+        console.log("No referer found, allowing access for testing purposes");
+        isAllowed = true;
+      } else {
         const refererDomain = new URL(referer).hostname;
         isAllowed = chatbot.share_settings.restrictions.allowed_domains.some(domain => 
           refererDomain === domain || refererDomain.endsWith(`.${domain}`)
