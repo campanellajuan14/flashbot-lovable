@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { User, LogOut, Settings, Zap } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function UserButton() {
@@ -28,7 +28,7 @@ export function UserButton() {
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.profileImageUrl} alt={user?.email || "User"} />
             <AvatarFallback className="bg-primary text-primary-foreground">
-              {user?.profileImageUrl ? initials : <Zap className="h-4 w-4" />}
+              {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
