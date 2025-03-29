@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -26,14 +27,30 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-const defaultPersonality = {
+// Define strict types for personality and settings
+interface Personality {
+  tone: string;
+  style: string;
+  language: string;
+  instructions: string;
+}
+
+interface Settings {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  includeReferences: boolean;
+}
+
+// Default values
+const defaultPersonality: Personality = {
   tone: "professional",
   style: "concise",
   language: "english",
   instructions: ""
 };
 
-const defaultSettings = {
+const defaultSettings: Settings = {
   model: "gpt-4o",
   temperature: 0.7,
   maxTokens: 2048,
@@ -73,30 +90,36 @@ const ChatbotForm = () => {
           if (error) throw error;
           
           if (data) {
-            const behavior = typeof data.behavior === 'object' && data.behavior !== null 
-              ? data.behavior 
-              : defaultPersonality;
-              
-            const settings = typeof data.settings === 'object' && data.settings !== null 
-              ? data.settings 
-              : defaultSettings;
+            // Safe extraction of behavior object with type checking
+            let personalityData: Personality = { ...defaultPersonality };
+            if (data.behavior && typeof data.behavior === 'object' && !Array.isArray(data.behavior)) {
+              const behavior = data.behavior as Record<string, unknown>;
+              personalityData = {
+                tone: typeof behavior.tone === 'string' ? behavior.tone : defaultPersonality.tone,
+                style: typeof behavior.style === 'string' ? behavior.style : defaultPersonality.style,
+                language: typeof behavior.language === 'string' ? behavior.language : defaultPersonality.language,
+                instructions: typeof behavior.instructions === 'string' ? behavior.instructions : defaultPersonality.instructions
+              };
+            }
+            
+            // Safe extraction of settings object with type checking
+            let settingsData: Settings = { ...defaultSettings };
+            if (data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)) {
+              const settings = data.settings as Record<string, unknown>;
+              settingsData = {
+                model: typeof settings.model === 'string' ? settings.model : defaultSettings.model,
+                temperature: typeof settings.temperature === 'number' ? settings.temperature : defaultSettings.temperature,
+                maxTokens: typeof settings.maxTokens === 'number' ? settings.maxTokens : defaultSettings.maxTokens,
+                includeReferences: typeof settings.includeReferences === 'boolean' ? settings.includeReferences : defaultSettings.includeReferences
+              };
+            }
             
             setForm({
               name: data.name,
               description: data.description || "",
               isActive: data.is_active,
-              personality: {
-                tone: behavior.tone || defaultPersonality.tone,
-                style: behavior.style || defaultPersonality.style,
-                language: behavior.language || defaultPersonality.language,
-                instructions: behavior.instructions || defaultPersonality.instructions
-              },
-              settings: {
-                model: settings.model || defaultSettings.model,
-                temperature: settings.temperature || defaultSettings.temperature,
-                maxTokens: settings.maxTokens || defaultSettings.maxTokens,
-                includeReferences: settings.includeReferences ?? defaultSettings.includeReferences
-              }
+              personality: personalityData,
+              settings: settingsData
             });
           }
         } catch (error) {
