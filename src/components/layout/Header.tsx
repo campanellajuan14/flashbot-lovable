@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/UserButton";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageSquare } from "lucide-react";
+import { Zap } from "lucide-react";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();
@@ -14,8 +14,8 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">ChatSimp</span>
+            <Zap className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">Flashbot</span>
           </Link>
         </div>
         <div className="flex items-center gap-4">

@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
-  MessageSquare, 
+  Zap, 
   FileText, 
   Settings, 
   Users, 
@@ -23,7 +23,7 @@ const Sidebar = () => {
     {
       title: "Chatbots",
       href: "/chatbots",
-      icon: MessageSquare,
+      icon: Zap,
     },
     {
       title: "Documents",
