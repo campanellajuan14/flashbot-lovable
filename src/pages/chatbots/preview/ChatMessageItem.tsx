@@ -19,7 +19,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   return (
     <div
       className={cn(
-        "flex w-max max-w-[90%]",
+        "flex w-full max-w-[90%]",
         message.role === "user" ? "ml-auto" : "mr-auto"
       )}
     >
@@ -42,7 +42,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             </>
           )}
         </Avatar>
-        <div>
+        <div className="max-w-full">
           <div
             className={cn(
               "rounded-lg px-4 py-3",
@@ -61,13 +61,13 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   className="inline-flex items-center text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-full px-2 py-1 transition-colors"
                 >
                   <FileText className="h-3 w-3 mr-1" />
-                  {showSourceDetails[message.id] ? "Ocultar fuentes" : `${message.references.length} fuentes`}
+                  {showSourceDetails[message.id] ? "Hide sources" : `${message.references.length} sources`}
                 </button>
               </div>
 
               {showSourceDetails[message.id] && (
                 <div className="space-y-1 border rounded-md p-2 bg-background mt-1 text-xs">
-                  <div className="font-medium text-muted-foreground mb-1">Documentos de referencia:</div>
+                  <div className="font-medium text-muted-foreground mb-1">Reference documents:</div>
                   {message.references.map((ref, i) => (
                     <div
                       key={i}
@@ -79,7 +79,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                       <div>
                         <div className="font-medium">{ref.name}</div>
                         <div className="text-muted-foreground">
-                          Relevancia: {Math.round(ref.similarity * 100)}%
+                          Relevance: {Math.round(ref.similarity * 100)}%
                         </div>
                       </div>
                     </div>

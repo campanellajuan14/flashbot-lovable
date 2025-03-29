@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,117 +9,138 @@
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
+ 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 245 92% 60%;
+ 
+    --primary: 222.1 83.2% 9.8%;
     --primary-foreground: 210 40% 98%;
-
+ 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
+ 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 245 92% 95%;
+ 
+    --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
+ 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 245 92% 60%;
-
+ 
+    --ring: 222.1 83.2% 9.8%;
+ 
     --radius: 0.5rem;
 
-    --sidebar-background: 245 92% 97%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 245 92% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 245 92% 90%;
-    --sidebar-accent-foreground: 245 92% 30%;
-    --sidebar-border: 245 92% 85%;
-    --sidebar-ring: 245 92% 60%;
+    --sidebar-background: 240 4.9% 96.1%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.1 83.2% 9.8%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.1 83.2% 9.8%;
   }
-
+ 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
+ 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
+ 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 245 92% 60%;
-    --primary-foreground: 210 40% 98%;
-
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
+ 
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 245 92% 25%;
+    --muted-foreground: 215 20.2% 65.9%;
+ 
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
+ 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
+ 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 245 92% 60%;
-    
-    --sidebar-background: 245 20% 15%;
-    --sidebar-foreground: 245 10% 90%;
-    --sidebar-primary: 245 92% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 245 20% 20%;
-    --sidebar-accent-foreground: 245 10% 90%;
-    --sidebar-border: 245 20% 25%;
-    --sidebar-ring: 245 92% 60%;
+ 
+    --ring: 212.7 26.8% 83.9%;
+
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
 }
 
-@layer components {
-  .chat-bubble-user {
-    @apply bg-primary text-primary-foreground rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 max-w-[85%] animate-in fade-in slide-in-from-left-5;
-  }
+/* Chat Bubble and Typing Indicator styles */
+.chat-bubble-user {
+  border-top-right-radius: 0;
+  position: relative;
+}
 
-  .chat-bubble-bot {
-    @apply bg-accent text-accent-foreground rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 max-w-[85%] animate-in fade-in slide-in-from-right-5;
-  }
+.chat-bubble-bot {
+  border-top-left-radius: 0;
+  position: relative;
+}
 
-  .typing-indicator span {
-    @apply inline-block w-2 h-2 bg-primary/60 rounded-full animate-pulse-slow;
-  }
+/* Typing indicator */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-  .typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-  }
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: typing-animation 1.5s infinite ease-in-out;
+}
 
-  .typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-  }
+.typing-indicator span:nth-child(1) {
+  animation-delay: 0s;
+}
 
-  .dashboard-card {
-    @apply bg-card rounded-lg border shadow-sm transition-all hover:shadow-md;
-  }
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.3s;
+}
 
-  .dashboard-stat {
-    @apply text-2xl font-bold;
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes typing-animation {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
   }
 }

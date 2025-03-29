@@ -1,15 +1,14 @@
 
-import React, { FormEvent } from "react";
-import { Input } from "@/components/ui/input";
+import React, { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 
 interface ChatInputProps {
   message: string;
   setMessage: (message: string) => void;
-  handleSendMessage: (e: FormEvent) => void;
+  handleSendMessage: (e: React.FormEvent) => void;
   isTyping: boolean;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: RefObject<HTMLInputElement>;
   language?: string;
 }
 
@@ -19,28 +18,39 @@ const ChatInput: React.FC<ChatInputProps> = ({
   handleSendMessage,
   isTyping,
   inputRef,
-  language,
+  language = "es",
 }) => {
+  const placeholderText = language === "en" ? "Type a message..." : "Escribe un mensaje...";
+  const sendText = language === "en" ? "Send" : "Enviar";
+
   return (
-    <div className="p-4">
-      <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-        <Input
-          ref={inputRef}
-          placeholder="Type your message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="flex-1"
-          autoFocus
-        />
-        <Button type="submit" size="icon" disabled={!message.trim() || isTyping}>
-          <Send className="h-4 w-4" />
+    <form
+      onSubmit={handleSendMessage}
+      className="border-t p-4"
+    >
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            ref={inputRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={placeholderText}
+            className="w-full px-4 py-2.5 rounded-full border bg-background focus-visible:ring-1 focus-visible:ring-offset-0"
+            disabled={isTyping}
+          />
+        </div>
+        <Button
+          type="submit"
+          size="icon"
+          className="rounded-full h-10 w-10 flex-shrink-0"
+          disabled={isTyping || !message.trim()}
+        >
+          <Send className="h-5 w-5" />
+          <span className="sr-only">{sendText}</span>
         </Button>
-      </form>
-      <p className="text-xs text-muted-foreground mt-2 text-center">
-        This is a preview of how your chatbot will appear to users.
-        {language === 'english' && " Remember that this chatbot is configured to respond in English."}
-      </p>
-    </div>
+      </div>
+    </form>
   );
 };
 
