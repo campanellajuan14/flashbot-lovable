@@ -7,6 +7,7 @@ import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { ShareSettings } from "./types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 interface EmbedCodeTabProps {
   widgetId: string | null;
@@ -18,22 +19,51 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const [copied, setCopied] = useState(false);
   const [copiedIframe, setCopiedIframe] = useState(false);
   const [embedType, setEmbedType] = useState<"script" | "iframe">("script");
+  const { toast } = useToast();
+
+  // Función para obtener el código de script correcto
+  const getScriptCode = () => {
+    // Prioriza el widget_id, pero si no está disponible usa el ID del chatbot directamente
+    const idToUse = widgetId || chatbotId;
+    return `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${idToUse}"></script>`;
+  };
 
   const handleCopy = (type: "script" | "iframe") => {
     if (type === "script") {
-      const success = copyEmbedCode(widgetId);
-      if (success) {
+      try {
+        const scriptCode = getScriptCode();
+        navigator.clipboard.writeText(scriptCode);
         setCopied(true);
+        toast({
+          title: "Código copiado",
+          description: "El código del script ha sido copiado al portapapeles",
+        });
         setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Failed to copy script code:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo copiar el código",
+          variant: "destructive",
+        });
       }
     } else {
       const iframeCode = getIframeEmbedCode(chatbotId);
       try {
         navigator.clipboard.writeText(iframeCode);
         setCopiedIframe(true);
+        toast({
+          title: "Código copiado",
+          description: "El código del iframe ha sido copiado al portapapeles",
+        });
         setTimeout(() => setCopiedIframe(false), 2000);
       } catch (error) {
         console.error('Failed to copy iframe code:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo copiar el código",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -62,9 +92,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
         <TabsContent value="script" className="mt-0 space-y-4">
           <div className="relative">
             <pre className="bg-muted/70 p-5 rounded-lg text-sm overflow-x-auto border border-border/50 font-mono">
-              <code>
-                {`<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${widgetId}"></script>`}
-              </code>
+              <code>{getScriptCode()}</code>
             </pre>
             <Button
               variant="ghost"
@@ -83,6 +111,9 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
             <p>
               <strong>Note:</strong> The script embed creates a floating chat widget that appears in the bottom corner of your website.
+            </p>
+            <p className="mt-2">
+              <strong>Important:</strong> For the widget to work properly, make sure it's enabled in the configuration and your domain is added to the allowed domains list in the Access tab.
             </p>
           </div>
         </TabsContent>
@@ -111,6 +142,11 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
             <p>
               <strong>Note:</strong> The iframe embed creates a fixed chat window within your website's content.
+            </p>
+            <p className="mt-2">
+              <strong>Direct URL:</strong> <a href={`https://chatbot-platform.lovable.app/widget/${chatbotId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                https://chatbot-platform.lovable.app/widget/{chatbotId}
+              </a>
             </p>
           </div>
         </TabsContent>

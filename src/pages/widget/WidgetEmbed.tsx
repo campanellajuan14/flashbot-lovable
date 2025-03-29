@@ -3,48 +3,49 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
+// Definimos una versión reducida de la configuración del widget
 interface WidgetConfig {
   id: string;
   name: string;
   config: {
     appearance: {
-      theme: 'light' | 'dark' | 'system';
-      position: 'right' | 'left';
-      offset_x: number;
-      offset_y: number;
-      initial_state: 'open' | 'closed' | 'minimized';
-      width: number | string;
-      height: number | string;
-      border_radius: number;
-      box_shadow: boolean;
-      z_index: number;
+      theme?: 'light' | 'dark' | 'system';
+      position?: 'right' | 'left';
+      offset_x?: number;
+      offset_y?: number;
+      initial_state?: 'open' | 'closed' | 'minimized';
+      width?: number | string;
+      height?: number | string;
+      border_radius?: number;
+      box_shadow?: boolean;
+      z_index?: number;
     };
     content: {
-      title: string;
+      title?: string;
       subtitle?: string;
-      placeholder_text: string;
+      placeholder_text?: string;
       welcome_message?: string;
-      branding: boolean;
+      branding?: boolean;
     };
     colors: {
-      primary: string;
-      secondary: string;
-      text: string;
-      background: string;
-      user_bubble: string;
-      bot_bubble: string;
-      links: string;
+      primary?: string;
+      secondary?: string;
+      text?: string;
+      background?: string;
+      user_bubble?: string;
+      bot_bubble?: string;
+      links?: string;
     };
     behavior: {
-      auto_open: boolean;
-      auto_open_delay: number;
-      persist_conversation: boolean;
-      save_conversation_id: boolean;
+      auto_open?: boolean;
+      auto_open_delay?: number;
+      persist_conversation?: boolean;
+      save_conversation_id?: boolean;
     };
   };
 }
 
-const WidgetEmbed = () => {
+const WidgetEmbed: React.FC = () => {
   const { widgetId } = useParams<{ widgetId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +74,8 @@ const WidgetEmbed = () => {
             'Content-Type': 'application/json',
             // Include the anon key for public access
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY',
-            'x-client-info': 'widget-embed-component'
+            'x-client-info': 'widget-embed-component',
+            'Origin': window.location.origin
           }
         });
         
@@ -98,10 +100,40 @@ const WidgetEmbed = () => {
 
         const data = await response.json();
         console.log("Configuración del widget cargada:", data);
-        setConfig(data);
+        
+        // Asegurémonos de que la configuración tiene valores por defecto para evitar errores
+        const defaultConfig: WidgetConfig = {
+          id: data.id || widgetId,
+          name: data.name || "Chat",
+          config: {
+            appearance: data.config?.appearance || {},
+            content: data.config?.content || {
+              title: "Chat",
+              placeholder_text: "Escribe tu mensaje...",
+              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?"
+            },
+            colors: data.config?.colors || {
+              primary: "#2563eb",
+              secondary: "#f1f5f9",
+              background: "#ffffff",
+              text: "#333333",
+              user_bubble: "#2563eb",
+              bot_bubble: "#f1f5f9",
+              links: "#2563eb"
+            },
+            behavior: data.config?.behavior || {
+              persist_conversation: true,
+              auto_open: false,
+              auto_open_delay: 0,
+              save_conversation_id: false
+            }
+          }
+        };
+        
+        setConfig(defaultConfig);
 
         // Check if we have a saved conversation
-        if (data.config.behavior.persist_conversation) {
+        if (defaultConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
           if (savedConversation) {
             try {
@@ -115,9 +147,9 @@ const WidgetEmbed = () => {
         }
 
         // Show welcome message if no messages and welcome message exists
-        if (data.config.content.welcome_message && (!messages || messages.length === 0)) {
+        if (defaultConfig.config.content.welcome_message && (!messages || messages.length === 0)) {
           setMessages([
-            { role: "assistant", content: data.config.content.welcome_message }
+            { role: "assistant", content: defaultConfig.config.content.welcome_message }
           ]);
         }
 
@@ -154,14 +186,20 @@ const WidgetEmbed = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY'
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY',
+          'Origin': window.location.origin
         },
         body: JSON.stringify({
           message: userMessage,
           chatbotId: config.id,
           conversationId: conversationId,
           source: 'widget',
-          widget_id: widgetId
+          widget_id: widgetId,
+          user_info: {
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            referrer: document.referrer
+          }
         })
       });
       
@@ -224,19 +262,28 @@ const WidgetEmbed = () => {
   }
 
   const { appearance, content, colors } = config.config;
+  
+  const DEFAULT_COLORS = {
+    text: "#333333",
+    background: "#ffffff",
+    primary: "#2563eb",
+    bot_bubble: "#f1f5f9",
+    user_bubble: "#2563eb",
+    links: "#0078ff"
+  };
 
   return (
     <div className="h-screen flex flex-col" style={{ 
-      backgroundColor: colors.background,
-      color: colors.text,
-      borderRadius: `${appearance.border_radius}px`,
+      backgroundColor: colors.background || DEFAULT_COLORS.background,
+      color: colors.text || DEFAULT_COLORS.text,
+      borderRadius: `${appearance.border_radius || 0}px`,
       overflow: 'hidden'
     }}>
       {/* Header */}
-      <div className="p-4" style={{ backgroundColor: colors.primary, color: '#ffffff' }}>
+      <div className="p-4" style={{ backgroundColor: colors.primary || DEFAULT_COLORS.primary, color: '#ffffff' }}>
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="font-medium">{content.title}</h3>
+            <h3 className="font-medium">{content.title || 'Chat'}</h3>
             {content.subtitle && <p className="text-sm opacity-90">{content.subtitle}</p>}
           </div>
         </div>
@@ -258,8 +305,10 @@ const WidgetEmbed = () => {
           >
             <div 
               style={{
-                backgroundColor: msg.role === 'user' ? colors.user_bubble : colors.bot_bubble,
-                color: msg.role === 'user' ? '#ffffff' : colors.text,
+                backgroundColor: msg.role === 'user' ? 
+                  (colors.user_bubble || DEFAULT_COLORS.user_bubble) : 
+                  (colors.bot_bubble || DEFAULT_COLORS.bot_bubble),
+                color: msg.role === 'user' ? '#ffffff' : (colors.text || DEFAULT_COLORS.text),
                 padding: '8px 12px',
                 borderRadius: msg.role === 'user' ? '18px 18px 0 18px' : '18px 18px 18px 0',
                 maxWidth: '80%',
@@ -268,7 +317,7 @@ const WidgetEmbed = () => {
               dangerouslySetInnerHTML={{
                 __html: msg.content.replace(
                   /(https?:\/\/[^\s]+)/g, 
-                  `<a href="$1" target="_blank" style="color: ${colors.links || '#0078ff'};">$1</a>`
+                  `<a href="$1" target="_blank" style="color: ${colors.links || DEFAULT_COLORS.links};">$1</a>`
                 ).replace(/\n/g, '<br>')
               }}
             />
@@ -279,8 +328,8 @@ const WidgetEmbed = () => {
           <div className="flex justify-start">
             <div 
               style={{
-                backgroundColor: colors.bot_bubble,
-                color: colors.text,
+                backgroundColor: colors.bot_bubble || DEFAULT_COLORS.bot_bubble,
+                color: colors.text || DEFAULT_COLORS.text,
                 padding: '8px 12px',
                 borderRadius: '18px 18px 18px 0',
                 display: 'inline-block'
@@ -299,19 +348,19 @@ const WidgetEmbed = () => {
             type="text"
             value={inputValue}
             onChange={handleInputChange}
-            placeholder={content.placeholder_text}
+            placeholder={content.placeholder_text || "Escribe un mensaje..."}
             className="flex-1 p-2 border rounded"
             style={{ 
               borderColor: 'rgba(0,0,0,0.2)',
               borderRadius: '4px',
-              color: colors.text
+              color: colors.text || DEFAULT_COLORS.text
             }}
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || sending}
             style={{
-              backgroundColor: colors.primary,
+              backgroundColor: colors.primary || DEFAULT_COLORS.primary,
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -326,7 +375,7 @@ const WidgetEmbed = () => {
       </div>
       
       {/* Branding */}
-      {content.branding && (
+      {(content.branding !== false) && (
         <div 
           className="p-2 text-center text-xs" 
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}

@@ -33,6 +33,12 @@
     // Debug info for troubleshooting
     console.log('Script base path:', basePath);
     console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
+    console.log('Current page origin:', window.location.origin);
+    
+    // Add a timeout to detect loading problems
+    const loadTimeout = setTimeout(() => {
+      console.error('Widget modules loading timeout - some modules may have failed to load');
+    }, 10000);
     
     modules.forEach(src => {
       const script = document.createElement('script');
@@ -44,6 +50,7 @@
         
         // When all modules are loaded, initialize the API
         if (loadedCount === modules.length) {
+          clearTimeout(loadTimeout);
           console.log('All modules loaded, initializing widget...');
           import(`${basePath}widget/index.js`)
             .then(module => {
@@ -52,7 +59,15 @@
               console.log('Widget API exposed as window.flashbotChat');
               
               // Initialize with the widget ID
-              window.flashbotChat('init', { widget_id: widgetId });
+              window.flashbotChat('init', { 
+                widget_id: widgetId,
+                // Opcionalmente puedes añadir información del usuario
+                user_info: {
+                  url: window.location.href,
+                  referrer: document.referrer,
+                  userAgent: navigator.userAgent
+                }
+              });
               
               // Trigger any queued commands
               if (window.flashbotChatQueue && Array.isArray(window.flashbotChatQueue)) {
@@ -63,10 +78,26 @@
                 delete window.flashbotChatQueue;
               }
             })
-            .catch(err => console.error('Error loading chatbot modules:', err));
+            .catch(err => {
+              console.error('Error loading chatbot modules:', err);
+              // Intentar recuperarse del error
+              const errorDiv = document.createElement('div');
+              errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
+                               color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
+                               font-family: sans-serif; z-index: 10000; max-width: 300px;`;
+              errorDiv.innerHTML = `
+                <strong>Widget Error</strong>
+                <p>La carga del widget ha fallado. Por favor contacte al administrador.</p>
+              `;
+              document.body.appendChild(errorDiv);
+            });
         }
       };
-      script.onerror = (e) => console.error(`Failed to load module: ${src}`, e);
+      script.onerror = (e) => {
+        console.error(`Failed to load module: ${src}`, e);
+        // Increment counter to avoid hanging
+        loadedCount++;
+      };
       document.head.appendChild(script);
     });
   }
