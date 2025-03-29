@@ -11,6 +11,11 @@ export function toggleWidget(open, state) {
   const chatWindow = document.getElementById('lovable-chatbot-window');
   const button = document.getElementById('lovable-chatbot-button');
   
+  if (!chatWindow || !button) {
+    console.error('Failed to find widget elements for toggling');
+    return;
+  }
+  
   if (open) {
     chatWindow.style.display = 'flex';
     button.style.display = 'none';

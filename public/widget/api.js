@@ -3,8 +3,8 @@
 const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
-// Añadimos más intentos para recuperación de errores
-const MAX_RETRIES = 3;
+// Increasing retries and adding more debugging 
+const MAX_RETRIES = 5;
 const RETRY_DELAY = 1000;
 
 /**
@@ -14,50 +14,57 @@ const RETRY_DELAY = 1000;
  */
 export async function fetchWidgetConfig(widgetId, retryCount = 0) {
   try {
-    console.log(`Intentando cargar configuración para widget ID: ${widgetId} (intento ${retryCount + 1}/${MAX_RETRIES + 1})`);
-    console.log(`URL completo: ${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
+    console.log(`Attempting to load configuration for widget ID: ${widgetId} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+    console.log(`Full URL: ${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
+    console.log('Using headers:', {
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY ? 'Key is set' : 'Key is missing',
+      'Origin': window.location.origin,
+      'Referer': document.referrer || window.location.href
+    });
     
     const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'apikey': ANON_KEY,
+        'Authorization': `Bearer ${ANON_KEY}`, // Adding explicit Authorization header
         'x-client-info': 'widget-client',
         'Origin': window.location.origin,
         'Referer': document.referrer || window.location.href
       },
-      // Asegurarse de incluir las cookies en la solicitud
+      // Ensuring cookies are included in the request
       credentials: 'include',
     });
     
-    console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
+    console.log(`Response received with status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
-      // Si recibimos un 401, 403 o 429, intentamos de nuevo después de un pequeño retraso
-      if ((response.status === 401 || response.status === 403 || response.status === 429) && retryCount < MAX_RETRIES) {
-        console.log(`Reintentando solicitud (${retryCount + 1}/${MAX_RETRIES}) después de error ${response.status}`);
+      // More aggressive retry for various error codes
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying request (${retryCount + 1}/${MAX_RETRIES}) after error ${response.status}`);
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
         return fetchWidgetConfig(widgetId, retryCount + 1);
       }
       
-      console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
+      console.error(`Error loading widget: ${response.status} ${response.statusText}`);
       
-      let errorMessage = 'Error al cargar la configuración del widget';
+      let errorMessage = 'Error loading widget configuration';
       try {
         const errorData = await response.json();
         if (errorData && errorData.error) {
           errorMessage = errorData.error;
-          console.error(`Error detallado: ${errorData.error}`);
+          console.error(`Detailed error: ${errorData.error}`);
           if (errorData.details) {
-            console.error(`Detalles adicionales: ${errorData.details}`);
+            console.error(`Additional details: ${errorData.details}`);
           }
         }
       } catch (e) {
         try {
           const errorText = await response.text();
-          console.error(`Contenido de la respuesta: ${errorText}`);
+          console.error(`Response content: ${errorText}`);
         } catch (textError) {
-          console.error("No se pudo leer el contenido de la respuesta de error");
+          console.error("Could not read error response content");
         }
       }
       
@@ -70,12 +77,12 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
   } catch (error) {
     console.error('Widget config fetch error:', error);
     
-    // Último intento con una configuración de respaldo si hemos agotado los reintentos
+    // Last attempt with fallback configuration after exhausting retries
     if (retryCount >= MAX_RETRIES) {
-      console.warn('Usando configuración de respaldo después de agotar reintentos');
+      console.warn('Using fallback configuration after exhausting retries');
       return {
         id: widgetId,
-        name: "Chat Asistente",
+        name: "Chat Assistant",
         config: {
           appearance: {
             position: "right",
@@ -85,9 +92,9 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
             box_shadow: true
           },
           content: {
-            title: "Chat Asistente",
-            placeholder_text: "Escribe un mensaje...",
-            welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?",
+            title: "Chat Assistant",
+            placeholder_text: "Type a message...",
+            welcome_message: "Hello! How can I help you today?",
             branding: true
           },
           colors: {
@@ -119,8 +126,8 @@ export async function sendChatMessage(message, state) {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // Adding apikey to header for anonymous access
         'apikey': ANON_KEY,
+        'Authorization': `Bearer ${ANON_KEY}`, // Adding explicit Authorization header
         'Origin': window.location.origin,
         'Referer': document.referrer || window.location.href
       },
@@ -132,12 +139,27 @@ export async function sendChatMessage(message, state) {
         widget_id: state.widgetId,
         user_info: state.userInfo
       }),
-      // Asegurarse de incluir las cookies en la solicitud
+      // Ensuring cookies are included in the request
       credentials: 'include',
     });
     
     if (!response.ok) {
       console.error(`Error sending message: ${response.status} ${response.statusText}`);
+      
+      // Try to get more error details
+      try {
+        const errorData = await response.json();
+        console.error('Error details:', errorData);
+      } catch (e) {
+        // If can't parse JSON, try to get text
+        try {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+        } catch (textError) {
+          console.error('Could not read error response');
+        }
+      }
+      
       throw new Error('Error sending message');
     }
     

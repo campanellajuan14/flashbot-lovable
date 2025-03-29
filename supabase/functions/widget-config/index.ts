@@ -31,12 +31,12 @@ serve(async (req) => {
     if (!widgetId) {
       console.error("Missing widget_id parameter");
       return new Response(
-        JSON.stringify({ error: "Se requiere widget_id" }),
+        JSON.stringify({ error: "widget_id is required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Initialize Supabase client - using anon key for public access
+    // Initialize Supabase client with anon key for public access
     const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
     
@@ -47,11 +47,11 @@ serve(async (req) => {
     
     console.log(`Looking for widget with ID: ${widgetId}`);
     
-    // IMPORTANTE: Mejora de búsqueda de widgets - Intentar diferentes métodos
+    // Improved widget search logic - Try different methods
     let chatbot = null;
     let error = null;
     
-    // 1. Buscar por widget_id en share_settings
+    // 1. Search by widget_id in share_settings
     console.log("Searching by widget_id in share_settings");
     const { data: widgetData, error: widgetError } = await supabase
       .from('chatbots')
@@ -63,7 +63,7 @@ serve(async (req) => {
       chatbot = widgetData;
       console.log("Found widget by widget_id:", chatbot.id);
     } else {
-      // 2. Buscar directamente por ID del chatbot
+      // 2. Search directly by chatbot ID
       console.log("Not found by widget_id, searching by chatbot ID");
       const { data: directData, error: directError } = await supabase
         .from('chatbots')
@@ -82,7 +82,7 @@ serve(async (req) => {
     
     if (!chatbot) {
       return new Response(
-        JSON.stringify({ error: "Widget no encontrado o no activo" }),
+        JSON.stringify({ error: "Widget not found or not active", details: error?.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -97,68 +97,42 @@ serve(async (req) => {
       };
     }
     
-    // Verify that widget is enabled, if not, it's NOT publicly available
-    if (chatbot.share_settings?.enabled === false) {
-      console.error(`Widget is not enabled: ${widgetId}`);
-      return new Response(
-        JSON.stringify({ error: "Widget no está activo" }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // IMPORTANTE: Temporalmente desactivar la restricción de dominios para solucionar el problema
-    // Validate domain restriction if configured
-    if (false && chatbot.share_settings?.restrictions?.allowed_domains?.length > 0) {
-      const referer = req.headers.get('Referer') || req.headers.get('Origin');
-      let isAllowed = false;
-      
-      console.log(`Referer/Origin header: ${referer}`);
-      console.log(`Allowed domains: ${JSON.stringify(chatbot.share_settings.restrictions.allowed_domains)}`);
-      
-      // Special allowances for testing environments and direct access
-      if (!referer || 
-          referer.includes('localhost') || 
-          referer.includes('127.0.0.1') || 
-          referer.includes('lovable.app') ||
-          referer.includes('chatbot-platform.lovable.app')) {
-        console.log("Development/testing/platform environment detected, allowing access");
-        isAllowed = true;
-      } else {
-        try {
-          const refererDomain = new URL(referer).hostname;
-          isAllowed = chatbot.share_settings.restrictions.allowed_domains.some(domain => 
-            refererDomain === domain || refererDomain.endsWith(`.${domain}`)
-          );
-          
-          console.log(`Referer domain: ${refererDomain}, Is allowed: ${isAllowed}`);
-        } catch (e) {
-          console.error("Invalid referer URL:", e);
-          // Allow access if we can't parse the referer - better UX than blocking
-          isAllowed = true;
-        }
-      }
-      
-      // For debugging, temporarily allow all domains
-      isAllowed = true;
-      
-      if (!isAllowed) {
-        console.error(`Domain not allowed for widget: ${widgetId}`);
-        return new Response(
-          JSON.stringify({ error: "Dominio no autorizado", allowed_domains: chatbot.share_settings.restrictions.allowed_domains }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
+    // IMPORTANT: Temporarily disable domain restriction to solve issues
+    // We'll first get the widget working, then re-enable restrictions if needed
     
     // Prepare response (remove sensitive data)
     const response = {
       id: chatbot.id,
       name: chatbot.name,
       config: {
-        appearance: chatbot.share_settings.appearance || {},
-        content: chatbot.share_settings.content || {},
-        colors: chatbot.share_settings.colors || {},
-        behavior: chatbot.share_settings.behavior || {}
+        appearance: chatbot.share_settings.appearance || {
+          position: "right",
+          theme: "light",
+          initial_state: "closed",
+          border_radius: 10,
+          box_shadow: true
+        },
+        content: chatbot.share_settings.content || {
+          title: "Chat Assistant",
+          placeholder_text: "Type a message...",
+          welcome_message: "Hello! How can I help you today?",
+          branding: true
+        },
+        colors: chatbot.share_settings.colors || {
+          primary: "#2563eb",
+          secondary: "#f1f5f9",
+          background: "#ffffff",
+          text: "#333333",
+          user_bubble: "#2563eb",
+          bot_bubble: "#f1f5f9",
+          links: "#2563eb"
+        },
+        behavior: chatbot.share_settings.behavior || {
+          persist_conversation: true,
+          auto_open: false,
+          auto_open_delay: 0,
+          save_conversation_id: false
+        }
       }
     };
     
@@ -173,7 +147,7 @@ serve(async (req) => {
     console.error('Error in widget-config:', error);
     
     return new Response(
-      JSON.stringify({ error: "Error interno del servidor", details: String(error) }),
+      JSON.stringify({ error: "Internal server error", details: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

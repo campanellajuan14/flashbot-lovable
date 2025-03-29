@@ -10,14 +10,15 @@
     
     if (!widgetId) {
       console.error('Widget initialization failed: Missing data-widget-id attribute');
-      // Añadir un elemento visual que muestre el error
+      // Add a visual error element
       const errorDiv = document.createElement('div');
       errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
                        color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
                        font-family: sans-serif; z-index: 10000; max-width: 300px;`;
       errorDiv.innerHTML = `
         <strong>Widget Error</strong>
-        <p>Falta el atributo data-widget-id en el script.</p>
+        <p>Missing data-widget-id attribute in script tag.</p>
+        <p>Widget ID: <code>${widgetId || 'undefined'}</code></p>
       `;
       document.body.appendChild(errorDiv);
       return;
@@ -73,7 +74,7 @@
               // Initialize with the widget ID
               window.flashbotChat('init', { 
                 widget_id: widgetId,
-                // Opcionalmente puedes añadir información del usuario
+                // Optionally add user information
                 user_info: {
                   url: window.location.href,
                   referrer: document.referrer,
@@ -94,15 +95,16 @@
             })
             .catch(err => {
               console.error('Error loading chatbot modules:', err);
-              // Intentar recuperarse del error
+              // Try to recover from error
               const errorDiv = document.createElement('div');
               errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
                                color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
                                font-family: sans-serif; z-index: 10000; max-width: 300px;`;
               errorDiv.innerHTML = `
                 <strong>Widget Error</strong>
-                <p>La carga del widget ha fallado. Por favor contacte al administrador.</p>
+                <p>Widget loading failed. Please contact administrator.</p>
                 <p>Error: ${err.message}</p>
+                <p>Widget ID: <code>${widgetId}</code></p>
               `;
               document.body.appendChild(errorDiv);
             });
@@ -113,14 +115,15 @@
         // Increment counter to avoid hanging
         loadedCount++;
         
-        // Mostrar error visual
+        // Show visual error
         const errorDiv = document.createElement('div');
         errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
                          color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
                          font-family: sans-serif; z-index: 10000; max-width: 300px;`;
         errorDiv.innerHTML = `
           <strong>Widget Error</strong>
-          <p>Error al cargar módulo: ${src}</p>
+          <p>Error loading module: ${src}</p>
+          <p>Widget ID: <code>${widgetId}</code></p>
         `;
         document.body.appendChild(errorDiv);
       };
@@ -137,7 +140,7 @@
   
   console.log('Widget script loaded, starting module loading...');
   
-  // Intentar detectar si estamos en un iframe
+  // Try to detect if we're in an iframe
   const isIframe = window !== window.parent;
   console.log('Is iframe:', isIframe);
   

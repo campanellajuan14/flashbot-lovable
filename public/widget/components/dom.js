@@ -11,7 +11,7 @@ import { trackEvent } from '../analytics.js';
 export function createWidgetElements(state) {
   // Main container
   const container = document.createElement('div');
-  container.id = 'flashbot-chat-container';
+  container.id = 'lovable-chatbot-container';
   container.style.position = 'fixed';
   container.style.zIndex = state.config.config.appearance.z_index || 9999;
   container.style.bottom = `${state.config.config.appearance.offset_y || 20}px`;
@@ -24,7 +24,7 @@ export function createWidgetElements(state) {
   
   // Button
   const button = document.createElement('div');
-  button.id = 'flashbot-chat-button';
+  button.id = 'lovable-chatbot-button';
   button.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="#ffffff"/>
   </svg>`;
@@ -40,7 +40,7 @@ export function createWidgetElements(state) {
   
   // Chat window
   const chatWindow = document.createElement('div');
-  chatWindow.id = 'flashbot-chat-window';
+  chatWindow.id = 'lovable-chatbot-window';
   chatWindow.style.display = 'none';
   chatWindow.style.flexDirection = 'column';
   chatWindow.style.width = state.config.config.appearance.width || '350px';
@@ -61,13 +61,13 @@ export function createWidgetElements(state) {
         <h3 style="margin: 0; font-size: 16px;">${state.config.config.content.title || 'Chat'}</h3>
         ${state.config.config.content.subtitle ? `<p style="margin: 5px 0 0; font-size: 12px;">${state.config.config.content.subtitle}</p>` : ''}
       </div>
-      <div id="flashbot-chat-close" style="cursor: pointer;">✕</div>
+      <div id="lovable-chatbot-close" style="cursor: pointer;">✕</div>
     </div>
   `;
   
   // Messages
   const messagesContainer = document.createElement('div');
-  messagesContainer.id = 'flashbot-chat-messages';
+  messagesContainer.id = 'lovable-chatbot-messages';
   messagesContainer.style.flex = '1';
   messagesContainer.style.padding = '15px';
   messagesContainer.style.overflowY = 'auto';
@@ -77,10 +77,10 @@ export function createWidgetElements(state) {
   inputContainer.style.borderTop = '1px solid #eee';
   inputContainer.style.padding = '10px 15px';
   inputContainer.innerHTML = `
-    <form id="flashbot-chat-form" style="display: flex;">
+    <form id="lovable-chatbot-form" style="display: flex;">
       <input 
         type="text" 
-        id="flashbot-chat-input"
+        id="lovable-chatbot-input"
         placeholder="${state.config.config.content.placeholder_text || 'Type a message...'}"
         style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;"
       >
@@ -105,10 +105,21 @@ export function createWidgetElements(state) {
     `;
   }
   
+  // Debug info container for easier troubleshooting
+  const debugContainer = document.createElement('div');
+  debugContainer.id = 'lovable-chatbot-debug';
+  debugContainer.style.display = 'none';
+  debugContainer.style.fontSize = '10px';
+  debugContainer.style.padding = '8px';
+  debugContainer.style.color = '#666';
+  debugContainer.style.borderTop = '1px solid #eee';
+  debugContainer.innerHTML = `Widget ID: ${state.widgetId}`;
+  
   // Assemble components
   chatWindow.appendChild(header);
   chatWindow.appendChild(messagesContainer);
   chatWindow.appendChild(inputContainer);
+  chatWindow.appendChild(debugContainer);
   if (footerHTML) {
     const footer = document.createElement('div');
     footer.innerHTML = footerHTML;
@@ -123,8 +134,8 @@ export function createWidgetElements(state) {
   
   // Add event listeners
   button.addEventListener('click', () => toggleWidget(true, state));
-  document.getElementById('flashbot-chat-close').addEventListener('click', () => toggleWidget(false, state));
-  document.getElementById('flashbot-chat-form').addEventListener('submit', (e) => handleSubmit(e, state));
+  document.getElementById('lovable-chatbot-close').addEventListener('click', () => toggleWidget(false, state));
+  document.getElementById('lovable-chatbot-form').addEventListener('submit', (e) => handleSubmit(e, state));
   
   // Return the created elements for further manipulation
   return { container, chatWindow, messagesContainer };
