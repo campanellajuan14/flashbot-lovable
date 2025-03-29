@@ -29,7 +29,7 @@ const MockDataIndicator = ({ isReal }: { isReal: boolean }) => (
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-xs">Dato simulado</p>
+          <p className="text-xs">Sample data</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -59,7 +59,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
             <p className="text-xs text-muted-foreground">{stat.description}</p>
             <Button variant="ghost" size="sm" className="mt-4 px-0" asChild>
               <Link to={stat.link}>
-                Ver detalles
+                View details
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>

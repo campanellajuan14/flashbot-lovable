@@ -32,7 +32,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
       </div>
       
       <div className="mt-4">
-        <h4 className="text-sm font-medium mb-2">Vista previa</h4>
+        <h4 className="text-sm font-medium mb-2">Preview</h4>
         <div className="border rounded-md p-4 bg-muted/50">
           <div className="flex justify-center">
             <ChatbotPreviewDialog 
@@ -40,7 +40,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
               widgetConfig={widgetConfig}
             >
               <Button variant="outline" size="lg" className="gap-2">
-                <Eye className="h-4 w-4" /> Ver cómo se verá tu chatbot
+                <Eye className="h-4 w-4" /> See how your chatbot will look
               </Button>
             </ChatbotPreviewDialog>
           </div>

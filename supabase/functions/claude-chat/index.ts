@@ -30,10 +30,10 @@ serve(async (req) => {
     console.log('Model settings:', settings);
     console.log('Chatbot ID:', chatbotId);
 
-    // Inicializar cliente de Supabase
+    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // Obtener la configuración de recuperación
+    // Get retrieval settings
     let retrievalSettings = null;
     try {
       const { data: settings, error } = await supabase
@@ -47,7 +47,7 @@ serve(async (req) => {
         console.log('Retrieved settings:', retrievalSettings);
       } else {
         console.error('Error fetching retrieval settings:', error);
-        // Crear configuración por defecto
+        // Create default configuration
         const { error: insertError } = await supabase
           .from('retrieval_settings')
           .insert({
@@ -80,18 +80,18 @@ serve(async (req) => {
       console.error("Error handling retrieval settings:", settingsError);
     }
 
-    // Obtener el último mensaje del usuario para la búsqueda
+    // Get the last user message for search
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user')?.content;
     
-    // Documentos relevantes para agregar al contexto
+    // Relevant documents to add to context
     let relevantDocuments = [];
     let documentContext = "";
     
-    // Si hay un ID de chatbot y un mensaje de usuario, buscar documentos relevantes
+    // If there is a chatbot ID and a user message, search for relevant documents
     if (chatbotId && lastUserMessage) {
       try {
-        // Invocar la función edge match-documents con umbral adaptativo 
-        // para mayor probabilidad de encontrar documentos relevantes
+        // Invoke the edge match-documents function with adaptive threshold
+        // for higher probability of finding relevant documents
         const matchResponse = await supabase.functions.invoke('match-documents', {
           body: {
             query: lastUserMessage,
@@ -99,7 +99,7 @@ serve(async (req) => {
             threshold: retrievalSettings?.similarity_threshold,
             limit: retrievalSettings?.max_results,
             model: retrievalSettings?.embedding_model,
-            adaptiveThreshold: true // Habilitar umbral adaptativo
+            adaptiveThreshold: true // Enable adaptive threshold
           }
         });
 
@@ -111,7 +111,7 @@ serve(async (req) => {
           console.log(`Found ${matchResponse.data.documents.length} relevant documents`);
           relevantDocuments = matchResponse.data.documents;
           
-          // Crear contexto con los documentos recuperados de manera más estructurada
+          // Create context with retrieved documents in a more structured way
           documentContext = "Here are some relevant documents that might help you answer the question:\n\n";
           relevantDocuments.forEach((doc, i) => {
             documentContext += `DOCUMENT ${i+1}: ${doc.name}\n${doc.content}\n\n`;
@@ -121,7 +121,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Error in document retrieval:', error);
-        // Continuar sin documentos en caso de error
+        // Continue without documents in case of error
       }
     }
 
@@ -133,70 +133,70 @@ serve(async (req) => {
     };
 
     // Build improved system prompt based on configured behavior
-    let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
+    let systemPrompt = `You are a chatbot named ${chatbotName || 'Assistant'}. `;
     
     if (behavior) {
       // Add tone instructions
       if (behavior.tone) {
-        systemPrompt += `\nDebes responder con un tono ${behavior.tone}. `;
+        systemPrompt += `\nYou should respond in a ${behavior.tone} tone. `;
       }
       
       // Add style instructions
       if (behavior.style) {
-        systemPrompt += `\nTu estilo de respuesta debe ser ${behavior.style}. `;
+        systemPrompt += `\nYour response style should be ${behavior.style}. `;
       }
       
       // Add language instructions
       if (behavior.language) {
         const languageMap: Record<string, string> = {
-          'english': 'inglés',
-          'spanish': 'español',
-          'french': 'francés',
-          'german': 'alemán',
-          'chinese': 'chino',
-          'japanese': 'japonés'
+          'english': 'English',
+          'spanish': 'Spanish',
+          'french': 'French',
+          'german': 'German',
+          'chinese': 'Chinese',
+          'japanese': 'Japanese'
         };
         
         const languageDisplay = languageMap[behavior.language] || behavior.language;
-        systemPrompt += `\nDebes comunicarte en ${languageDisplay}. `;
+        systemPrompt += `\nYou must communicate in ${languageDisplay}. `;
       }
       
       // Add emoji usage instructions
       if (behavior.useEmojis) {
-        systemPrompt += `\nUsa emojis en tus respuestas cuando sea apropiado. `;
+        systemPrompt += `\nUse emojis in your responses when appropriate. `;
       } else {
-        systemPrompt += `\nNo uses emojis en tus respuestas. `;
+        systemPrompt += `\nDon't use emojis in your responses. `;
       }
       
       // Add asking questions instructions
       if (behavior.askQuestions) {
-        systemPrompt += `\nHaz preguntas al usuario para entender mejor sus necesidades. `;
+        systemPrompt += `\nAsk questions to better understand the user's needs. `;
       }
       
       // Add suggesting solutions instructions
       if (behavior.suggestSolutions) {
-        systemPrompt += `\nSiempre sugiere soluciones prácticas a los problemas del usuario. `;
+        systemPrompt += `\nAlways suggest practical solutions to the user's problems. `;
       }
       
       // Add custom instructions
       if (behavior.instructions) {
-        systemPrompt += `\nInstrucciones adicionales: ${behavior.instructions}`;
+        systemPrompt += `\nAdditional instructions: ${behavior.instructions}`;
       }
     }
 
-    // Instrucciones mejoradas para el uso del contexto de documentos
+    // Improved instructions for using document context
     if (documentContext) {
-      systemPrompt += `\n\nUsa la siguiente información de documentos como contexto para responder las preguntas del usuario:
+      systemPrompt += `\n\nUse the following document information as context to answer the user's questions:
 
 ${documentContext}
 
-Instrucciones importantes sobre el uso de estos documentos:
-1. Basa tu respuesta principalmente en estos documentos cuando sean relevantes a la pregunta.
-2. Si la información en los documentos contradice tu conocimiento general, prioriza la información de los documentos.
-3. Si la pregunta no puede responderse completamente con los documentos, complementa con tu conocimiento general, pero indica claramente cuando estás haciendo esto.
-4. No menciones explícitamente que estás usando "documentos" a menos que el usuario te pregunte específicamente por tus fuentes.
-5. Si citas información de los documentos, hazlo de manera natural y fluida en tu respuesta.
-6. Si necesitas hacer referencia a un documento específico, puedes referirte al contenido sin mencionar que es un documento.`;
+Important instructions about using these documents:
+1. Base your response primarily on these documents when they are relevant to the question.
+2. If the information in the documents contradicts your general knowledge, prioritize the information from the documents.
+3. If the question cannot be fully answered with the documents, supplement with your general knowledge, but clearly indicate when you are doing this.
+4. Don't explicitly mention that you're using "documents" unless the user specifically asks about your sources.
+5. If you quote information from the documents, do so naturally and fluidly in your response.
+6. If you need to reference a specific document, you can refer to the content without mentioning that it is a document.`;
     }
 
     console.log('System prompt:', systemPrompt);
@@ -232,14 +232,14 @@ Instrucciones importantes sobre el uso de estos documentos:
     const data = await response.json();
     console.log('Anthropic API response:', data);
 
-    // Construir respuesta con referencias a documentos si hay documentos relevantes
+    // Build response with document references if there are relevant documents
     const responseData = {
       message: data.content[0].text,
       model: data.model,
       usage: data.usage
     };
     
-    // Agregar referencias a documentos
+    // Add document references
     if (relevantDocuments.length > 0) {
       responseData.references = relevantDocuments.map(doc => ({
         id: doc.id,
@@ -248,7 +248,7 @@ Instrucciones importantes sobre el uso de estos documentos:
       }));
     }
 
-    // Registrar esta interacción para análisis (opcional)
+    // Log this interaction for analysis (optional)
     try {
       await supabase.from('message_metrics').insert({
         chatbot_id: chatbotId,

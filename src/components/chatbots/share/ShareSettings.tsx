@@ -76,7 +76,7 @@ const ShareSettings = () => {
         console.error("Error fetching share settings:", error);
         toast({
           title: "Error",
-          description: "No se pudieron cargar las configuraciones de compartir",
+          description: "Could not load sharing settings",
           variant: "destructive",
         });
       } finally {
@@ -143,9 +143,9 @@ const ShareSettings = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-medium">Widget para tu sitio web</h3>
+                <h3 className="text-lg font-medium">Widget for your website</h3>
                 <p className="text-sm text-muted-foreground">
-                  Configura y obtén el código para incrustar el chatbot en tu sitio web
+                  Configure and get the code to embed the chatbot on your website
                 </p>
               </div>
               
@@ -170,11 +170,11 @@ const ShareSettings = () => {
                   className="w-full mt-4"
                 >
                   <TabsList className="grid grid-cols-5 mb-4">
-                    <TabsTrigger value="embed">Código</TabsTrigger>
-                    <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-                    <TabsTrigger value="content">Contenido</TabsTrigger>
-                    <TabsTrigger value="colors">Colores</TabsTrigger>
-                    <TabsTrigger value="restrictions">Restricciones</TabsTrigger>
+                    <TabsTrigger value="embed">Code</TabsTrigger>
+                    <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                    <TabsTrigger value="content">Content</TabsTrigger>
+                    <TabsTrigger value="colors">Colors</TabsTrigger>
+                    <TabsTrigger value="restrictions">Restrictions</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="embed">
@@ -221,7 +221,7 @@ const ShareSettings = () => {
                     className="gap-2"
                   >
                     {isSaving && <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>}
-                    Guardar configuración
+                    Save configuration
                   </Button>
                 </div>
               </>
