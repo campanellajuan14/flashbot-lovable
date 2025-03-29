@@ -117,7 +117,7 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="temperature">Temperature ({currentTemperature})</Label>
+            <Label htmlFor="temperature">Creativity ({currentTemperature})</Label>
             <Input
               id="temperature"
               type="range"
@@ -128,8 +128,8 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
               onChange={handleTemperatureChange}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Precise</span>
-              <span>Creative</span>
+              <span>Precise & Factual</span>
+              <span>Creative & Varied</span>
             </div>
           </div>
           
