@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MetricsData } from "@/hooks/useAnalyticsData";
 
 interface MetricsDataItem {
   id: string;
@@ -19,7 +19,7 @@ interface MetricsDataItem {
 }
 
 interface UsageChartProps {
-  data?: MetricsDataItem[];
+  data?: MetricsData[];
   isLoading: boolean;
 }
 

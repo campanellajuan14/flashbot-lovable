@@ -1,15 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, MessageSquare, FileText, BarChart } from "lucide-react";
+import { CountData } from "@/hooks/useAnalyticsData";
 
 interface AnalyticsSummaryProps {
-  data?: {
-    chatbots: number;
-    conversations: number;
-    documents: number;
-    messages: number;
-  };
+  data?: CountData;
 }
 
 const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {

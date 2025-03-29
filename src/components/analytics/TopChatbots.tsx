@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bot, ArrowUpRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { MetricsData } from "@/hooks/useAnalyticsData";
 
 interface MetricsDataItem {
   id: string;
@@ -21,7 +21,7 @@ interface MetricsDataItem {
 }
 
 interface TopChatbotsProps {
-  data?: MetricsDataItem[];
+  data?: MetricsData[];
   isLoading: boolean;
 }
 

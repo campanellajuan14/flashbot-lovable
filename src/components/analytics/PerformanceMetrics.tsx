@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -6,6 +5,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Activity, Clock, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MetricsData } from "@/hooks/useAnalyticsData";
 
 interface MetricsDataItem {
   id: string;
@@ -21,7 +21,7 @@ interface MetricsDataItem {
 }
 
 interface PerformanceMetricsProps {
-  data?: MetricsDataItem[];
+  data?: MetricsData[];
   isLoading: boolean;
 }
 
