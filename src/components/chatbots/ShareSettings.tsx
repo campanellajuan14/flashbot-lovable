@@ -197,7 +197,7 @@ const ShareSettings = () => {
   };
 
   const handleCopyCode = () => {
-    const baseUrl = window.location.origin;
+    const baseUrl = "https://chatbot-platform.lovable.app";
     let code = '';
     
     if (embedType === 'script') {
@@ -1068,13 +1068,13 @@ const ShareSettings = () => {
     w[o] = w[o] || function() { (w[o].q = w[o].q || []).push(arguments) };
     js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
     js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
-  }(window, document, 'script', 'lovableChatbot', '${window.location.origin}/widget.js'));
+  }(window, document, 'script', 'lovableChatbot', 'https://chatbot-platform.lovable.app/widget.js'));
   
   lovableChatbot('init', { widget_id: '${settings.widget_id || 'WIDGET_ID'}' });
 </script>`}</pre>
                   ) : (
                     <pre>{`<iframe 
-  src="${window.location.origin}/widget/${settings.widget_id || 'WIDGET_ID'}" 
+  src="https://chatbot-platform.lovable.app/widget/${settings.widget_id || 'WIDGET_ID'}" 
   width="${settings.appearance.width}" 
   height="${settings.appearance.height}" 
   frameborder="0"

@@ -1,4 +1,3 @@
-
 (function() {
   // Initial state
   const state = {
@@ -21,7 +20,7 @@
     
     try {
       // Load configuration
-      const response = await fetch(`https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${state.widgetId}`);
+      const response = await fetch(`https://chatbot-platform.lovable.app/api/widget-config?widget_id=${state.widgetId}`);
       if (!response.ok) throw new Error('Error al cargar configuración');
       
       const data = await response.json();
@@ -294,7 +293,7 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
       
       // Send message to server
-      const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/claude-chat', {
+      const response = await fetch('https://chatbot-platform.lovable.app/api/claude-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
