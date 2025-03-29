@@ -1,140 +1,37 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useParams } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShareSettings as ShareSettingsType } from "./types";
-import { createDefaultWidgetConfig, saveWidgetSettings } from "./utils";
+import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import EmbedCodeTab from "./EmbedCodeTab";
 import AppearanceTab from "./AppearanceTab";
 import ContentTab from "./ContentTab";
 import ColorsTab from "./ColorsTab";
 import RestrictionsTab from "./RestrictionsTab";
+import { useWidgetSettings } from "./hooks/useWidgetSettings";
+import { useWidgetConfigHandlers } from "./hooks/useWidgetConfigHandlers";
 
 const ShareSettings = () => {
   const { id: chatbotId } = useParams<{ id: string }>();
-  const { toast } = useToast();
-  const [widgetId, setWidgetId] = useState<string | null>(null);
-  const [widgetConfig, setWidgetConfig] = useState<ShareSettingsType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("embed");
-  const [isSaving, setIsSaving] = useState(false);
+  
+  // Use our custom hooks
+  const { 
+    widgetId, 
+    widgetConfig, 
+    setWidgetConfig, 
+    isLoading, 
+    isSaving, 
+    updateSettings 
+  } = useWidgetSettings(chatbotId);
 
-  useEffect(() => {
-    if (!chatbotId) return;
-
-    const fetchShareSettings = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("chatbots")
-          .select("share_settings")
-          .eq("id", chatbotId)
-          .single();
-
-        if (error) throw error;
-
-        const shareSettings = data?.share_settings as ShareSettingsType | null;
-
-        if (shareSettings?.widget_id) {
-          setWidgetId(shareSettings.widget_id);
-          setWidgetConfig(shareSettings);
-        } else {
-          // Generate a widget ID if none exists
-          const newWidgetId = `wgt_${Math.random().toString(36).substring(2, 12)}`;
-          setWidgetId(newWidgetId);
-          
-          // Create a new configuration object with the generated widget ID
-          const newConfig = createDefaultWidgetConfig(newWidgetId);
-          
-          // Update the database with the new widget ID
-          const { error: updateError } = await supabase
-            .from("chatbots")
-            .update({
-              share_settings: newConfig as unknown as any
-            })
-            .eq("id", chatbotId);
-
-          if (updateError) throw updateError;
-          
-          // Fetch the updated settings
-          const { data: updatedData } = await supabase
-            .from("chatbots")
-            .select("share_settings")
-            .eq("id", chatbotId)
-            .single();
-            
-          if (updatedData?.share_settings) {
-            setWidgetConfig(updatedData.share_settings as ShareSettingsType);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching share settings:", error);
-        toast({
-          title: "Error",
-          description: "Could not load sharing settings",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchShareSettings();
-  }, [chatbotId, toast]);
-
-  const updateSettings = async () => {
-    if (!chatbotId || !widgetConfig) return;
-    
-    setIsSaving(true);
-    const success = await saveWidgetSettings(chatbotId, widgetConfig);
-    setIsSaving(false);
-  };
-
-  const handleColorChange = (colorKey: keyof NonNullable<ShareSettingsType['colors']>, value: string) => {
-    if (!widgetConfig) return;
-    
-    const newConfig = { ...widgetConfig };
-    if (!newConfig.colors) newConfig.colors = {};
-    newConfig.colors[colorKey] = value;
-    setWidgetConfig(newConfig);
-  };
-
-  const handleContentChange = (contentKey: keyof NonNullable<ShareSettingsType['content']>, value: any) => {
-    if (!widgetConfig) return;
-    
-    const newConfig = { ...widgetConfig };
-    if (!newConfig.content) newConfig.content = {};
-    
-    if (contentKey === 'branding' && typeof value === 'boolean') {
-      newConfig.content.branding = value;
-    } else if (typeof value === 'string') {
-      (newConfig.content as any)[contentKey] = value;
-    }
-    
-    setWidgetConfig(newConfig);
-  };
-
-  const handleAppearanceChange = (key: keyof NonNullable<ShareSettingsType['appearance']>, value: any) => {
-    if (!widgetConfig) return;
-    
-    const newConfig = { ...widgetConfig };
-    if (!newConfig.appearance) newConfig.appearance = {};
-    
-    if ((key === 'border_radius' || key === 'width' || key === 'height' || key === 'offset_x' || key === 'offset_y' || key === 'z_index') && typeof value === 'string') {
-      (newConfig.appearance as any)[key] = parseInt(value, 10);
-    } else if (key === 'box_shadow' && typeof value === 'boolean') {
-      newConfig.appearance.box_shadow = value;
-    } else if (typeof value === 'string') {
-      (newConfig.appearance as any)[key] = value;
-    }
-    
-    setWidgetConfig(newConfig);
-  };
+  const {
+    handleColorChange,
+    handleContentChange,
+    handleAppearanceChange
+  } = useWidgetConfigHandlers(widgetConfig, setWidgetConfig);
 
   return (
     <div className="space-y-4">

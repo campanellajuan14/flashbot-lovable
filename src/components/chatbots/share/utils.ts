@@ -1,7 +1,5 @@
 
 import { ShareSettings } from "./types";
-import { Json } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 export const createDefaultWidgetConfig = (widgetId: string): ShareSettings => {
@@ -46,34 +44,6 @@ export const createDefaultWidgetConfig = (widgetId: string): ShareSettings => {
       allowed_domains: []
     }
   };
-};
-
-export const saveWidgetSettings = async (chatbotId: string, widgetConfig: ShareSettings) => {
-  try {
-    const { error } = await supabase
-      .from("chatbots")
-      .update({
-        share_settings: widgetConfig as unknown as Json
-      })
-      .eq("id", chatbotId);
-
-    if (error) throw error;
-    
-    toast({
-      title: "Configuración guardada",
-      description: "La configuración del widget se ha guardado correctamente",
-    });
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating settings:", error);
-    toast({
-      title: "Error",
-      description: "No se pudo guardar la configuración",
-      variant: "destructive",
-    });
-    return false;
-  }
 };
 
 export const copyEmbedCode = (widgetId: string | null) => {

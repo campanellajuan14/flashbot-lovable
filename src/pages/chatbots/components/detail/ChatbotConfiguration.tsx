@@ -20,6 +20,11 @@ interface ChatbotConfigurationProps {
 }
 
 const ChatbotConfiguration: React.FC<ChatbotConfigurationProps> = ({ chatbot, chatbotId }) => {
+  // Helper function to determine badge variant
+  const getBadgeVariant = (isActive: boolean) => {
+    return isActive ? "success" : "default";
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -157,7 +162,7 @@ const ChatbotConfiguration: React.FC<ChatbotConfigurationProps> = ({ chatbot, ch
             
             <div className="bg-muted/30 p-4 rounded-lg border">
               <h3 className="text-sm font-semibold mb-1">Status</h3>
-              <Badge variant={chatbot.is_active ? "success" : "warning"}>
+              <Badge variant={getBadgeVariant(chatbot.is_active)}>
                 {chatbot.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
