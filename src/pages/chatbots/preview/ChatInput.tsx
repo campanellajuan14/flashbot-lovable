@@ -23,9 +23,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const placeholderText = language === "en" ? "Type a message..." : "Escribe un mensaje...";
   const sendText = language === "en" ? "Send" : "Enviar";
 
+  const handleSubmit = (e: React.FormEvent) => {
+    handleSendMessage(e);
+    setMessage(""); // Clear the input after sending
+  };
+
   return (
     <form
-      onSubmit={handleSendMessage}
+      onSubmit={handleSubmit}
       className="border-t p-4"
     >
       <div className="flex items-center gap-2">

@@ -83,7 +83,10 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     };
     
     setMessages(prevMessages => [...prevMessages, userMessage]);
+    
+    // Clear the input field
     if (inputRef.current) inputRef.current.value = "";
+    
     setIsTyping(true);
     
     setTimeout(() => {

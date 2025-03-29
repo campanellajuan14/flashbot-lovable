@@ -93,15 +93,25 @@ export const formatMessageText = (text: string): React.ReactNode => {
         
         // Formatear listas numeradas
         if (paragraph.trim().match(/^\d+\.\s/)) {
-          // Buscar todos los elementos que empiezan por número + punto
-          const listItems = paragraph.split('\n')
-            .filter(line => line.trim().match(/^\d+\.\s/));
+          // Separar el párrafo en líneas
+          const lines = paragraph.split('\n');
+          
+          // Filtrar líneas que comienzan con un número seguido de un punto
+          const numberedItems = lines.filter(line => line.trim().match(/^\d+\.\s/));
           
           return (
             <ol key={i} className="list-decimal pl-5 my-2">
-              {listItems.map((item, j) => (
-                <li key={j}>{formatInlineText(item.replace(/^\d+\.\s/, ''))}</li>
-              ))}
+              {numberedItems.map((item, j) => {
+                // Extraer el número del ítem para mantener la numeración correcta
+                const numberMatch = item.match(/^(\d+)\.\s/);
+                const itemText = item.replace(/^\d+\.\s/, '');
+                
+                return (
+                  <li key={j} value={numberMatch ? parseInt(numberMatch[1]) : j + 1}>
+                    {formatInlineText(itemText)}
+                  </li>
+                );
+              })}
             </ol>
           );
         }

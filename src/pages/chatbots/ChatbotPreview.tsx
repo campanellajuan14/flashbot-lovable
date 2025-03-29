@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { Bot, Loader2 } from "lucide-react";
@@ -25,6 +25,15 @@ const ChatbotPreview = () => {
     handleSendMessage,
     toggleSourceDetails
   } = useChatMessages(chatbot);
+
+  // Clear input field after message is sent
+  const handleMessageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || isTyping) return;
+    
+    handleSendMessage(e);
+    setMessage("");
+  };
 
   if (isLoading) {
     return (
@@ -87,7 +96,7 @@ const ChatbotPreview = () => {
         <ChatInput
           message={message}
           setMessage={setMessage}
-          handleSendMessage={handleSendMessage}
+          handleSendMessage={handleMessageSubmit}
           isTyping={isTyping}
           inputRef={inputRef}
           language={chatbot.behavior?.language}
