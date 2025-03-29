@@ -1,4 +1,3 @@
-
 import { Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import SignIn from "./pages/auth/SignIn";
@@ -16,15 +15,14 @@ import WidgetEmbed from "./pages/widget/WidgetEmbed";
 import AuthRequired from "./components/auth/AuthRequired";
 import { Toaster } from "./components/ui/toaster";
 import "./App.css";
+import SettingsPage from "./pages/settings/SettingsPage";
 
-// External widget route (no authentication required)
 const WidgetRoute = () => (
   <Routes>
     <Route path="/widget/:widgetId" element={<WidgetEmbed />} />
   </Routes>
 );
 
-// Main application routes
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
@@ -43,6 +41,12 @@ const AppRoutes = () => (
       <Route path="/chatbots/:id/edit" element={<ChatbotForm />} />
       <Route path="/chatbots/:id/documents" element={<ChatbotDocuments />} />
       <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
+      
+      <Route path="/settings" element={
+        <AuthRequired>
+          <SettingsPage />
+        </AuthRequired>
+      } />
     </Route>
     
     <Route path="*" element={<NotFound />} />
@@ -50,7 +54,6 @@ const AppRoutes = () => (
 );
 
 function App() {
-  // Check if we're on a widget route
   const isWidgetRoute = window.location.pathname.startsWith('/widget/');
   
   return (
