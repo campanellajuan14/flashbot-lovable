@@ -16,7 +16,7 @@ interface ChatMessage {
   role: "user" | "bot";
   content: string;
   timestamp: Date;
-  references?: string[];
+  references?: any[];
 }
 
 interface Chatbot {
@@ -104,7 +104,8 @@ const ChatbotPreview = () => {
           messages: formattedMessages,
           behavior: chatbot.behavior,
           chatbotName: chatbot.name,
-          settings: chatbot.settings
+          settings: chatbot.settings,
+          chatbotId: chatbot.id // Enviar el ID del chatbot para la recuperación de documentos
         }
       });
       
@@ -118,7 +119,7 @@ const ChatbotPreview = () => {
         return null;
       }
       
-      return response.data.message;
+      return response.data;
     } catch (error) {
       console.error("Error calling Claude API:", error);
       toast({
@@ -157,10 +158,11 @@ const ChatbotPreview = () => {
       const updatedMessages = [...messages, userMessage];
       
       // Call Claude API
-      const aiResponse = await callClaudeAPI(updatedMessages);
+      const apiResponse = await callClaudeAPI(updatedMessages);
       
-      if (aiResponse) {
-        handleBotResponse(aiResponse);
+      if (apiResponse) {
+        const { message: responseText, references } = apiResponse;
+        handleBotResponse(responseText, references);
       } else {
         // Fallback response if API fails
         handleBotResponse("Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.");
@@ -173,7 +175,7 @@ const ChatbotPreview = () => {
     }
   };
   
-  const handleBotResponse = (content: string, references?: string[]) => {
+  const handleBotResponse = (content: string, references?: any[]) => {
     const botMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "bot",
@@ -274,7 +276,7 @@ const ChatbotPreview = () => {
                     >
                       {msg.content}
                     </div>
-                    {msg.references && (
+                    {msg.references && msg.references.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {msg.references.map((ref, i) => (
                           <div 
@@ -282,7 +284,7 @@ const ChatbotPreview = () => {
                             className="inline-flex items-center text-xs text-muted-foreground bg-secondary rounded-full px-2 py-1"
                           >
                             <FileText className="h-3 w-3 mr-1" />
-                            {ref}
+                            {ref.name} ({Math.round(ref.similarity * 100)}%)
                           </div>
                         ))}
                       </div>
