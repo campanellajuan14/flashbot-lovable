@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import type { Json } from "@/integrations/supabase/types";
 
 interface ShareSettings {
   enabled: boolean;
@@ -114,12 +115,10 @@ const ShareSettings = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [embedType, setEmbedType] = useState<'script' | 'iframe'>('script');
 
-  // Generate a widget ID
   const generateWidgetId = () => {
     return 'wgt_' + Math.random().toString(36).substring(2, 15);
   };
 
-  // Load existing share settings
   const { data: chatbot, isLoading } = useQuery({
     queryKey: ["chatbot-share-settings", chatbotId],
     queryFn: async () => {
@@ -137,10 +136,8 @@ const ShareSettings = () => {
     enabled: !!chatbotId
   });
 
-  // Update settings from chatbot data
   useEffect(() => {
     if (chatbot && chatbot.share_settings) {
-      // Cast the JSON data to our ShareSettings type
       const loadedSettings = chatbot.share_settings as unknown as ShareSettings;
       
       setSettings(prevSettings => ({
@@ -148,26 +145,23 @@ const ShareSettings = () => {
         ...loadedSettings,
       }));
 
-      // Update domains text
       if (loadedSettings.restrictions?.allowed_domains) {
         setDomainsText(loadedSettings.restrictions.allowed_domains.join("\n"));
       }
     }
   }, [chatbot]);
 
-  // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (newSettings: ShareSettings) => {
       if (!chatbotId) throw new Error("Chatbot ID is required");
       
-      // If enabled and no widget_id, generate one
       if (newSettings.enabled && !newSettings.widget_id) {
         newSettings.widget_id = generateWidgetId();
       }
       
       const { error } = await supabase
         .from("chatbots")
-        .update({ share_settings: newSettings as unknown as object })
+        .update({ share_settings: newSettings as unknown as Json })
         .eq("id", chatbotId);
       
       if (error) throw error;
@@ -193,7 +187,6 @@ const ShareSettings = () => {
   });
 
   const handleSaveSettings = () => {
-    // Parse domains from textarea
     const updatedSettings = { ...settings };
     updatedSettings.restrictions.allowed_domains = domainsText
       .split("\n")
