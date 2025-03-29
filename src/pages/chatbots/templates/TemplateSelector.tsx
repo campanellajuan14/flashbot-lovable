@@ -36,9 +36,10 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {chatbotTemplates.map((template) => {
           const IconComponent = TEMPLATE_ICONS[template.icon as keyof typeof TEMPLATE_ICONS];
+          const isLovableTemplate = template.id === "lovable-hackathon-expert";
           
           return (
             <Card 
@@ -47,6 +48,8 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 "cursor-pointer transition-all hover:border-primary hover:shadow-md",
                 selectedTemplateId === template.id 
                   ? "border-2 border-primary shadow-md" 
+                  : isLovableTemplate
+                  ? "border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-purple-100"
                   : "border border-border"
               )}
               onClick={(e) => handleTemplateClick(template, e)}
@@ -54,10 +57,20 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-2">
-                    <div className="p-2 rounded-md bg-primary/10 text-primary">
+                    <div className={cn(
+                      "p-2 rounded-md",
+                      isLovableTemplate
+                        ? "bg-purple-200 text-purple-700"
+                        : "bg-primary/10 text-primary"
+                    )}>
                       <IconComponent className="h-5 w-5" />
                     </div>
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    <CardTitle className={cn(
+                      "text-lg",
+                      isLovableTemplate ? "text-purple-700" : ""
+                    )}>
+                      {template.name}
+                    </CardTitle>
                   </div>
                   
                   <Badge variant="outline" className="capitalize">

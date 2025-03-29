@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, AwardIcon } from "lucide-react";
+import { PlusCircle, AwardIcon, TrendingUp } from "lucide-react";
 import TemplateSelector from "../templates/TemplateSelector";
 import { ChatbotTemplate } from "../templates/types";
 import { getTemplateById } from "../templates/data";
@@ -39,25 +39,25 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
           Choose a preconfigured template for your chatbot or start from scratch
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
         {/* Featured Template - Lovable Hackathon Expert */}
         {featuredTemplate && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-              <AwardIcon className="h-4 w-4 mr-2 text-primary" />
+              <AwardIcon className="h-4 w-4 mr-2 text-purple-500" />
               Featured Template
             </h3>
             <div 
-              className="p-4 border-2 border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+              className="p-5 border-2 border-purple-300 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 cursor-pointer hover:bg-purple-100 transition-colors"
               onClick={() => handleTemplateClick(featuredTemplate)}
             >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/20 text-primary">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-md bg-purple-200 text-purple-700">
                   <AwardIcon className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg">{featuredTemplate.name}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-medium text-xl text-purple-700">{featuredTemplate.name}</h3>
+                  <p className="text-sm text-purple-600">
                     {featuredTemplate.description}
                   </p>
                 </div>
@@ -67,15 +67,15 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
         )}
         
         <div 
-          className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+          className="p-5 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
           onClick={handleStartFromScratch}
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-primary/20 text-primary">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-md bg-primary/20 text-primary">
               <PlusCircle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-medium">Start from scratch</h3>
+              <h3 className="font-medium text-lg">Start from scratch</h3>
               <p className="text-sm text-muted-foreground">
                 Create a custom chatbot without using a predefined template
               </p>

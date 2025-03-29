@@ -7,7 +7,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wand2, MessageCircle, AwardIcon } from "lucide-react";
+import { PlusCircle, Wand2, MessageCircle, AwardIcon, TrendingUp } from "lucide-react";
 import { chatbotTemplates, TEMPLATE_ICONS } from "../templates/data";
 
 interface InitialChoiceDialogProps {
@@ -28,7 +28,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
   
   // Select just 2 other featured templates
   const otherTemplates = chatbotTemplates
-    .filter(t => t.id !== "lovable-hackathon-expert")
+    .filter(t => t.id !== "lovable-hackathon-expert" && t.id !== "technical-support")
     .slice(0, 2);
   
   // Combine templates with Lovable Hackathon Expert first
@@ -39,7 +39,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
   // Helper function to get the correct icon component
   const getIconComponent = (iconName: string) => {
     if (iconName === "lovable") {
-      return <AwardIcon className="h-6 w-6 text-primary" />;
+      return <AwardIcon className="h-6 w-6 text-purple-500" />;
     }
     
     switch(iconName) {
@@ -57,39 +57,39 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl w-[90vw]">
+      <DialogContent className="sm:max-w-4xl w-[92vw]">
         <DialogHeader>
           <DialogTitle className="text-2xl text-left">Create a new chatbot</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-8 py-6">
           {/* Start from scratch option */}
           <div 
-            className="flex items-center p-5 border rounded-lg hover:border-primary cursor-pointer hover:bg-accent/50 transition-all"
+            className="flex items-center p-6 border rounded-lg hover:border-primary cursor-pointer hover:bg-accent/50 transition-all"
             onClick={onStartFromScratch}
           >
-            <div className="mr-4 p-3 bg-primary/10 rounded-full">
-              <PlusCircle className="h-6 w-6 text-primary" />
+            <div className="mr-5 p-4 bg-primary/10 rounded-full">
+              <PlusCircle className="h-7 w-7 text-primary" />
             </div>
             <div className="text-left">
-              <h3 className="font-medium text-lg">Start from scratch</h3>
-              <p className="text-sm text-muted-foreground">Create a custom chatbot with your own settings</p>
+              <h3 className="font-medium text-xl">Start from scratch</h3>
+              <p className="text-md text-muted-foreground">Create a custom chatbot with your own settings</p>
             </div>
           </div>
           
           {/* Template option */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex items-center px-4">
-              <div className="mr-4 p-3 bg-primary/10 rounded-full">
-                <Wand2 className="h-6 w-6 text-primary" />
+              <div className="mr-5 p-4 bg-primary/10 rounded-full">
+                <Wand2 className="h-7 w-7 text-primary" />
               </div>
               <div className="text-left">
-                <h3 className="font-medium text-lg">Use a template</h3>
-                <p className="text-sm text-muted-foreground">Start with a pre-configured template</p>
+                <h3 className="font-medium text-xl">Use a template</h3>
+                <p className="text-md text-muted-foreground">Start with a pre-configured template</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {featuredTemplates.map((template, index) => {
                 // Apply special styling to the Lovable Hackathon Expert template
                 const isLovableTemplate = template.id === "lovable-hackathon-expert";
@@ -97,18 +97,18 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
                 return (
                   <div 
                     key={template.id}
-                    className={`border rounded-lg p-4 hover:border-primary cursor-pointer hover:bg-accent/50 transition-all flex flex-col items-center text-center ${
-                      isLovableTemplate ? 'border-primary border-2 bg-primary/5 ring-1 ring-primary/20' : ''
+                    className={`border rounded-lg p-5 hover:border-primary cursor-pointer hover:bg-accent/50 transition-all flex flex-col items-center text-center ${
+                      isLovableTemplate ? 'border-purple-400 border-2 bg-gradient-to-br from-purple-50 to-purple-100 shadow-sm' : ''
                     }`}
                     onClick={() => onSelectTemplate(template.id)}
                   >
-                    <div className={`p-3 ${isLovableTemplate ? 'bg-primary/20' : 'bg-primary/10'} rounded-full mb-3`}>
+                    <div className={`p-3 ${isLovableTemplate ? 'bg-purple-200 text-purple-700' : 'bg-primary/10'} rounded-full mb-4`}>
                       {getIconComponent(template.icon)}
                     </div>
-                    <h4 className="text-base font-medium">
+                    <h4 className={`text-lg font-medium ${isLovableTemplate ? 'text-purple-700' : ''}`}>
                       {template.name}
                       {isLovableTemplate && (
-                        <span className="block text-xs text-primary mt-0.5">Recommended</span>
+                        <span className="block text-xs text-purple-500 mt-1 font-bold">Recommended</span>
                       )}
                     </h4>
                   </div>
@@ -118,7 +118,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
             
             <Button 
               variant="link" 
-              className="w-full text-base mt-2" 
+              className="w-full text-lg mt-4" 
               onClick={() => onSelectTemplate("")}
             >
               View all templates
