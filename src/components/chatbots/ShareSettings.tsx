@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +8,54 @@ import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye } from "lucide-react";
 
+// Define the shape of the widget configuration
+interface ShareSettings {
+  widget_id?: string;
+  enabled?: boolean;
+  appearance?: {
+    position?: string;
+    theme?: string;
+    initial_state?: string;
+    offset_x?: number;
+    offset_y?: number;
+    width?: number;
+    height?: number;
+    border_radius?: number;
+    box_shadow?: boolean;
+    z_index?: number;
+  };
+  content?: {
+    title?: string;
+    subtitle?: string;
+    placeholder_text?: string;
+    welcome_message?: string;
+    branding?: boolean;
+  };
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    background?: string;
+    text?: string;
+    user_bubble?: string;
+    bot_bubble?: string;
+    links?: string;
+  };
+  behavior?: {
+    auto_open?: boolean;
+    auto_open_delay?: number;
+    persist_conversation?: boolean;
+    save_conversation_id?: boolean;
+  };
+  restrictions?: {
+    allowed_domains?: string[];
+  };
+}
+
 const ShareSettings = () => {
   const { id: chatbotId } = useParams<{ id: string }>();
   const { toast } = useToast();
   const [widgetId, setWidgetId] = useState<string | null>(null);
-  const [widgetConfig, setWidgetConfig] = useState<any>(null);
+  const [widgetConfig, setWidgetConfig] = useState<ShareSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,59 +72,64 @@ const ShareSettings = () => {
 
         if (error) throw error;
 
-        if (data?.share_settings?.widget_id) {
-          setWidgetId(data.share_settings.widget_id);
-          setWidgetConfig(data.share_settings);
+        const shareSettings = data?.share_settings as ShareSettings | null;
+
+        if (shareSettings?.widget_id) {
+          setWidgetId(shareSettings.widget_id);
+          setWidgetConfig(shareSettings);
         } else {
           // Generate a widget ID if none exists
           const newWidgetId = `wgt_${Math.random().toString(36).substring(2, 12)}`;
           setWidgetId(newWidgetId);
           
+          // Create a new configuration object with the generated widget ID
+          const newConfig: ShareSettings = {
+            widget_id: newWidgetId,
+            enabled: true,
+            appearance: {
+              position: "right",
+              theme: "light",
+              initial_state: "closed",
+              offset_x: 20,
+              offset_y: 20,
+              width: 350,
+              height: 500,
+              border_radius: 10,
+              box_shadow: true,
+              z_index: 9999
+            },
+            content: {
+              title: "Chat con nosotros",
+              subtitle: "Responderemos tus dudas",
+              placeholder_text: "Escribe un mensaje...",
+              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?",
+              branding: true
+            },
+            colors: {
+              primary: "#2563eb",
+              secondary: "#4b5563",
+              background: "#ffffff",
+              text: "#333333",
+              user_bubble: "#2563eb",
+              bot_bubble: "#f1f0f0",
+              links: "#0078ff"
+            },
+            behavior: {
+              auto_open: false,
+              auto_open_delay: 3000,
+              persist_conversation: true,
+              save_conversation_id: true
+            },
+            restrictions: {
+              allowed_domains: []
+            }
+          };
+          
           // Update the database with the new widget ID
           const { error: updateError } = await supabase
             .from("chatbots")
             .update({
-              share_settings: {
-                widget_id: newWidgetId,
-                enabled: true,
-                appearance: {
-                  position: "right",
-                  theme: "light",
-                  initial_state: "closed",
-                  offset_x: 20,
-                  offset_y: 20,
-                  width: 350,
-                  height: 500,
-                  border_radius: 10,
-                  box_shadow: true,
-                  z_index: 9999
-                },
-                content: {
-                  title: "Chat con nosotros",
-                  subtitle: "Responderemos tus dudas",
-                  placeholder_text: "Escribe un mensaje...",
-                  welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?",
-                  branding: true
-                },
-                colors: {
-                  primary: "#2563eb",
-                  secondary: "#4b5563",
-                  background: "#ffffff",
-                  text: "#333333",
-                  user_bubble: "#2563eb",
-                  bot_bubble: "#f1f0f0",
-                  links: "#0078ff"
-                },
-                behavior: {
-                  auto_open: false,
-                  auto_open_delay: 3000,
-                  persist_conversation: true,
-                  save_conversation_id: true
-                },
-                restrictions: {
-                  allowed_domains: []
-                }
-              }
+              share_settings: newConfig
             })
             .eq("id", chatbotId);
 
@@ -94,7 +143,7 @@ const ShareSettings = () => {
             .single();
             
           if (updatedData?.share_settings) {
-            setWidgetConfig(updatedData.share_settings);
+            setWidgetConfig(updatedData.share_settings as ShareSettings);
           }
         }
       } catch (error) {
