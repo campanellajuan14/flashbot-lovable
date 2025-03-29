@@ -30,9 +30,9 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
 
   // Get model badge color based on model name
   const getModelBadgeColor = (modelName: string) => {
-    if (modelName.includes('Claude 3 Haiku')) return 'bg-violet-100 text-violet-800 hover:bg-violet-100';
-    if (modelName.includes('Claude 3 Sonnet')) return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
-    if (modelName.includes('Claude 3 Opus')) return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100';
+    if (modelName.includes('Claude 3 Haiku')) return 'bg-amber-100 text-amber-800 hover:bg-amber-100';
+    if (modelName.includes('Claude 3 Sonnet')) return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
+    if (modelName.includes('Claude 3 Opus')) return 'bg-amber-200 text-amber-900 hover:bg-amber-200';
     if (modelName.includes('GPT-4')) return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100';
     if (modelName.includes('GPT-3.5')) return 'bg-green-100 text-green-800 hover:bg-green-100';
     return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
@@ -42,7 +42,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
     <Card className="dashboard-card overflow-hidden transition-all duration-200 hover:shadow-md">
       <CardHeader className="pb-2 relative flex flex-row justify-between items-start">
         <div className="flex flex-col items-start">
-          <Badge variant={chatbot.is_active ? "default" : "secondary"} className="mb-2">
+          <Badge variant={chatbot.is_active ? "success" : "secondary"} className="mb-2">
             {chatbot.is_active ? "Active" : "Inactive"}
           </Badge>
           <div className="flex items-center gap-2">
