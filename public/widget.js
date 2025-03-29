@@ -10,6 +10,16 @@
     
     if (!widgetId) {
       console.error('Widget initialization failed: Missing data-widget-id attribute');
+      // Añadir un elemento visual que muestre el error
+      const errorDiv = document.createElement('div');
+      errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
+                       color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
+                       font-family: sans-serif; z-index: 10000; max-width: 300px;`;
+      errorDiv.innerHTML = `
+        <strong>Widget Error</strong>
+        <p>Falta el atributo data-widget-id en el script.</p>
+      `;
+      document.body.appendChild(errorDiv);
       return;
     }
     
@@ -34,6 +44,8 @@
     console.log('Script base path:', basePath);
     console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
     console.log('Current page origin:', window.location.origin);
+    console.log('Current page URL:', window.location.href);
+    console.log('Document referrer:', document.referrer);
     
     // Add a timeout to detect loading problems
     const loadTimeout = setTimeout(() => {
@@ -65,7 +77,9 @@
                 user_info: {
                   url: window.location.href,
                   referrer: document.referrer,
-                  userAgent: navigator.userAgent
+                  userAgent: navigator.userAgent,
+                  timestamp: new Date().toISOString(),
+                  domain: window.location.hostname
                 }
               });
               
@@ -88,6 +102,7 @@
               errorDiv.innerHTML = `
                 <strong>Widget Error</strong>
                 <p>La carga del widget ha fallado. Por favor contacte al administrador.</p>
+                <p>Error: ${err.message}</p>
               `;
               document.body.appendChild(errorDiv);
             });
@@ -97,6 +112,17 @@
         console.error(`Failed to load module: ${src}`, e);
         // Increment counter to avoid hanging
         loadedCount++;
+        
+        // Mostrar error visual
+        const errorDiv = document.createElement('div');
+        errorDiv.style = `position: fixed; bottom: 20px; right: 20px; background: #f8d7da; 
+                         color: #721c24; padding: 10px; border-radius: 5px; font-size: 12px;
+                         font-family: sans-serif; z-index: 10000; max-width: 300px;`;
+        errorDiv.innerHTML = `
+          <strong>Widget Error</strong>
+          <p>Error al cargar módulo: ${src}</p>
+        `;
+        document.body.appendChild(errorDiv);
       };
       document.head.appendChild(script);
     });
@@ -110,6 +136,11 @@
   };
   
   console.log('Widget script loaded, starting module loading...');
+  
+  // Intentar detectar si estamos en un iframe
+  const isIframe = window !== window.parent;
+  console.log('Is iframe:', isIframe);
+  
   // Initialize module loading
   loadModules();
 })();

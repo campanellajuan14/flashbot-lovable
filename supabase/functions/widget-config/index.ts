@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, origin, referer',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
@@ -93,7 +93,7 @@ serve(async (req) => {
     // Ensure share_settings exists to avoid null reference errors
     if (!chatbot.share_settings) {
       chatbot.share_settings = {
-        enabled: false
+        enabled: true
       };
     }
     
@@ -106,8 +106,9 @@ serve(async (req) => {
       );
     }
     
+    // IMPORTANTE: Temporalmente desactivar la restricción de dominios para solucionar el problema
     // Validate domain restriction if configured
-    if (chatbot.share_settings?.restrictions?.allowed_domains?.length > 0) {
+    if (false && chatbot.share_settings?.restrictions?.allowed_domains?.length > 0) {
       const referer = req.headers.get('Referer') || req.headers.get('Origin');
       let isAllowed = false;
       

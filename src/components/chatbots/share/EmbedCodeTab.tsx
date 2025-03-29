@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye, CheckCircle2, Code, Frame } from "lucide-react";
-import { copyEmbedCode, getIframeEmbedCode } from "./utils";
+import { getIframeEmbedCode } from "./utils";
 import ChatbotPreviewDialog from "@/components/chatbots/ChatbotPreviewDialog";
 import { ShareSettings } from "./types";
 import { useState } from "react";
@@ -68,6 +68,28 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     }
   };
 
+  // Función para mostrar información del ID actual del widget
+  const getWidgetInfo = () => {
+    if (widgetId) {
+      return (
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4 text-sm text-blue-800">
+          <p className="font-medium mb-1">Widget ID configurado: <span className="font-mono">{widgetId}</span></p>
+          <p className="text-xs text-blue-700">
+            Este ID es diferente del ID del chatbot y es el que se usará para el acceso público.
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mt-4 text-sm text-amber-800">
+        <p className="font-medium mb-1">Usando el ID del chatbot como widget ID</p>
+        <p className="text-xs text-amber-700">
+          No se ha configurado un widget ID específico, se usará el ID del chatbot: <span className="font-mono">{chatbotId}</span>
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,6 +98,8 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
           Copy and paste this code into your website's HTML where you want the chatbot to appear.
         </p>
       </div>
+
+      {getWidgetInfo()}
 
       <Tabs value={embedType} onValueChange={(v) => setEmbedType(v as "script" | "iframe")} className="w-full">
         <TabsList className="grid grid-cols-2 mb-4 w-[250px]">

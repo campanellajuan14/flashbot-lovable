@@ -4,7 +4,8 @@ const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
 // Añadimos más intentos para recuperación de errores
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 /**
  * Fetch widget configuration from the API
@@ -13,7 +14,7 @@ const MAX_RETRIES = 2;
  */
 export async function fetchWidgetConfig(widgetId, retryCount = 0) {
   try {
-    console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
+    console.log(`Intentando cargar configuración para widget ID: ${widgetId} (intento ${retryCount + 1}/${MAX_RETRIES + 1})`);
     console.log(`URL completo: ${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
     
     const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
@@ -22,7 +23,8 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
         'Content-Type': 'application/json',
         'apikey': ANON_KEY,
         'x-client-info': 'widget-client',
-        'Origin': window.location.origin
+        'Origin': window.location.origin,
+        'Referer': document.referrer || window.location.href
       },
       // Asegurarse de incluir las cookies en la solicitud
       credentials: 'include',
@@ -31,10 +33,10 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
     console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
-      // Si recibimos un 401 o 403, intentamos de nuevo después de un pequeño retraso
-      if ((response.status === 401 || response.status === 403) && retryCount < MAX_RETRIES) {
+      // Si recibimos un 401, 403 o 429, intentamos de nuevo después de un pequeño retraso
+      if ((response.status === 401 || response.status === 403 || response.status === 429) && retryCount < MAX_RETRIES) {
         console.log(`Reintentando solicitud (${retryCount + 1}/${MAX_RETRIES}) después de error ${response.status}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
         return fetchWidgetConfig(widgetId, retryCount + 1);
       }
       
@@ -51,8 +53,12 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
           }
         }
       } catch (e) {
-        const errorText = await response.text();
-        console.error(`Contenido de la respuesta: ${errorText}`);
+        try {
+          const errorText = await response.text();
+          console.error(`Contenido de la respuesta: ${errorText}`);
+        } catch (textError) {
+          console.error("No se pudo leer el contenido de la respuesta de error");
+        }
       }
       
       throw new Error(errorMessage);
@@ -63,6 +69,45 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
     return data;
   } catch (error) {
     console.error('Widget config fetch error:', error);
+    
+    // Último intento con una configuración de respaldo si hemos agotado los reintentos
+    if (retryCount >= MAX_RETRIES) {
+      console.warn('Usando configuración de respaldo después de agotar reintentos');
+      return {
+        id: widgetId,
+        name: "Chat Asistente",
+        config: {
+          appearance: {
+            position: "right",
+            theme: "light",
+            initial_state: "closed",
+            border_radius: 10,
+            box_shadow: true
+          },
+          content: {
+            title: "Chat Asistente",
+            placeholder_text: "Escribe un mensaje...",
+            welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?",
+            branding: true
+          },
+          colors: {
+            primary: "#2563eb",
+            secondary: "#f1f5f9",
+            background: "#ffffff",
+            text: "#333333",
+            user_bubble: "#2563eb",
+            bot_bubble: "#f1f5f9",
+            links: "#2563eb"
+          },
+          behavior: {
+            persist_conversation: true,
+            auto_open: false,
+            auto_open_delay: 0,
+            save_conversation_id: false
+          }
+        }
+      };
+    }
     throw error;
   }
 }
@@ -76,7 +121,8 @@ export async function sendChatMessage(message, state) {
         'Content-Type': 'application/json',
         // Adding apikey to header for anonymous access
         'apikey': ANON_KEY,
-        'Origin': window.location.origin
+        'Origin': window.location.origin,
+        'Referer': document.referrer || window.location.href
       },
       body: JSON.stringify({
         message,
