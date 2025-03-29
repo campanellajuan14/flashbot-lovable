@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -78,21 +79,21 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
   // Configuración de color para los gráficos
   const config = {
     precision: {
-      label: "Precisión",
+      label: "Precision",
       theme: {
         light: "#9b87f5",
         dark: "#7E69AB",
       }
     },
     response_time: {
-      label: "Tiempo de Respuesta",
+      label: "Response Time",
       theme: {
         light: "#ea384c",
         dark: "#DC2626",
       }
     },
     tokens_used: {
-      label: "Tokens Usados",
+      label: "Tokens Used",
       theme: {
         light: "#0EA5E9",
         dark: "#0284C7",
@@ -105,11 +106,11 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Rendimiento</CardTitle>
-          <CardDescription>No hay datos de rendimiento disponibles.</CardDescription>
+          <CardTitle>Performance</CardTitle>
+          <CardDescription>No performance data available.</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground">
-          No hay suficientes datos para mostrar métricas de rendimiento.
+          Not enough data to display performance metrics.
         </CardContent>
       </Card>
     );
@@ -163,25 +164,25 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard 
-          title="Precisión Promedio"
+          title="Average Precision"
           value={`${(avgPrecision * 100).toFixed(1)}%`}
-          description="Promedio de precisión en respuestas"
+          description="Average precision in responses"
           icon={Activity}
           color="text-purple-500"
           isLoading={isLoading}
         />
         <MetricCard 
-          title="Tiempo de Respuesta"
+          title="Response Time"
           value={`${avgResponseTime.toFixed(0)} ms`}
-          description="Tiempo promedio de respuesta"
+          description="Average response time"
           icon={Clock}
           color="text-red-500"
           isLoading={isLoading}
         />
         <MetricCard 
-          title="Tokens Promedio"
+          title="Average Tokens"
           value={avgTokensUsed.toFixed(0)}
-          description="Tokens promedio por consulta"
+          description="Average tokens per query"
           icon={Zap}
           color="text-blue-500"
           isLoading={isLoading}
@@ -190,9 +191,9 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
       
       <Card>
         <CardHeader>
-          <CardTitle>Tendencias de Rendimiento</CardTitle>
+          <CardTitle>Performance Trends</CardTitle>
           <CardDescription>
-            Evolución de métricas en el tiempo
+            Evolution of metrics over time
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -225,10 +226,10 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
                   <Tooltip 
                     formatter={(value, name) => {
                       if (name === "precision") {
-                        return [`${(Number(value) * 100).toFixed(1)}%`, "Precisión"];
+                        return [`${(Number(value) * 100).toFixed(1)}%`, "Precision"];
                       }
                       if (name === "response_time") {
-                        return [`${Number(value).toFixed(0)} ms`, "Tiempo de Respuesta"];
+                        return [`${Number(value).toFixed(0)} ms`, "Response Time"];
                       }
                       return [value, name];
                     }}
@@ -238,7 +239,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
                     yAxisId="left"
                     type="monotone"
                     dataKey="precision"
-                    name="Precisión"
+                    name="Precision"
                     stroke="#9b87f5"
                     activeDot={{ r: 8 }}
                   />
@@ -246,7 +247,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ data, isLoading
                     yAxisId="right"
                     type="monotone"
                     dataKey="response_time"
-                    name="Tiempo de Respuesta"
+                    name="Response Time"
                     stroke="#ea384c"
                     activeDot={{ r: 8 }}
                   />

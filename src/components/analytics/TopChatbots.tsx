@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,7 +44,7 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
       if (!acc[item.chatbot_id]) {
         acc[item.chatbot_id] = {
           id: item.chatbot_id,
-          name: item.chatbots?.name || "Chatbot sin nombre",
+          name: item.chatbots?.name || "Unnamed chatbot",
           queries: 0,
           totalTokens: 0,
           avgPrecision: 0,
@@ -83,7 +84,7 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
   // Función para formatear la fecha
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('es', { 
+    return new Intl.DateTimeFormat('en', { 
       day: '2-digit', 
       month: '2-digit',
       year: 'numeric',
@@ -92,17 +93,17 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
     }).format(date);
   };
   
-  // Contenido cuando no hay datos
+  // Content when no data is available
   if (!isLoading && (!data || data.length === 0 || topChatbots.length === 0)) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Top Chatbots</CardTitle>
-          <CardDescription>No hay datos disponibles.</CardDescription>
+          <CardDescription>No data available.</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px] flex flex-col items-center justify-center text-muted-foreground">
           <Bot className="h-16 w-16 mb-4 opacity-20" />
-          <p>No hay suficientes datos para mostrar estadísticas de chatbots.</p>
+          <p>Not enough data to display chatbot statistics.</p>
         </CardContent>
       </Card>
     );
@@ -113,7 +114,7 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
       <CardHeader>
         <CardTitle>Top Chatbots</CardTitle>
         <CardDescription>
-          Los chatbots más utilizados y sus métricas
+          Most used chatbots and their metrics
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -127,11 +128,11 @@ const TopChatbots: React.FC<TopChatbotsProps> = ({ data, isLoading }) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead className="text-right">Consultas</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead className="text-right">Queries</TableHead>
                 <TableHead className="text-right">Tokens</TableHead>
-                <TableHead className="text-right">Precisión</TableHead>
-                <TableHead className="text-right">Último uso</TableHead>
+                <TableHead className="text-right">Precision</TableHead>
+                <TableHead className="text-right">Last Used</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
