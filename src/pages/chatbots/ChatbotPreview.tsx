@@ -12,6 +12,7 @@ import { useChatbotData } from "./preview/useChatbotData";
 import { useChatMessages } from "./preview/useChatMessages";
 import { useVoiceChat } from "./preview/hooks/useVoiceChat";
 import VoiceChat from "./preview/components/VoiceChat";
+import { ChatMessage } from "./preview/types";
 
 const ChatbotPreview = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const ChatbotPreview = () => {
 
   // Handle message from voice chat
   const handleVoiceChatMessage = (text: string) => {
-    const botMessage = {
+    const botMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "bot",
       content: text,

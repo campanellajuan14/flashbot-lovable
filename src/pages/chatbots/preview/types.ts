@@ -59,7 +59,7 @@ export interface ChatMessage {
 export interface VoiceChatMessage {
   type: string;
   content?: string;
-  role?: string;
+  role?: "user" | "bot";
   function_call?: any;
   tool_calls?: any[];
 }

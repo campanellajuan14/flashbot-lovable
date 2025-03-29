@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useConversation } from "@11labs/react";
-import { Chatbot } from "../types";
+import { Chatbot, VoiceChatMessage } from "../types";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Mic, MicOff, Send, Volume2, VolumeX } from "lucide-react";
+import { AlertCircle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
