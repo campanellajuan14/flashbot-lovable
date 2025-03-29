@@ -17,11 +17,11 @@ export const useFormState = () => {
       ...defaultSettings,
       // Ensure numeric types are properly initialized
       maxTokens: typeof defaultSettings.maxTokens === 'string' 
-        ? parseInt(defaultSettings.maxTokens, 10) 
-        : defaultSettings.maxTokens,
+        ? parseInt(defaultSettings.maxTokens, 10) || 500
+        : defaultSettings.maxTokens || 500,
       temperature: typeof defaultSettings.temperature === 'string'
-        ? parseFloat(defaultSettings.temperature)
-        : defaultSettings.temperature
+        ? parseFloat(defaultSettings.temperature) || 0.7
+        : defaultSettings.temperature || 0.7
     }
   });
   
@@ -42,12 +42,28 @@ export const useFormState = () => {
   const handleNestedChange = (parent: string, field: string, value: any) => {
     setForm(prev => {
       const parentValue = prev[parent as keyof typeof prev];
+      
       if (typeof parentValue === 'object' && parentValue !== null) {
+        // Type conversion for known numeric fields
+        let processedValue = value;
+        
+        if (parent === 'settings' && field === 'maxTokens') {
+          processedValue = typeof value === 'string' 
+            ? parseInt(value, 10) || 500
+            : value;
+        }
+        
+        if (parent === 'settings' && field === 'temperature') {
+          processedValue = typeof value === 'string' 
+            ? parseFloat(value) || 0.7 
+            : value;
+        }
+        
         return {
           ...prev,
           [parent]: {
             ...parentValue,
-            [field]: value
+            [field]: processedValue
           }
         };
       }
@@ -59,7 +75,7 @@ export const useFormState = () => {
     setAiProvider(provider);
     // Set a default model based on the provider
     const defaultModel = provider === "claude" 
-      ? "claude-3-haiku-20240307" 
+      ? "claude-3-5-sonnet-20241022" 
       : "gpt-4o";
     
     handleNestedChange("settings", "model", defaultModel);

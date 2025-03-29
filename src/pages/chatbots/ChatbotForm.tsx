@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -9,18 +9,22 @@ import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 import DocumentNavigation from "@/components/chatbots/DocumentNavigation";
+import InitialChoiceDialog from "./components/InitialChoiceDialog";
 import BasicInfoTab from "./components/BasicInfoTab";
 import PersonalityTab from "./components/PersonalityTab";
 import AdvancedSettingsTab from "./components/AdvancedSettingsTab";
 import TemplateSelectionTab from "./components/TemplateSelectionTab";
 import { useChatbotForm } from "./hooks/useChatbotForm";
 import LoadingState from "./components/LoadingState";
+import { getTemplateById } from "./templates/data";
+import { ChatbotTemplate } from "./templates/types";
 
 const ChatbotForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>(id ? "basic" : "templates");
+  const [activeTab, setActiveTab] = useState<string>("basic");
+  const [showInitialDialog, setShowInitialDialog] = useState<boolean>(!id);
   
   const {
     form,
@@ -37,8 +41,32 @@ const ChatbotForm = () => {
   } = useChatbotForm({ id, userId: user?.id });
 
   const handleStartFromScratch = () => {
+    setShowInitialDialog(false);
     setActiveTab("basic");
   };
+  
+  const handleSelectTemplateFromDialog = (templateId: string) => {
+    if (templateId === "") {
+      // View all templates
+      setShowInitialDialog(false);
+      setActiveTab("templates");
+    } else {
+      // Select specific template
+      const template = getTemplateById(templateId);
+      if (template) {
+        handleTemplateSelect(template);
+        setShowInitialDialog(false);
+        setActiveTab("basic");
+      }
+    }
+  };
+
+  // Close the dialog if we're editing an existing chatbot
+  useEffect(() => {
+    if (id) {
+      setShowInitialDialog(false);
+    }
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -53,6 +81,14 @@ const ChatbotForm = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Initial choice dialog */}
+        <InitialChoiceDialog 
+          open={showInitialDialog}
+          onOpenChange={setShowInitialDialog}
+          onStartFromScratch={handleStartFromScratch}
+          onSelectTemplate={handleSelectTemplateFromDialog}
+        />
+        
         <div className="flex items-center">
           <Button 
             variant="ghost" 
@@ -79,15 +115,13 @@ const ChatbotForm = () => {
 
         <form onSubmit={handleSubmit}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              {!isEditing && (
-                <TabsTrigger value="templates">Templates</TabsTrigger>
-              )}
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Information</TabsTrigger>
               <TabsTrigger value="personality">Personality</TabsTrigger>
               <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
             </TabsList>
             
+            {/* Templates tab is now hidden by default but can still be accessed */}
             {!isEditing && (
               <TabsContent value="templates" className="space-y-4 pt-4">
                 <TemplateSelectionTab 

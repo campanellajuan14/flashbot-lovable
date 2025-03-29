@@ -40,7 +40,16 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
       name: prev.name || template.name,
       description: prev.description || template.description,
       personality: template.personality,
-      settings: template.settings
+      settings: {
+        ...template.settings,
+        // Ensure numeric types are properly initialized
+        maxTokens: typeof template.settings.maxTokens === 'string' 
+          ? parseInt(template.settings.maxTokens, 10) 
+          : template.settings.maxTokens,
+        temperature: typeof template.settings.temperature === 'string'
+          ? parseFloat(template.settings.temperature)
+          : template.settings.temperature
+      }
     }));
     
     // Set the correct provider based on the template model
