@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Card,
@@ -191,7 +190,6 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
       </div>
 
       <div className="col-span-1 md:col-span-2 space-y-6">
-        {/* Custom Instructions Section - Moved to top for prominence */}
         <Card className="overflow-hidden border-t-4 border-t-primary">
           <CardHeader className="bg-muted/30">
             <CardTitle className="text-left">Custom Instructions</CardTitle>
@@ -256,7 +254,7 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
                   </div>
                   <div className="flex justify-end">
                     <Button 
-                      variant="primary" 
+                      variant="default" 
                       onClick={() => setIsEditing(true)}
                       type="button"
                     >
