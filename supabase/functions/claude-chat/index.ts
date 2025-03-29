@@ -135,9 +135,6 @@ serve(async (req) => {
     // Build improved system prompt based on configured behavior
     let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
     
-    // Código ChatSimp inspirado para enfatizar el nombre del chatbot (problema crítico)
-    systemPrompt += `\n\nMUY IMPORTANTE: Tu nombre es ${chatbotName}. SIEMPRE debes identificarte con este nombre cuando te pregunten cómo te llamas o cuál es tu nombre. NUNCA debes decir que eres un asistente sin nombre. Esto es crítico para tu identidad.`;
-    
     if (behavior) {
       // Add tone instructions
       if (behavior.tone) {
@@ -210,18 +207,6 @@ Instrucciones importantes sobre el uso de estos documentos:
 
     console.log('System prompt:', systemPrompt);
 
-    // Verificar si se está preguntando por el nombre para asegurar consistencia
-    const isNameQuestion = lastUserMessage && 
-      (lastUserMessage.toLowerCase().includes("cómo te llamas") || 
-       lastUserMessage.toLowerCase().includes("cuál es tu nombre") ||
-       lastUserMessage.toLowerCase().includes("quién eres"));
-
-    // Si es una pregunta sobre el nombre, añadir instrucción especial
-    let finalSystemPrompt = systemPrompt;
-    if (isNameQuestion) {
-      finalSystemPrompt += `\n\nRECUERDA: Esta pregunta es sobre tu nombre. Tu ÚNICO nombre es ${chatbotName}. Debes responder que te llamas ${chatbotName}, sin excepciones ni alternativas.`;
-    }
-
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
       headers: {
@@ -232,7 +217,7 @@ Instrucciones importantes sobre el uso de estos documentos:
       body: JSON.stringify({
         model: modelSettings.model,
         messages: formattedMessages,
-        system: finalSystemPrompt,
+        system: systemPrompt,
         max_tokens: modelSettings.maxTokens,
         temperature: modelSettings.temperature,
       }),
@@ -247,19 +232,9 @@ Instrucciones importantes sobre el uso de estos documentos:
     const data = await response.json();
     console.log('Anthropic API response:', data);
 
-    // Verificación post-respuesta para asegurar el nombre correcto
-    let finalMessage = data.content[0].text;
-    
-    if (isNameQuestion && !finalMessage.toLowerCase().includes(chatbotName.toLowerCase())) {
-      console.log("Name verification failed, forcing correct name");
-      // Si Claude no respondió con el nombre correcto en una pregunta de nombre,
-      // modificar la respuesta para incluir el nombre explícitamente
-      finalMessage = `Mi nombre es ${chatbotName}. ${finalMessage.replace(/Mi nombre es [^.]*\./, "").trim()}`;
-    }
-
     // Construir respuesta con referencias a documentos si hay documentos relevantes
     const responseData = {
-      message: finalMessage,
+      message: data.content[0].text,
       model: data.model,
       usage: data.usage
     };
