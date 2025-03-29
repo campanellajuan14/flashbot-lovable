@@ -1,11 +1,16 @@
 
 // API interactions
-const API_BASE_URL = 'https://chatbot-platform.lovable.app/api';
+const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 
 export async function fetchWidgetConfig(widgetId) {
   try {
     console.log(`Fetching widget config for ID: ${widgetId}`);
-    const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`);
+    const response = await fetch(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
       console.error(`Error fetching widget config: ${response.status} ${response.statusText}`);

@@ -16,6 +16,10 @@
     // Count loaded modules to know when all are ready
     let loadedCount = 0;
     
+    // Debug info for troubleshooting
+    console.log('Script base path:', document.currentScript ? document.currentScript.src : 'Unknown');
+    console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
+    
     modules.forEach(src => {
       const script = document.createElement('script');
       script.type = 'module';
