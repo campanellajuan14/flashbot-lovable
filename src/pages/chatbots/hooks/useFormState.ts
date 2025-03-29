@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { ChatbotFormData } from "../types";
 import { defaultPersonality, defaultSettings } from "../constants";
-import { determineAiProvider } from "./form-utils";
 
 /**
  * Hook to manage form state
@@ -14,7 +13,16 @@ export const useFormState = () => {
     description: "",
     isActive: true,
     personality: defaultPersonality,
-    settings: defaultSettings
+    settings: {
+      ...defaultSettings,
+      // Ensure numeric types are properly initialized
+      maxTokens: typeof defaultSettings.maxTokens === 'string' 
+        ? parseInt(defaultSettings.maxTokens, 10) 
+        : defaultSettings.maxTokens,
+      temperature: typeof defaultSettings.temperature === 'string'
+        ? parseFloat(defaultSettings.temperature)
+        : defaultSettings.temperature
+    }
   });
   
   // Template selection

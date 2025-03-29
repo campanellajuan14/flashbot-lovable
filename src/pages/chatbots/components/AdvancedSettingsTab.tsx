@@ -30,6 +30,12 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
 }) => {
   // Prevent any unexpected string to number conversion issues
   const currentMaxTokens = form.settings.maxTokens?.toString() || "1000";
+  const currentTemperature = form.settings.temperature?.toString() || "0.7";
+  
+  const handleTemperatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value);
+    handleNestedChange("settings", "temperature", newValue);
+  };
   
   return (
     <Card>
@@ -62,7 +68,7 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
         <div className="space-y-2">
           <Label htmlFor="model">AI Model</Label>
           <Select
-            value={form.settings.model}
+            value={form.settings.model || ""}
             onValueChange={(value) => handleNestedChange("settings", "model", value)}
           >
             <SelectTrigger id="model">
@@ -91,15 +97,15 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="temperature">Temperature ({form.settings.temperature})</Label>
+            <Label htmlFor="temperature">Temperature ({currentTemperature})</Label>
             <Input
               id="temperature"
               type="range"
               min="0"
               max="1"
               step="0.1"
-              value={form.settings.temperature}
-              onChange={(e) => handleNestedChange("settings", "temperature", parseFloat(e.target.value))}
+              value={currentTemperature}
+              onChange={handleTemperatureChange}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Precise</span>

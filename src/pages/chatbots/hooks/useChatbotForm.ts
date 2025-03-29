@@ -43,7 +43,7 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
       settings: template.settings
     }));
     
-    // Establecer el proveedor correcto basado en el modelo del template
+    // Set the correct provider based on the template model
     if (template.settings.model.includes('claude')) {
       setAiProvider("claude");
     } else {

@@ -19,8 +19,11 @@ export const useChatbotData = (
   const { toast } = useToast();
   
   useEffect(() => {
+    // Only fetch data if both ID and userId are available
     if (!id || !userId) return;
     
+    // Prevent multiple fetches
+    let isMounted = true;
     setIsLoading(true);
     
     const fetchChatbot = async () => {
@@ -34,12 +37,17 @@ export const useChatbotData = (
         
         if (error) throw error;
         
+        // Only proceed if component is still mounted
+        if (!isMounted) return;
+        
         if (data) {
+          // Parse personality data with defaults
           let personalityData = { ...defaultPersonality };
           if (data.behavior && typeof data.behavior === 'object' && !Array.isArray(data.behavior)) {
             personalityData = parsePersonalityData(data.behavior as Record<string, unknown>);
           }
           
+          // Parse settings data with defaults
           let settingsData = { ...defaultSettings };
           if (data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)) {
             settingsData = parseSettingsData(data.settings as Record<string, unknown>);
@@ -55,6 +63,7 @@ export const useChatbotData = (
             }
           }
           
+          // Update form state with parsed data
           setForm({
             name: data.name || "",
             description: data.description || "",
@@ -76,17 +85,26 @@ export const useChatbotData = (
         }
       } catch (error) {
         console.error("Error fetching chatbot:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not load chatbot data",
-        });
+        if (isMounted) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load chatbot data",
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchChatbot();
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [id, userId, setForm, setAiProvider, handleNestedChange, toast]);
   
   return { isLoading };
