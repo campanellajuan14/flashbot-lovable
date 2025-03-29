@@ -138,10 +138,11 @@ export async function sendChatMessage(message, state) {
         'apikey': ANON_KEY,
         'Authorization': `Bearer ${ANON_KEY}`,
         'Origin': window.location.origin,
-        'Referer': document.referrer || window.location.href
+        'Referer': document.referrer || window.location.href,
+        'x-client-info': 'widget-client'
       },
       body: JSON.stringify({
-        message,
+        messages: [{ role: 'user', content: message }],
         chatbotId: state.config.id,
         conversationId: state.conversationId,
         source: 'widget',
@@ -174,7 +175,7 @@ export async function sendChatMessage(message, state) {
     
     const data = await response.json();
     console.log('Message sent successfully, received response:', data);
-    return data;
+    return { answer: data.message };
   } catch (error) {
     console.error('Message send error:', error);
     throw error;

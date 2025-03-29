@@ -55,7 +55,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
           const { error: updateError } = await supabase
             .from("chatbots")
             .update({ 
-              share_settings: defaultConfig
+              share_settings: defaultConfig as any // Type cast to any to avoid TypeScript error
             })
             .eq("id", chatbotId);
             
@@ -93,7 +93,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
       const { error } = await supabase
         .from("chatbots")
         .update({ 
-          share_settings: widgetConfig
+          share_settings: widgetConfig as any // Type cast to any to avoid TypeScript error
         })
         .eq("id", chatbotId);
       

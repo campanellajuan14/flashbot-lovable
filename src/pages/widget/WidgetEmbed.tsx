@@ -55,6 +55,9 @@ const WidgetEmbed: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
+  // API key for the widget
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
+
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
@@ -72,8 +75,8 @@ const WidgetEmbed: React.FC = () => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // Include the anon key for public access
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY',
+            'apikey': ANON_KEY,
+            'Authorization': `Bearer ${ANON_KEY}`,
             'x-client-info': 'widget-embed-component',
             'Origin': window.location.origin
           }
@@ -119,7 +122,7 @@ const WidgetEmbed: React.FC = () => {
               text: "#333333",
               user_bubble: "#2563eb",
               bot_bubble: "#f1f5f9",
-              links: "#2563eb"
+              links: "#0078ff"
             },
             behavior: data.config?.behavior || {
               persist_conversation: true,
@@ -171,7 +174,7 @@ const WidgetEmbed: React.FC = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!inputValue.trim() || !config) return;
+    if (!inputValue.trim() || !config || sending) return;
     
     const userMessage = inputValue.trim();
     setInputValue("");
@@ -186,11 +189,13 @@ const WidgetEmbed: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY',
+          'apikey': ANON_KEY,
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-client-info': 'widget-embed-component',
           'Origin': window.location.origin
         },
         body: JSON.stringify({
-          message: userMessage,
+          messages: [{ role: "user", content: userMessage }],
           chatbotId: config.id,
           conversationId: conversationId,
           source: 'widget',
@@ -205,10 +210,24 @@ const WidgetEmbed: React.FC = () => {
       
       if (!response.ok) {
         console.error(`Error enviando mensaje: ${response.status} ${response.statusText}`);
-        throw new Error('Error al enviar mensaje');
+        
+        // Try to get the error message
+        let errorMessage = "Error al enviar mensaje";
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          const errorText = await response.text();
+          console.error(`Contenido de la respuesta de error: ${errorText}`);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
+      console.log("Respuesta del servidor:", result);
       
       // Save conversation ID if first response
       if (result.conversation_id && !conversationId) {
@@ -216,17 +235,17 @@ const WidgetEmbed: React.FC = () => {
       }
       
       // Add bot response to state
-      setMessages(prev => [...prev, { role: "assistant", content: result.answer }]);
+      setMessages(prev => [...prev, { role: "assistant", content: result.message }]);
       
       // Save conversation if needed
       if (config.config.behavior.persist_conversation) {
         localStorage.setItem(`flashbot_chat_${widgetId}`, JSON.stringify({
-          messages: [...messages, { role: "user", content: userMessage }, { role: "assistant", content: result.answer }],
+          messages: [...messages, { role: "user", content: userMessage }, { role: "assistant", content: result.message }],
           conversationId: result.conversation_id || conversationId
         }));
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error enviando mensaje:", error);
       
       // Add error message

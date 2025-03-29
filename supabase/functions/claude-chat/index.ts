@@ -10,6 +10,7 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') as string;
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
@@ -19,7 +20,46 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, behavior, chatbotName, settings, chatbotId } = await req.json();
+    // Check for authorization header
+    const authHeader = req.headers.get('Authorization');
+    const apiKey = req.headers.get('apikey');
+    const clientInfo = req.headers.get('x-client-info');
+    const origin = req.headers.get('Origin') || '';
+    const referer = req.headers.get('Referer') || '';
+
+    console.log('Request headers debug:');
+    console.log('- Auth header present:', !!authHeader);
+    console.log('- API key present:', !!apiKey);
+    console.log('- Client Info:', clientInfo);
+    console.log('- Origin:', origin);
+    console.log('- Referer:', referer);
+
+    // Special widget authorization check
+    // Allow requests from the widget preview page or with widget source
+    const isWidgetRequest = 
+      (clientInfo && clientInfo.includes('widget')) || 
+      referer.includes('widget') || 
+      origin.includes('widget') ||
+      apiKey === SUPABASE_ANON_KEY;
+
+    if (!authHeader && !isWidgetRequest) {
+      console.error('Unauthorized request: No authentication and not a widget request');
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        details: 'No valid authentication provided'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source } = await req.json();
+
+    // Log request details for debugging
+    console.log('Request received:');
+    console.log('- Source:', source);
+    console.log('- Widget ID:', widget_id);
+    console.log('- Chatbot ID:', chatbotId);
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error('Invalid request: messages array is required');
