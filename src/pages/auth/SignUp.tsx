@@ -13,7 +13,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const SignUp = () => {
@@ -71,9 +71,9 @@ const SignUp = () => {
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center">
-            <MessageSquare className="h-10 w-10 text-primary" />
+            <Zap className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="mt-2 text-3xl font-bold">ChatSimp</h2>
+          <h2 className="mt-2 text-3xl font-bold">Flashbot</h2>
           <p className="mt-1 text-muted-foreground">Create your account</p>
         </div>
         
@@ -82,7 +82,7 @@ const SignUp = () => {
             <CardHeader>
               <CardTitle>Sign Up</CardTitle>
               <CardDescription>
-                Create a new account to start using ChatSimp
+                Create a new account to start using Flashbot
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -139,7 +139,7 @@ const SignUp = () => {
               </Button>
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <Link to="/sign-in" className="text-primary hover:underline">
+                <Link to="/auth/signin" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </div>

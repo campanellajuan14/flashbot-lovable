@@ -13,7 +13,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const SignIn = () => {
@@ -62,9 +62,9 @@ const SignIn = () => {
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center">
-            <MessageSquare className="h-10 w-10 text-primary" />
+            <Zap className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="mt-2 text-3xl font-bold">ChatSimp</h2>
+          <h2 className="mt-2 text-3xl font-bold">Flashbot</h2>
           <p className="mt-1 text-muted-foreground">Sign in to your account</p>
         </div>
         
@@ -125,7 +125,7 @@ const SignIn = () => {
               </Button>
               <div className="text-center text-sm">
                 Don't have an account?{" "}
-                <Link to="/sign-up" className="text-primary hover:underline">
+                <Link to="/auth/signup" className="text-primary hover:underline">
                   Sign up
                 </Link>
               </div>
