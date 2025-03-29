@@ -28,6 +28,7 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
     settings: defaultSettings
   });
   
+  // Establecer Claude como proveedor predeterminado
   const [aiProvider, setAiProvider] = useState<"claude" | "openai">("claude");
 
   useEffect(() => {
@@ -77,10 +78,16 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
               settings: settingsData
             });
             
-            if (settingsData.model.includes('claude')) {
+            // Determinar el proveedor basado en el modelo
+            if (settingsData.model && settingsData.model.includes('claude')) {
               setAiProvider("claude");
-            } else {
+            } else if (settingsData.model) {
               setAiProvider("openai");
+            } else {
+              // Si no hay modelo definido, usar Claude por defecto
+              setAiProvider("claude");
+              // Establecer un modelo Claude por defecto si no hay ninguno
+              handleNestedChange("settings", "model", "claude-3-haiku-20240307");
             }
           }
         } catch (error) {
@@ -110,6 +117,7 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
       settings: template.settings
     }));
     
+    // Establecer el proveedor correcto basado en el modelo del template
     if (template.settings.model.includes('claude')) {
       setAiProvider("claude");
     } else {
@@ -142,6 +150,7 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps) => {
   
   const handleProviderChange = (provider: "claude" | "openai") => {
     setAiProvider(provider);
+    // Establecer un modelo predeterminado según el proveedor
     const defaultModel = provider === "claude" 
       ? "claude-3-haiku-20240307" 
       : "gpt-4o";

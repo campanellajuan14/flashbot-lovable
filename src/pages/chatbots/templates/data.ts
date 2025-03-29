@@ -31,7 +31,7 @@ export const chatbotTemplates: ChatbotTemplate[] = [
       greeting: "¡Hola! Soy tu asistente de atención al cliente. ¿En qué puedo ayudarte hoy?"
     },
     settings: {
-      model: "gpt-4o-mini",
+      model: "claude-3-haiku-20240307",
       temperature: 0.7,
       maxTokens: 500,
       includeReferences: true
@@ -51,7 +51,7 @@ export const chatbotTemplates: ChatbotTemplate[] = [
       greeting: "¡Hola! Soy tu especialista de soporte técnico. ¿Qué problema necesitas resolver hoy?"
     },
     settings: {
-      model: "gpt-4o",
+      model: "claude-3-sonnet-20240229",
       temperature: 0.3,
       maxTokens: 800,
       includeReferences: true
@@ -71,7 +71,7 @@ export const chatbotTemplates: ChatbotTemplate[] = [
       greeting: "¡Hola! Soy tu asesor personal de ventas. ¿En qué producto estás interesado hoy?"
     },
     settings: {
-      model: "gpt-4o-mini",
+      model: "claude-3-haiku-20240307",
       temperature: 0.7,
       maxTokens: 500,
       includeReferences: true
@@ -91,7 +91,7 @@ export const chatbotTemplates: ChatbotTemplate[] = [
       greeting: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?"
     },
     settings: {
-      model: "gpt-4o-mini",
+      model: "claude-3-haiku-20240307",
       temperature: 0.7,
       maxTokens: 500,
       includeReferences: false
@@ -111,7 +111,7 @@ export const chatbotTemplates: ChatbotTemplate[] = [
       greeting: "¡Hola! Soy tu experto en inteligencia artificial. ¿Qué te gustaría saber sobre IA hoy?"
     },
     settings: {
-      model: "gpt-4o",
+      model: "claude-3-sonnet-20240229",
       temperature: 0.5,
       maxTokens: 800,
       includeReferences: true
