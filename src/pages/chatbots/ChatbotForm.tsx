@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -27,8 +26,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Json } from "@/integrations/supabase/types";
+import DocumentNavigation from "@/components/chatbots/DocumentNavigation";
 
-// Define strict types for personality and settings
 interface Personality {
   tone: string;
   style: string;
@@ -43,7 +42,6 @@ interface Settings {
   includeReferences: boolean;
 }
 
-// Default values
 const defaultPersonality: Personality = {
   tone: "professional",
   style: "concise",
@@ -58,7 +56,6 @@ const defaultSettings: Settings = {
   includeReferences: true
 };
 
-// Modelos disponibles por proveedor
 const availableModels = {
   claude: [
     { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku", description: "Rápido y económico" },
@@ -89,7 +86,6 @@ const ChatbotForm = () => {
     settings: defaultSettings
   });
   
-  // Estado para controlar qué proveedor de IA está seleccionado
   const [aiProvider, setAiProvider] = useState<"claude" | "openai">("claude");
 
   useEffect(() => {
@@ -108,7 +104,6 @@ const ChatbotForm = () => {
           if (error) throw error;
           
           if (data) {
-            // Safe extraction of behavior object with type checking
             let personalityData: Personality = { ...defaultPersonality };
             if (data.behavior && typeof data.behavior === 'object' && !Array.isArray(data.behavior)) {
               const behavior = data.behavior as Record<string, unknown>;
@@ -120,7 +115,6 @@ const ChatbotForm = () => {
               };
             }
             
-            // Safe extraction of settings object with type checking
             let settingsData: Settings = { ...defaultSettings };
             if (data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)) {
               const settings = data.settings as Record<string, unknown>;
@@ -140,7 +134,6 @@ const ChatbotForm = () => {
               settings: settingsData
             });
             
-            // Detectar qué proveedor de IA está siendo usado basado en el modelo
             if (settingsData.model.includes('claude')) {
               setAiProvider("claude");
             } else {
@@ -186,10 +179,8 @@ const ChatbotForm = () => {
     });
   };
   
-  // Cambiar el proveedor de IA y actualizar el modelo por defecto
   const handleProviderChange = (provider: "claude" | "openai") => {
     setAiProvider(provider);
-    // Establecer el modelo predeterminado según el proveedor
     const defaultModel = provider === "claude" 
       ? "claude-3-haiku-20240307" 
       : "gpt-4o";
@@ -212,13 +203,12 @@ const ChatbotForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Convert our typed objects to JSON-compatible objects that Supabase expects
       const chatbotData = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
-        behavior: form.personality as unknown as Json, // Type assertion to Json
-        settings: form.settings as unknown as Json, // Type assertion to Json
+        behavior: form.personality as unknown as Json,
+        settings: form.settings as unknown as Json,
         user_id: user.id
       };
       
@@ -292,6 +282,10 @@ const ChatbotForm = () => {
             </p>
           </div>
         </div>
+
+        {isEditing && (
+          <DocumentNavigation chatbotId={id || ""} />
+        )}
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic">
