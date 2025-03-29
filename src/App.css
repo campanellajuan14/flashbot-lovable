@@ -51,19 +51,3 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
-
-/* Estilos personalizados para badges de modelos Claude */
-.claude-badge-haiku {
-  background-color: #FFECC7;
-  color: #92400E;
-}
-
-.claude-badge-sonnet {
-  background-color: #FFEDD5;
-  color: #9A3412;
-}
-
-.claude-badge-opus {
-  background-color: #FEF3C7;
-  color: #78350F;
-}

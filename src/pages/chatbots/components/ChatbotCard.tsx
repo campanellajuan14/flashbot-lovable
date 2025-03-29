@@ -28,87 +28,82 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
     return model.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  // Get model badge color based on model name
+  // Get model badge color based on model name - simplified color palette
   const getModelBadgeColor = (modelName: string) => {
-    if (modelName.includes('Claude 3 Haiku')) return 'bg-amber-100 text-amber-800 hover:bg-amber-100';
-    if (modelName.includes('Claude 3 Sonnet')) return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
-    if (modelName.includes('Claude 3 Opus')) return 'bg-amber-200 text-amber-900 hover:bg-amber-200';
-    if (modelName.includes('GPT-4')) return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100';
-    if (modelName.includes('GPT-3.5')) return 'bg-green-100 text-green-800 hover:bg-green-100';
+    if (modelName.includes('Claude')) return 'bg-amber-50 text-amber-800 hover:bg-amber-50';
+    if (modelName.includes('GPT')) return 'bg-emerald-50 text-emerald-800 hover:bg-emerald-50';
     return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
   };
 
   return (
-    <Card className="dashboard-card overflow-hidden transition-all duration-200 hover:shadow-md">
+    <Card className="dashboard-card overflow-hidden transition-all duration-200 hover:shadow-md flex flex-col h-full">
       <CardHeader className="pb-2 relative flex flex-row justify-between items-start">
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <Badge variant={chatbot.is_active ? "success" : "secondary"} className="mb-2">
             {chatbot.is_active ? "Active" : "Inactive"}
           </Badge>
-          <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            <CardTitle className="text-xl">{chatbot.name}</CardTitle>
+          <div className="flex items-center gap-2 w-full justify-between">
+            <div className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+              <CardTitle className="text-xl text-left">{chatbot.name}</CardTitle>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="flex cursor-pointer"
+                  onClick={() => onCopyId(chatbot.id)}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy ID
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="flex cursor-pointer text-destructive focus:text-destructive"
+                  onClick={() => onDelete(chatbot.id)}
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <CardDescription className="line-clamp-2 mt-1 text-left">
+          <CardDescription className="line-clamp-2 mt-1 text-left w-full">
             {chatbot.description || "No description"}
           </CardDescription>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="flex cursor-pointer"
-              onClick={() => onCopyId(chatbot.id)}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              Copy ID
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="flex cursor-pointer text-destructive focus:text-destructive"
-              onClick={() => onDelete(chatbot.id)}
-            >
-              <Trash className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent className="pb-2 flex-grow">
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge variant="outline" className={getModelBadgeColor(getModelName(chatbot))}>
             <Cpu className="mr-1 h-3 w-3" />
             {getModelName(chatbot)}
           </Badge>
           
-          <Badge variant="outline" className={
-            chatbot.documentCount > 0 
-              ? "bg-blue-100 text-blue-800 hover:bg-blue-100" 
-              : "bg-gray-100 text-gray-600 hover:bg-gray-100"
-          }>
+          <Badge variant="outline" className="bg-blue-50 text-blue-800 hover:bg-blue-50">
             <FileText className="mr-1 h-3 w-3" />
             {chatbot.documentCount} {chatbot.documentCount === 1 ? 'document' : 'documents'}
           </Badge>
         </div>
         
         <div className="text-left text-sm">
-          <div>
-            <span className="text-muted-foreground">Conversations: </span>
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">Conversations:</span>
             <span className="font-medium">0</span>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-0">
+      <CardFooter className="mt-auto flex justify-between pt-2 border-t">
         <Button variant="outline" size="sm" asChild>
           <Link to={`/chatbots/${chatbot.id}`}>
             <Edit className="mr-2 h-4 w-4" />
