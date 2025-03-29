@@ -268,6 +268,36 @@ export type Database = {
           },
         ]
       }
+      temp_documents: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          metadata: Json | null
+          name: string
+          temp_chatbot_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          temp_chatbot_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          temp_chatbot_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

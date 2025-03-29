@@ -35,7 +35,6 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     // Store the document in Supabase Database instead of KV
-    // Use a temporary table approach instead of KV store
     try {
       const { data, error } = await supabase
         .from('temp_documents')
