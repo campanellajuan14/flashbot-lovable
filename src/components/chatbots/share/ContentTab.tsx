@@ -24,7 +24,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-left">
           <Label htmlFor="chatTitle">Chat Title</Label>
           <Input 
             id="chatTitle"
@@ -38,7 +38,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
           </p>
         </div>
         
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-left">
           <Label htmlFor="chatSubtitle">Chat Subtitle (Optional)</Label>
           <Input 
             id="chatSubtitle"
@@ -52,7 +52,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
           </p>
         </div>
         
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-left">
           <Label htmlFor="welcomeMessage">Welcome Message</Label>
           <Textarea 
             id="welcomeMessage"
@@ -67,7 +67,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
           </p>
         </div>
         
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-left">
           <Label htmlFor="placeholderText">Input Placeholder</Label>
           <Input 
             id="placeholderText"
@@ -81,7 +81,7 @@ const ContentTab = ({ widgetConfig, onContentChange }: ContentTabProps) => {
           </p>
         </div>
         
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3 pt-2 text-left">
           <div className="flex items-start space-x-3">
             <Switch 
               id="branding"

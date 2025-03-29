@@ -47,3 +47,20 @@ export const createDefaultWidgetConfig = (widgetId: string): ShareSettings => {
     }
   };
 };
+
+/**
+ * Copies the widget embed code to the clipboard
+ */
+export const copyEmbedCode = (widgetId: string | null): boolean => {
+  if (!widgetId) return false;
+  
+  const embedCode = `<script src="https://obiiomoqhpbgaymfphdz.supabase.co/storage/v1/object/public/widget/widget.js" data-widget-id="${widgetId}"></script>`;
+  
+  try {
+    navigator.clipboard.writeText(embedCode);
+    return true;
+  } catch (error) {
+    console.error('Failed to copy embed code:', error);
+    return false;
+  }
+};
