@@ -37,7 +37,7 @@ serve(async (req) => {
     // Special widget authorization check
     // Allow requests from the widget preview page or with widget source
     const isWidgetRequest = 
-      (clientInfo && clientInfo.includes('widget')) || 
+      (clientInfo && (clientInfo.includes('widget') || clientInfo.includes('embed'))) || 
       referer.includes('widget') || 
       origin.includes('widget') ||
       apiKey === SUPABASE_ANON_KEY;
@@ -53,13 +53,15 @@ serve(async (req) => {
       });
     }
 
-    const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source } = await req.json();
+    const requestData = await req.json();
+    const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source, conversationId } = requestData;
 
     // Log request details for debugging
     console.log('Request received:');
     console.log('- Source:', source);
     console.log('- Widget ID:', widget_id);
     console.log('- Chatbot ID:', chatbotId);
+    console.log('- Conversation ID:', conversationId);
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error('Invalid request: messages array is required');
@@ -72,6 +74,36 @@ serve(async (req) => {
 
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // Get chatbot info if not provided (for widget requests)
+    let chatbotInfo = null;
+    if (chatbotId && (!behavior || !settings)) {
+      try {
+        const { data, error } = await supabase
+          .from('chatbots')
+          .select('*, share_settings')
+          .eq('id', chatbotId)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching chatbot info:', error);
+        } else {
+          chatbotInfo = data;
+          console.log('Retrieved chatbot info:', chatbotInfo);
+        }
+      } catch (chatbotError) {
+        console.error('Error retrieving chatbot:', chatbotError);
+      }
+    }
+    
+    // Use chatbotInfo to supplement missing data for widget requests
+    const effectiveBehavior = behavior || chatbotInfo?.behavior || {};
+    const effectiveSettings = settings || chatbotInfo?.settings || {
+      model: 'claude-3-haiku-20240307',
+      temperature: 0.7,
+      maxTokens: 1000
+    };
+    const effectiveChatbotName = chatbotName || chatbotInfo?.name || 'Assistant';
     
     // Get retrieval settings
     let retrievalSettings = null;
@@ -130,6 +162,7 @@ serve(async (req) => {
     // If there is a chatbot ID and a user message, search for relevant documents
     if (chatbotId && lastUserMessage) {
       try {
+        console.log("Searching for relevant documents with query:", lastUserMessage);
         // Invoke the edge match-documents function with adaptive threshold
         // for higher probability of finding relevant documents
         const matchResponse = await supabase.functions.invoke('match-documents', {
@@ -144,9 +177,12 @@ serve(async (req) => {
         });
 
         if (matchResponse.error) {
+          console.error(`Match documents error:`, matchResponse.error);
           throw new Error(`Match documents error: ${matchResponse.error}`);
         }
 
+        console.log("Match documents response:", matchResponse.data);
+        
         if (matchResponse.data && matchResponse.data.documents && matchResponse.data.documents.length > 0) {
           console.log(`Found ${matchResponse.data.documents.length} relevant documents`);
           relevantDocuments = matchResponse.data.documents;
@@ -165,29 +201,22 @@ serve(async (req) => {
       }
     }
 
-    // Use provided settings or fallback to defaults
-    const modelSettings = settings || {
-      model: 'claude-3-haiku-20240307',
-      temperature: 0.7,
-      maxTokens: 1000
-    };
-
     // Build improved system prompt based on configured behavior
-    let systemPrompt = `You are a chatbot named ${chatbotName || 'Assistant'}. `;
+    let systemPrompt = `You are a chatbot named ${effectiveChatbotName}. `;
     
-    if (behavior) {
+    if (effectiveBehavior) {
       // Add tone instructions
-      if (behavior.tone) {
-        systemPrompt += `\nYou should respond in a ${behavior.tone} tone. `;
+      if (effectiveBehavior.tone) {
+        systemPrompt += `\nYou should respond in a ${effectiveBehavior.tone} tone. `;
       }
       
       // Add style instructions
-      if (behavior.style) {
-        systemPrompt += `\nYour response style should be ${behavior.style}. `;
+      if (effectiveBehavior.style) {
+        systemPrompt += `\nYour response style should be ${effectiveBehavior.style}. `;
       }
       
       // Add language instructions
-      if (behavior.language) {
+      if (effectiveBehavior.language) {
         const languageMap: Record<string, string> = {
           'english': 'English',
           'spanish': 'Spanish',
@@ -197,30 +226,35 @@ serve(async (req) => {
           'japanese': 'Japanese'
         };
         
-        const languageDisplay = languageMap[behavior.language] || behavior.language;
+        const languageDisplay = languageMap[effectiveBehavior.language] || effectiveBehavior.language;
         systemPrompt += `\nYou must communicate in ${languageDisplay}. `;
       }
       
       // Add emoji usage instructions
-      if (behavior.useEmojis) {
+      if (effectiveBehavior.useEmojis) {
         systemPrompt += `\nUse emojis in your responses when appropriate. `;
       } else {
         systemPrompt += `\nDon't use emojis in your responses. `;
       }
       
       // Add asking questions instructions
-      if (behavior.askQuestions) {
+      if (effectiveBehavior.askQuestions) {
         systemPrompt += `\nAsk questions to better understand the user's needs. `;
       }
       
       // Add suggesting solutions instructions
-      if (behavior.suggestSolutions) {
+      if (effectiveBehavior.suggestSolutions) {
         systemPrompt += `\nAlways suggest practical solutions to the user's problems. `;
       }
       
       // Add custom instructions
-      if (behavior.instructions) {
-        systemPrompt += `\nAdditional instructions: ${behavior.instructions}`;
+      if (effectiveBehavior.instructions) {
+        systemPrompt += `\nAdditional instructions: ${effectiveBehavior.instructions}`;
+      }
+      
+      // Add greeting if available
+      if (effectiveBehavior.greeting) {
+        systemPrompt += `\nYour initial greeting is: "${effectiveBehavior.greeting}"`;
       }
     }
 
@@ -255,11 +289,11 @@ Important instructions about using these documents:
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: modelSettings.model,
+        model: effectiveSettings.model,
         messages: formattedMessages,
         system: systemPrompt,
-        max_tokens: modelSettings.maxTokens,
-        temperature: modelSettings.temperature,
+        max_tokens: effectiveSettings.maxTokens,
+        temperature: effectiveSettings.temperature,
       }),
     });
 
@@ -276,7 +310,8 @@ Important instructions about using these documents:
     const responseData = {
       message: data.content[0].text,
       model: data.model,
-      usage: data.usage
+      usage: data.usage,
+      conversation_id: conversationId || crypto.randomUUID()
     };
     
     // Add document references

@@ -131,6 +131,8 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
 export async function sendChatMessage(message, state) {
   try {
     console.log('Sending chat message:', message);
+    console.log('Using conversation ID:', state.conversationId);
+    
     const response = await fetch(`${API_BASE_URL}/claude-chat`, {
       method: 'POST',
       headers: { 
@@ -175,7 +177,14 @@ export async function sendChatMessage(message, state) {
     
     const data = await response.json();
     console.log('Message sent successfully, received response:', data);
-    return { answer: data.message };
+    
+    // Store the conversation ID for future messages
+    if (data.conversation_id && !state.conversationId) {
+      state.conversationId = data.conversation_id;
+      console.log('Received and stored conversation ID:', data.conversation_id);
+    }
+    
+    return { answer: data.message, conversation_id: data.conversation_id };
   } catch (error) {
     console.error('Message send error:', error);
     throw error;

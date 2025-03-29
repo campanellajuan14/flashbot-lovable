@@ -185,6 +185,8 @@ const WidgetEmbed: React.FC = () => {
     
     try {
       // Send message to API
+      console.log("Sending message with conversation ID:", conversationId);
+      
       const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/claude-chat', {
         method: 'POST',
         headers: { 
