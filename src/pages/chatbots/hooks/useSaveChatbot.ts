@@ -107,7 +107,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       // Use a timeout to ensure the toast shows before navigation
       setTimeout(() => {
         navigate("/chatbots");
-      }, 200);
+      }, 500);
     } catch (error: any) {
       console.error("Error saving chatbot:", error);
       toast({
