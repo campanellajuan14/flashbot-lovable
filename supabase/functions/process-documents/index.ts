@@ -155,6 +155,7 @@ serve(async (req) => {
     
     // Verificar de nuevo si tenemos la clave de OpenAI antes de intentar generar embeddings
     if (!OPENAI_API_KEY) {
+      console.error("ERROR: OPENAI_API_KEY no está configurada");
       return new Response(
         JSON.stringify({ 
           success: false, 

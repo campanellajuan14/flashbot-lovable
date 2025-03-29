@@ -9,8 +9,7 @@ import {
   CardTitle,
   Alert,
   AlertTitle,
-  AlertDescription,
-  useToast
+  AlertDescription
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { Upload, Plus, AlertCircle } from "lucide-react";
@@ -34,8 +33,7 @@ const DocumentUploadCard = ({
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-
+  
   const handleFileButtonClick = () => {
     fileInputRef.current?.click();
   };
@@ -47,11 +45,7 @@ const DocumentUploadCard = ({
     }
     
     if (!userId) {
-      toast({
-        title: "Error",
-        description: "No se pudo encontrar la información del usuario.",
-        variant: "destructive",
-      });
+      setErrorMessage("No se pudo encontrar la información del usuario.");
       return;
     }
     
@@ -105,10 +99,8 @@ const DocumentUploadCard = ({
       
       setUploadProgress(100);
       
-      toast({
-        title: "Documentos subidos",
-        description: `Se subieron ${files.length} documento(s) correctamente.`,
-      });
+      // Mostrar mensaje de éxito
+      // Usar toast aquí si es necesario
       
       onUploadComplete();
       
@@ -121,16 +113,12 @@ const DocumentUploadCard = ({
       setUploading(false);
       setUploadProgress(0);
       
-      // Check for specific OpenAI API key error
+      // Verificar error específico de OpenAI API
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (errorMsg.includes("OpenAI API key not found")) {
         setErrorMessage("No se ha configurado la clave de API de OpenAI. Contacte al administrador del sistema para configurar esta clave.");
       } else {
-        toast({
-          title: "Error al subir documentos",
-          description: "Ocurrió un error al procesar los documentos. Por favor, inténtalo de nuevo.",
-          variant: "destructive",
-        });
+        setErrorMessage("Ocurrió un error al procesar los documentos. Por favor, inténtalo de nuevo.");
       }
     }
   };

@@ -51,6 +51,16 @@ interface Document {
   user_id?: string;
 }
 
+interface Chatbot {
+  id: string;
+  name: string;
+  user_id: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// This type is defined explicitly without self-references to avoid the infinite type instantiation
 interface RetrievalSettings {
   chatbot_id: string;
   similarity_threshold: number;
@@ -60,15 +70,6 @@ interface RetrievalSettings {
   use_hierarchical_embeddings: boolean;
   embedding_model: string;
   use_cache: boolean;
-}
-
-interface Chatbot {
-  id: string;
-  name: string;
-  user_id: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 const ChatbotDocuments = () => {
