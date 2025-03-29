@@ -26,6 +26,7 @@ import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Json } from "@/integrations/supabase/types";
 
 // Define strict types for personality and settings
 interface Personality {
@@ -176,12 +177,13 @@ const ChatbotForm = () => {
     setIsSubmitting(true);
     
     try {
+      // Convert our typed objects to JSON-compatible objects that Supabase expects
       const chatbotData = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
-        behavior: form.personality,
-        settings: form.settings,
+        behavior: form.personality as unknown as Json, // Type assertion to Json
+        settings: form.settings as unknown as Json, // Type assertion to Json
         user_id: user.id
       };
       
