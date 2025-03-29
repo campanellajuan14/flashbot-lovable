@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ interface Chatbot {
     askQuestions?: boolean;
     suggestSolutions?: boolean;
     instructions?: string;
+    greeting?: string;
   };
   settings?: Record<string, any>;
 }
@@ -48,7 +48,6 @@ const ChatbotPreview = () => {
   const { toast } = useToast();
   const [showSourceDetails, setShowSourceDetails] = useState<Record<string, boolean>>({});
   
-  // Fetch chatbot data from Supabase
   const { data: chatbot, isLoading, isError } = useQuery({
     queryKey: ['chatbot', id],
     queryFn: async () => {
@@ -80,12 +79,11 @@ const ChatbotPreview = () => {
   useEffect(() => {
     scrollToBottom();
     if (messages.length === 0 && chatbot) {
-      // Add initial bot message
-      handleBotResponse(`¡Hola! Soy ${chatbot.name}. ${chatbot.description ? chatbot.description : "¿En qué puedo ayudarte hoy?"}`);
+      const initialGreeting = chatbot.behavior?.greeting || `¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?`;
+      handleBotResponse(initialGreeting);
     }
   }, [messages, chatbot]);
 
-  // For debugging
   useEffect(() => {
     console.log("Chatbot data:", chatbot);
   }, [chatbot]);
@@ -94,7 +92,6 @@ const ChatbotPreview = () => {
     if (!chatbot) return null;
     
     try {
-      // Format messages for Claude API
       const formattedMessages = messageHistory.map(msg => ({
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content
@@ -107,9 +104,9 @@ const ChatbotPreview = () => {
           chatbotName: chatbot.name,
           settings: {
             ...chatbot.settings,
-            includeReferences: true // Solicitar explícitamente referencias de documentos
+            includeReferences: true
           },
-          chatbotId: chatbot.id // Enviar el ID del chatbot para la recuperación de documentos
+          chatbotId: chatbot.id
         }
       });
       
@@ -139,7 +136,6 @@ const ChatbotPreview = () => {
     e.preventDefault();
     if (!message.trim() || !chatbot || isTyping) return;
     
-    // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -147,28 +143,23 @@ const ChatbotPreview = () => {
       timestamp: new Date(),
     };
     
-    // Update messages state with the new user message
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setMessage("");
     setIsTyping(true);
     
-    // Focus back on input
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
 
     try {
-      // Get all messages including the new one for context
       const updatedMessages = [...messages, userMessage];
       
-      // Call Claude API
       const apiResponse = await callClaudeAPI(updatedMessages);
       
       if (apiResponse) {
         const { message: responseText, references } = apiResponse;
         handleBotResponse(responseText, references);
       } else {
-        // Fallback response if API fails
         handleBotResponse("Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.");
       }
     } catch (error) {
