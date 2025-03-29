@@ -96,7 +96,9 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
   // Helper function to process temporarily stored documents after chatbot creation
   const processTemporaryDocuments = async (chatbotId: string, tempChatbotId: string, userId: string | undefined) => {
     try {
-      // Process the temp documents by calling a new edge function
+      console.log(`Processing temporary documents from ${tempChatbotId} to ${chatbotId}`);
+      
+      // Process the temp documents by calling the edge function
       const { data, error } = await supabase.functions.invoke('process-temp-documents', {
         body: {
           realChatbotId: chatbotId,
@@ -111,8 +113,20 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       }
       
       console.log("Temporary documents processed:", data);
+      
+      if (data && data.processed > 0) {
+        toast({
+          title: "Documentos procesados",
+          description: `${data.processed} documentos han sido procesados exitosamente.`,
+        });
+      }
     } catch (error) {
       console.error("Error processing temporary documents:", error);
+      toast({
+        variant: "destructive",
+        title: "Advertencia",
+        description: "Algunos documentos pueden no haberse procesado correctamente.",
+      });
     }
   };
   

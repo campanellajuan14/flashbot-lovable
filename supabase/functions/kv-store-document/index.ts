@@ -21,36 +21,54 @@ serve(async (req) => {
     
     if (!tempChatbotId || !document) {
       return new Response(
-        JSON.stringify({ error: "Se requiere tempChatbotId y document" }),
+        JSON.stringify({ error: "Se requieren tempChatbotId y document" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    // Generate a unique ID for this document
+    const docId = crypto.randomUUID();
+    
+    console.log(`Storing document ${document.name} with ID ${docId} for chatbot ${tempChatbotId}`);
+    
+    // Connect to Supabase
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    // Store document in KV
-    const { error: storeError } = await supabase
-      .rpc('store_temp_document', { 
-        temp_id: tempChatbotId,
-        doc: document 
-      });
+    // Store the document in KV store
+    // Use a simple namespace pattern to avoid key conflicts
+    const key = `temp_docs:${tempChatbotId}:${docId}`;
     
-    if (storeError) {
-      throw new Error(`Error storing document in KV: ${storeError.message}`);
+    try {
+      const { data, error } = await supabase.rpc(
+        'kv_set',
+        { 
+          key: key,
+          value: document
+        }
+      );
+      
+      if (error) {
+        throw new Error(`Error storing document in KV: ${error.message}`);
+      }
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          documentId: docId,
+          message: `Document ${document.name} stored successfully`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (kvError) {
+      console.error("Error storing document in KV:", kvError);
+      throw new Error(`Error storing document in KV: ${kvError.message}`);
     }
-    
-    console.log(`Stored document for chatbot ${tempChatbotId}: ${document.name}`);
-    
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
   } catch (error) {
-    console.error('Error storing document in KV:', error);
+    console.error('Error processing request:', error);
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error instanceof Error ? error.message : String(error) 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

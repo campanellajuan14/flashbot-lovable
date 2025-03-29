@@ -136,7 +136,15 @@ export const useDocumentUpload = ({
       await Promise.all(filePromises);
       
       setUploadProgress(100);
+      
+      // Notify parent component that upload is complete
       onUploadComplete();
+      
+      // Show success toast
+      toast({
+        title: "Documentos procesados",
+        description: "Los documentos han sido procesados exitosamente.",
+      });
       
       setTimeout(() => {
         setUploading(false);

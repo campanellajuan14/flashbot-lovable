@@ -32,7 +32,18 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   const [tempDocuments, setTempDocuments] = useState<any[]>([]);
   
   // Use a temporary ID for the chatbot if we're creating a new one
-  const [tempChatbotId] = useState(() => chatbotId || `temp-${uuidv4()}`);
+  const [tempChatbotId] = useState(() => {
+    if (chatbotId) return chatbotId;
+    
+    // Check if we already have a temp ID in localStorage
+    const existingId = localStorage.getItem('temp_chatbot_id');
+    if (existingId) return existingId;
+    
+    // Generate a new temp ID
+    const newId = `temp-${uuidv4()}`;
+    localStorage.setItem('temp_chatbot_id', newId);
+    return newId;
+  });
   
   // Fetch temporary documents when mounting or after an upload
   const fetchTempDocuments = async () => {
@@ -65,11 +76,6 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   }, [tempChatbotId]);
 
   const handleDocumentUploadComplete = () => {
-    toast({
-      title: "Documentos procesados",
-      description: "Los documentos han sido procesados exitosamente.",
-    });
-    
     // Refresh the documents list
     fetchTempDocuments();
     

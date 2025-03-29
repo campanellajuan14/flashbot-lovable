@@ -28,15 +28,21 @@ serve(async (req) => {
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    // Get temporary documents from KV storage
-    const { data: documents, error: getError } = await supabase
-      .rpc('get_temp_documents', { temp_id: tempChatbotId });
+    console.log(`Processing temporary documents from ${tempChatbotId} to ${realChatbotId}`);
     
-    if (getError) {
-      throw new Error(`Error retrieving temporary documents: ${getError.message}`);
+    // Get temporary documents from KV storage
+    const { data: keys, error: listError } = await supabase.rpc(
+      'kv_list_keys',
+      { 
+        prefix: `temp_docs:${tempChatbotId}:` 
+      }
+    );
+    
+    if (listError) {
+      throw new Error(`Error listing KV keys: ${listError.message}`);
     }
     
-    if (!documents || documents.length === 0) {
+    if (!keys || keys.length === 0) {
       console.log(`No temporary documents found for chatbot ${tempChatbotId}`);
       return new Response(
         JSON.stringify({ success: true, processed: 0 }),
@@ -44,26 +50,40 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Found ${documents.length} temporary documents to process`);
+    console.log(`Found ${keys.length} temporary document keys to process`);
     
     // Process each document
     const processResults = [];
     
-    for (const doc of documents) {
+    for (const key of keys) {
+      // Get document from KV
+      const { data: doc, error: getError } = await supabase.rpc(
+        'kv_get',
+        { key }
+      );
+      
+      if (getError || !doc) {
+        console.error(`Error retrieving document with key ${key}: ${getError?.message || 'No data'}`);
+        processResults.push({
+          key,
+          success: false,
+          error: getError?.message || 'No data found'
+        });
+        continue;
+      }
+      
       console.log(`Processing document: ${doc.name}`);
       
-      // Update the document with the real chatbot ID
-      const documentData = {
-        chatbot_id: realChatbotId,
-        name: doc.name,
-        content: doc.content,
-        user_id: userId,
-        metadata: doc.metadata || {}
-      };
-      
+      // Insert document into database with real chatbot ID
       const { data: insertResult, error: insertError } = await supabase
         .from('documents')
-        .insert(documentData)
+        .insert({
+          chatbot_id: realChatbotId,
+          name: doc.name,
+          content: doc.content,
+          user_id: userId,
+          metadata: doc.metadata || {}
+        })
         .select('id');
       
       if (insertError) {
@@ -81,14 +101,16 @@ serve(async (req) => {
         success: true,
         id: insertResult[0]?.id
       });
-    }
-    
-    // Clear temporary documents
-    const { error: clearError } = await supabase
-      .rpc('clear_temp_documents', { temp_id: tempChatbotId });
-    
-    if (clearError) {
-      console.error(`Error clearing temporary documents: ${clearError.message}`);
+      
+      // Delete the processed document from KV
+      const { error: deleteError } = await supabase.rpc(
+        'kv_del',
+        { key }
+      );
+      
+      if (deleteError) {
+        console.warn(`Error deleting key ${key}: ${deleteError.message}`);
+      }
     }
     
     return new Response(
