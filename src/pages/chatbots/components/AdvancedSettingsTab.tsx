@@ -52,7 +52,7 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Elija el proveedor de IA para alimentar su chatbot
+            Choose the AI provider to power your chatbot
           </p>
         </div>
         
@@ -82,7 +82,7 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            El modelo de IA determina la calidad y capacidades de su chatbot
+            The AI model determines your chatbot's quality and capabilities
           </p>
         </div>
         
@@ -119,6 +119,7 @@ const AdvancedSettingsTab: React.FC<AdvancedSettingsTabProps> = ({
                     <SelectItem value="1000">Short (1000 tokens)</SelectItem>
                     <SelectItem value="2000">Medium (2000 tokens)</SelectItem>
                     <SelectItem value="4000">Long (4000 tokens)</SelectItem>
+                    <SelectItem value="8192">Very Long (8192 tokens)</SelectItem>
                   </>
                 ) : (
                   <>
