@@ -56,13 +56,13 @@ const SettingsPage = () => {
       
       if (error) throw error;
       
-      toast.success("Perfil actualizado", {
-        description: "Tu información ha sido actualizada con éxito.",
+      toast.success("Profile updated", {
+        description: "Your information has been updated successfully.",
       });
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Error al actualizar el perfil", {
-        description: "Por favor intenta nuevamente.",
+      toast.error("Error updating profile", {
+        description: "Please try again.",
       });
     } finally {
       setIsUpdating(false);
@@ -78,7 +78,7 @@ const SettingsPage = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <p className="text-muted-foreground">Cargando configuración...</p>
+            <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -89,25 +89,25 @@ const SettingsPage = () => {
     <DashboardLayout>
       <div className="space-y-6 container py-6 max-w-4xl mx-auto">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Configuración</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">
-            Gestiona tu cuenta y actualiza tus preferencias.
+            Manage your account and update your preferences.
           </p>
         </div>
         <Separator className="my-6" />
         
         <Tabs defaultValue="profile" className="w-full">
           <TabsList>
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="account">Cuenta</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>Perfil de usuario</CardTitle>
+                <CardTitle>User Profile</CardTitle>
                 <CardDescription>
-                  Actualiza tu información de perfil y cómo aparece en la plataforma.
+                  Update your profile information and how it appears on the platform.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -121,10 +121,10 @@ const SettingsPage = () => {
                   <div>
                     <p className="text-sm font-medium">Avatar</p>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Tu avatar aparece en tu página de perfil y en tus comentarios.
+                      Your avatar appears on your profile page and in your comments.
                     </p>
                     <Button variant="outline" disabled size="sm">
-                      Cambiar avatar
+                      Change avatar
                     </Button>
                   </div>
                 </div>
@@ -132,16 +132,16 @@ const SettingsPage = () => {
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="businessName">Nombre de empresa</Label>
+                      <Label htmlFor="businessName">Business name</Label>
                       <Input 
                         id="businessName"
                         name="businessName"
                         value={formData.businessName} 
                         onChange={handleChange} 
-                        placeholder="Tu empresa"
+                        placeholder="Your business"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Este nombre será visible para todos los usuarios.
+                        This name will be visible to all users.
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -154,7 +154,7 @@ const SettingsPage = () => {
                         disabled
                       />
                       <p className="text-xs text-muted-foreground">
-                        Tu correo electrónico no puede ser cambiado.
+                        Your email cannot be changed.
                       </p>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ const SettingsPage = () => {
                     disabled={isUpdating}
                     className="mt-4"
                   >
-                    {isUpdating ? 'Guardando...' : 'Guardar cambios'}
+                    {isUpdating ? 'Saving...' : 'Save changes'}
                   </Button>
                 </form>
               </CardContent>
@@ -174,28 +174,28 @@ const SettingsPage = () => {
           <TabsContent value="account" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>Configuración de cuenta</CardTitle>
+                <CardTitle>Account Settings</CardTitle>
                 <CardDescription>
-                  Gestiona las preferencias de tu cuenta y opciones de seguridad.
+                  Manage your account preferences and security options.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Cambiar contraseña</h3>
+                  <h3 className="text-lg font-medium">Change password</h3>
                   <p className="text-sm text-muted-foreground">
-                    Actualiza tu contraseña para mantener segura tu cuenta.
+                    Update your password to keep your account secure.
                   </p>
                   <Button variant="outline" disabled>
-                    Cambiar contraseña
+                    Change password
                   </Button>
                 </div>
                 
                 <Separator />
                 
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Zona horaria</h3>
+                  <h3 className="text-lg font-medium">Time zone</h3>
                   <p className="text-sm text-muted-foreground">
-                    Tu zona horaria actual está configurada como: <span className="font-medium">Europe/Madrid</span>
+                    Your current time zone is set to: <span className="font-medium">Europe/Madrid</span>
                   </p>
                 </div>
               </CardContent>
@@ -203,22 +203,22 @@ const SettingsPage = () => {
             
             <Card className="border-destructive">
               <CardHeader>
-                <CardTitle className="text-destructive">Zona de peligro</CardTitle>
+                <CardTitle className="text-destructive">Danger Zone</CardTitle>
                 <CardDescription>
-                  Acciones irreversibles que afectarán permanentemente a tu cuenta.
+                  Actions that will permanently affect your account.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Eliminar cuenta</h3>
+                  <h3 className="text-lg font-medium">Delete account</h3>
                   <p className="text-sm text-muted-foreground">
-                    Una vez eliminada tu cuenta, no hay vuelta atrás. Por favor, estás seguro.
+                    Once you delete your account, there is no going back. Please be certain.
                   </p>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button variant="destructive" disabled>
-                  Eliminar cuenta
+                  Delete account
                 </Button>
               </CardFooter>
             </Card>
