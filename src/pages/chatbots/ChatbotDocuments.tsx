@@ -1,27 +1,25 @@
+
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  Button,
+  Input,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/components/ui/alert";
-import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+  Separator,
+  Badge
+} from "@/components/ui";
 import { 
   ArrowLeft, 
   Upload,
@@ -79,60 +77,85 @@ const ChatbotDocuments = () => {
   const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState<boolean>(false);
 
-  const { data: chatbot, isLoading: isLoadingChatbot } = useQuery({
-    queryKey: ['chatbot', id],
+  // Verificar que tenemos un ID válido
+  const chatbotId = id || '';
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatbotId);
+
+  const { data: chatbot, isLoading: isLoadingChatbot, error: chatbotError } = useQuery({
+    queryKey: ['chatbot', chatbotId],
     queryFn: async () => {
-      if (!id) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId || !isValidUUID) {
+        throw new Error("ID de chatbot inválido o no proporcionado");
+      }
       
       const { data, error } = await supabase
         .from('chatbots')
         .select('*')
-        .eq('id', id)
+        .eq('id', chatbotId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error al cargar chatbot:", error);
+        throw error;
+      }
       return data;
     },
+    enabled: isValidUUID,
   });
 
   const { 
     data: documents, 
     isLoading: isLoadingDocuments,
     isError: isErrorDocuments,
-    error: documentsError 
+    error: documentsError,
+    refetch: refetchDocuments
   } = useQuery({
-    queryKey: ['chatbot-documents', id],
+    queryKey: ['chatbot-documents', chatbotId],
     queryFn: async () => {
-      if (!id) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId || !isValidUUID) {
+        throw new Error("ID de chatbot inválido o no proporcionado");
+      }
       
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .eq('chatbot_id', id)
+        .eq('chatbot_id', chatbotId)
         .eq('metadata->>isChunk', 'false')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error al cargar documentos:", error);
+        throw error;
+      }
       return data as Document[];
     },
+    enabled: isValidUUID,
   });
 
   const { 
     data: settings, 
-    isLoading: isLoadingSettings 
+    isLoading: isLoadingSettings,
+    error: settingsError,
+    refetch: refetchSettings
   } = useQuery({
-    queryKey: ['retrieval-settings', id],
+    queryKey: ['retrieval-settings', chatbotId],
     queryFn: async () => {
-      if (!id) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId || !isValidUUID) {
+        throw new Error("ID de chatbot inválido o no proporcionado");
+      }
       
       const { data, error } = await supabase
-        .rpc('get_retrieval_settings', { p_chatbot_id: id });
+        .rpc('get_retrieval_settings', { p_chatbot_id: chatbotId });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error al cargar configuración:", error);
+        throw error;
+      }
       
       setRetrievalSettings(data);
       return data as RetrievalSettings;
     },
+    enabled: isValidUUID,
   });
 
   const deleteDocumentMutation = useMutation({
@@ -151,7 +174,7 @@ const ChatbotDocuments = () => {
         description: "El documento ha sido eliminado correctamente.",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['chatbot-documents', id] });
+      queryClient.invalidateQueries({ queryKey: ['chatbot-documents', chatbotId] });
     },
     onError: (error) => {
       console.error("Error al eliminar documento:", error);
@@ -168,7 +191,7 @@ const ChatbotDocuments = () => {
       const { error } = await supabase
         .from('retrieval_settings')
         .upsert({
-          chatbot_id: id,
+          chatbot_id: chatbotId,
           similarity_threshold: settings.similarity_threshold,
           max_results: settings.max_results,
           chunk_size: settings.chunk_size,
@@ -188,7 +211,7 @@ const ChatbotDocuments = () => {
       });
       
       setIsEditingSettings(false);
-      queryClient.invalidateQueries({ queryKey: ['retrieval-settings', id] });
+      queryClient.invalidateQueries({ queryKey: ['retrieval-settings', chatbotId] });
     },
     onError: (error) => {
       console.error("Error al actualizar configuración:", error);
@@ -205,12 +228,13 @@ const ChatbotDocuments = () => {
   };
 
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !chatbotId || !isValidUUID) return;
     
     setUploading(true);
     setUploadProgress(0);
     
     try {
+      // Simular progreso para mejorar UX mientras esperamos respuesta del servidor
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 95) {
@@ -221,25 +245,54 @@ const ChatbotDocuments = () => {
         });
       }, 300);
       
-      setTimeout(() => {
-        clearInterval(interval);
-        setUploadProgress(100);
+      // Procesar cada archivo
+      const filePromises = Array.from(files).map(async (file) => {
+        // Leer el archivo como texto
+        const text = await file.text();
         
-        toast({
-          title: "Documentos subidos",
-          description: `Se subieron ${files.length} documento(s) correctamente.`,
+        // Llamar a la función Edge Function de Supabase para procesar documentos
+        const { data, error } = await supabase.functions.invoke('process-documents', {
+          body: {
+            chatbotId,
+            text,
+            fileName: file.name,
+            fileType: file.type,
+            userId: chatbot?.user_id, // Usar user_id del chatbot o del contexto de autenticación
+            retrievalSettings: settings // Pasar configuración de recuperación actual
+          }
         });
         
-        queryClient.invalidateQueries({ queryKey: ['chatbot-documents', id] });
+        if (error) {
+          console.error("Error procesando documento:", error);
+          throw error;
+        }
         
-        setTimeout(() => {
-          setUploading(false);
-          setUploadProgress(0);
-        }, 1000);
-      }, 3000);
+        return data;
+      });
+      
+      // Esperar a que todos los archivos se procesen
+      await Promise.all(filePromises);
+      
+      // Actualizar UI con éxito
+      setUploadProgress(100);
+      
+      toast({
+        title: "Documentos subidos",
+        description: `Se subieron ${files.length} documento(s) correctamente.`,
+      });
+      
+      // Actualizar la lista de documentos
+      refetchDocuments();
+      
+      // Limpiar estado después de una pausa breve
+      setTimeout(() => {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 1000);
     } catch (error) {
       console.error("Error al subir documentos:", error);
       setUploading(false);
+      setUploadProgress(0);
       
       toast({
         title: "Error al subir documentos",
@@ -282,25 +335,55 @@ const ChatbotDocuments = () => {
     }
   };
 
-  if (isErrorDocuments) {
+  // Manejar caso de error general o ID inválido
+  if (!isValidUUID) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            {documentsError instanceof Error 
-              ? documentsError.message 
-              : "Error al cargar los documentos. Por favor, inténtalo de nuevo."}
+            ID de chatbot inválido o no proporcionado. Por favor, verifica la URL.
           </AlertDescription>
         </Alert>
         <Button 
           variant="outline" 
           className="mt-4"
-          onClick={() => navigate(`/chatbots/${id}`)}
+          onClick={() => navigate(`/chatbots`)}
         >
-          Volver al chatbot
+          Volver a mis chatbots
         </Button>
+      </div>
+    );
+  }
+
+  if (isErrorDocuments || chatbotError) {
+    const error = (documentsError as Error)?.message || (chatbotError as Error)?.message || "Error al cargar los datos. Por favor, inténtalo de nuevo.";
+    
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="flex gap-2 mt-4">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              refetchDocuments();
+              refetchSettings();
+            }}
+          >
+            Reintentar
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(`/chatbots/${chatbotId}`)}
+          >
+            Volver al chatbot
+          </Button>
+        </div>
       </div>
     );
   }
@@ -315,7 +398,7 @@ const ChatbotDocuments = () => {
               size="icon" 
               asChild
             >
-              <Link to={`/chatbots/${id}`}>
+              <Link to={`/chatbots/${chatbotId}`}>
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
@@ -336,12 +419,12 @@ const ChatbotDocuments = () => {
 
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to={`/chatbots/${id}`}>
+              <Link to={`/chatbots/${chatbotId}`}>
                 Volver al chatbot
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to={`/chatbots/${id}/preview`}>
+              <Link to={`/chatbots/${chatbotId}/preview`}>
                 Vista previa
               </Link>
             </Button>
