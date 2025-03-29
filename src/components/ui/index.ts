@@ -19,3 +19,5 @@ export { Textarea } from "./textarea";
 export { Label } from "./label";
 export { Slider } from "./slider";
 export { Toast, ToastAction } from "./toast";
+export { useToast } from "./use-toast";
+export { Toaster } from "./toaster";

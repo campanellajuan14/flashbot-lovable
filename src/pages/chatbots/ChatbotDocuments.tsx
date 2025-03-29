@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -77,17 +76,25 @@ const ChatbotDocuments = () => {
   const [retrievalSettings, setRetrievalSettings] = useState<RetrievalSettings | null>(null);
   const [isEditingSettings, setIsEditingSettings] = useState<boolean>(false);
 
-  // Verificar que tenemos un ID válido
   const chatbotId = id || '';
-  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatbotId);
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatbotId);
 
-  const { data: chatbot, isLoading: isLoadingChatbot, error: chatbotError } = useQuery({
+  console.log("Current chatbotId:", chatbotId, "Is valid UUID:", isValidUUID);
+
+  const { 
+    data: chatbot, 
+    isLoading: isLoadingChatbot, 
+    error: chatbotError,
+    isError: isChatbotError
+  } = useQuery({
     queryKey: ['chatbot', chatbotId],
     queryFn: async () => {
       if (!chatbotId || !isValidUUID) {
+        console.error("Invalid chatbot ID format:", chatbotId);
         throw new Error("ID de chatbot inválido o no proporcionado");
       }
       
+      console.log("Fetching chatbot with ID:", chatbotId);
       const { data, error } = await supabase
         .from('chatbots')
         .select('*')
@@ -95,11 +102,19 @@ const ChatbotDocuments = () => {
         .single();
       
       if (error) {
-        console.error("Error al cargar chatbot:", error);
+        console.error("Error fetching chatbot:", error);
         throw error;
       }
+      
+      if (!data) {
+        console.error("No chatbot found with ID:", chatbotId);
+        throw new Error("Chatbot no encontrado");
+      }
+      
+      console.log("Chatbot data retrieved:", data);
       return data;
     },
+    retry: 1,
     enabled: isValidUUID,
   });
 
@@ -113,23 +128,28 @@ const ChatbotDocuments = () => {
     queryKey: ['chatbot-documents', chatbotId],
     queryFn: async () => {
       if (!chatbotId || !isValidUUID) {
+        console.error("Invalid chatbot ID for documents:", chatbotId);
         throw new Error("ID de chatbot inválido o no proporcionado");
       }
       
+      console.log("Fetching documents for chatbot:", chatbotId);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
         .eq('chatbot_id', chatbotId)
-        .eq('metadata->>isChunk', 'false')
+        .eq('metadata->isChunk', 'false')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error("Error al cargar documentos:", error);
+        console.error("Error fetching documents:", error);
         throw error;
       }
+      
+      console.log("Documents retrieved:", data?.length || 0);
       return data as Document[];
     },
-    enabled: isValidUUID,
+    enabled: isValidUUID && !!chatbot,
+    retry: 1
   });
 
   const { 
@@ -228,13 +248,24 @@ const ChatbotDocuments = () => {
   };
 
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !chatbotId || !isValidUUID) return;
+    if (!files || files.length === 0 || !chatbotId || !isValidUUID) {
+      console.error("Missing files or invalid chatbot ID");
+      return;
+    }
+    
+    if (!chatbot) {
+      toast({
+        title: "Error",
+        description: "No se pudo encontrar la información del chatbot.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setUploading(true);
     setUploadProgress(0);
     
     try {
-      // Simular progreso para mejorar UX mientras esperamos respuesta del servidor
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 95) {
@@ -245,35 +276,35 @@ const ChatbotDocuments = () => {
         });
       }, 300);
       
-      // Procesar cada archivo
+      console.log(`Processing ${files.length} files for chatbot ${chatbotId}`);
+      
       const filePromises = Array.from(files).map(async (file) => {
-        // Leer el archivo como texto
         const text = await file.text();
         
-        // Llamar a la función Edge Function de Supabase para procesar documentos
+        console.log(`Sending file ${file.name} to process-documents function`);
+        
         const { data, error } = await supabase.functions.invoke('process-documents', {
           body: {
             chatbotId,
             text,
             fileName: file.name,
             fileType: file.type,
-            userId: chatbot?.user_id, // Usar user_id del chatbot o del contexto de autenticación
-            retrievalSettings: settings // Pasar configuración de recuperación actual
+            userId: chatbot?.user_id, 
+            retrievalSettings: retrievalSettings
           }
         });
         
         if (error) {
-          console.error("Error procesando documento:", error);
+          console.error("Error processing document:", error);
           throw error;
         }
         
+        console.log("Document processing result:", data);
         return data;
       });
       
-      // Esperar a que todos los archivos se procesen
       await Promise.all(filePromises);
       
-      // Actualizar UI con éxito
       setUploadProgress(100);
       
       toast({
@@ -281,16 +312,14 @@ const ChatbotDocuments = () => {
         description: `Se subieron ${files.length} documento(s) correctamente.`,
       });
       
-      // Actualizar la lista de documentos
       refetchDocuments();
       
-      // Limpiar estado después de una pausa breve
       setTimeout(() => {
         setUploading(false);
         setUploadProgress(0);
       }, 1000);
     } catch (error) {
-      console.error("Error al subir documentos:", error);
+      console.error("Error uploading documents:", error);
       setUploading(false);
       setUploadProgress(0);
       
@@ -335,8 +364,8 @@ const ChatbotDocuments = () => {
     }
   };
 
-  // Manejar caso de error general o ID inválido
   if (!isValidUUID) {
+    console.error("Invalid UUID format:", chatbotId);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">
@@ -357,31 +386,20 @@ const ChatbotDocuments = () => {
     );
   }
 
-  if (isErrorDocuments || chatbotError) {
-    const error = (documentsError as Error)?.message || (chatbotError as Error)?.message || "Error al cargar los datos. Por favor, inténtalo de nuevo.";
+  if (isChatbotError) {
+    const errorMessage = (chatbotError as Error)?.message || "Error al cargar el chatbot";
+    console.error("Chatbot error:", errorMessage);
     
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
         <div className="flex gap-2 mt-4">
-          <Button 
-            variant="outline"
-            onClick={() => {
-              refetchDocuments();
-              refetchSettings();
-            }}
-          >
-            Reintentar
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/chatbots/${chatbotId}`)}
-          >
-            Volver al chatbot
+          <Button variant="outline" onClick={() => navigate(`/chatbots`)}>
+            Volver a mis chatbots
           </Button>
         </div>
       </div>

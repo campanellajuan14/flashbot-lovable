@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Definir interfaces para los tipos de Json
 interface BehaviorSettings {
   tone?: string;
   style?: string;
@@ -47,32 +45,30 @@ interface ChatbotSettings {
 }
 
 const ChatbotDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: chatbotId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Fetch chatbot data
   const {
     data: chatbot,
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ["chatbot", id],
+    queryKey: ["chatbot", chatbotId],
     queryFn: async () => {
-      if (!id) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId) throw new Error("Se requiere ID del chatbot");
 
       const { data, error } = await supabase
         .from("chatbots")
         .select("*")
-        .eq("id", id)
+        .eq("id", chatbotId)
         .single();
 
       if (error) throw error;
       
-      // Asegurar que behavior y settings sean objetos
       if (data) {
         data.behavior = data.behavior || {};
         data.settings = data.settings || {};
@@ -82,15 +78,14 @@ const ChatbotDetail = () => {
     },
   });
 
-  // Delete chatbot mutation
   const deleteChatbotMutation = useMutation({
     mutationFn: async () => {
-      if (!id) throw new Error("Se requiere ID del chatbot");
+      if (!chatbotId) throw new Error("Se requiere ID del chatbot");
 
-      const { error } = await supabase.from("chatbots").delete().eq("id", id);
+      const { error } = await supabase.from("chatbots").delete().eq("id", chatbotId);
 
       if (error) throw error;
-      return id;
+      return chatbotId;
     },
     onSuccess: () => {
       toast({
@@ -110,15 +105,14 @@ const ChatbotDetail = () => {
     },
   });
 
-  // Toggle active status mutation
   const toggleActiveMutation = useMutation({
     mutationFn: async () => {
-      if (!id || !chatbot) throw new Error("Se requiere chatbot");
+      if (!chatbotId || !chatbot) throw new Error("Se requiere chatbot");
 
       const { error } = await supabase
         .from("chatbots")
         .update({ is_active: !chatbot.is_active })
-        .eq("id", id);
+        .eq("id", chatbotId);
 
       if (error) throw error;
       return !chatbot.is_active;
@@ -132,7 +126,7 @@ const ChatbotDetail = () => {
           ? "El chatbot ha sido activado correctamente."
           : "El chatbot ha sido desactivado correctamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["chatbot", id] });
+      queryClient.invalidateQueries({ queryKey: ["chatbot", chatbotId] });
     },
     onError: (error) => {
       console.error("Error al cambiar estado del chatbot:", error);
@@ -154,7 +148,6 @@ const ChatbotDetail = () => {
     toggleActiveMutation.mutate();
   };
 
-  // Render loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -163,7 +156,6 @@ const ChatbotDetail = () => {
     );
   }
 
-  // Render error state
   if (isError || !chatbot) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
@@ -180,7 +172,6 @@ const ChatbotDetail = () => {
     );
   }
 
-  // Type casting para acceder a las propiedades de behavior y settings
   const behaviorSettings = chatbot.behavior as BehaviorSettings;
   const chatbotSettings = chatbot.settings as ChatbotSettings;
 
@@ -218,7 +209,7 @@ const ChatbotDetail = () => {
               size="sm"
               asChild
             >
-              <Link to={`/chatbots/${id}/edit`}>
+              <Link to={`/chatbots/${chatbotId}/edit`}>
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </Link>
@@ -228,7 +219,7 @@ const ChatbotDetail = () => {
               size="sm"
               asChild
             >
-              <Link to={`/chatbots/${id}/preview`}>
+              <Link to={`/chatbots/${chatbotId}/preview`}>
                 <Play className="h-4 w-4 mr-2" />
                 Vista Previa
               </Link>
@@ -240,9 +231,7 @@ const ChatbotDetail = () => {
       <div className="flex-1 p-4">
         <div className="container max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Columna izquierda */}
             <div className="col-span-1 space-y-6">
-              {/* Tarjeta principal */}
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -330,9 +319,9 @@ const ChatbotDetail = () => {
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Button variant="outline" size="sm" asChild>
-                    <Link to={`/chatbots/${id}/documents`}>
+                    <Link to={`/chatbots/${chatbotId}/documents`}>
                       <FileText className="h-4 w-4 mr-2" />
-                      Gestionar documentos
+                      Documentos
                     </Link>
                   </Button>
                   <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -373,9 +362,7 @@ const ChatbotDetail = () => {
               </Card>
             </div>
 
-            {/* Columna derecha */}
             <div className="col-span-1 md:col-span-2 space-y-6">
-              {/* Configuración del modelo */}
               <Card>
                 <CardHeader>
                   <CardTitle>Configuración del modelo</CardTitle>
@@ -413,7 +400,6 @@ const ChatbotDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Estadísticas (a implementar en el futuro) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Estadísticas de uso</CardTitle>

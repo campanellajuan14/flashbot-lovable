@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -82,8 +83,12 @@ const App = () => (
             {/* Preview no necesita autenticación para que puedas compartir con usuarios */}
             <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
             
-            {/* Agregar la ruta al componente de documentos */}
-            <Route path="/chatbots/:id/documents" element={<ChatbotDocuments />} />
+            {/* Ruta a documentos - asegurarnos que esté protegida */}
+            <Route path="/chatbots/:id/documents" element={
+              <ProtectedRoute>
+                <ChatbotDocuments />
+              </ProtectedRoute>
+            } />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
