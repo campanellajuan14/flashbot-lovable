@@ -22,19 +22,22 @@ const VoiceChatButton: React.FC<VoiceChatButtonProps> = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant={isVoiceMode ? "outline" : "ghost"}
-            size="icon"
-            className="rounded-full relative"
+            variant={isVoiceMode ? "default" : "outline"}
+            size="sm"
+            className={`relative ${isVoiceMode ? 'bg-red-500 hover:bg-red-600' : ''}`}
             onClick={toggleVoiceMode}
             disabled={!isEnabled}
           >
             {isVoiceMode ? (
-              <MicOff className="h-5 w-5 text-red-500" />
+              <>
+                <MicOff className="h-4 w-4 mr-1 text-white" />
+                <span>Voice Active</span>
+              </>
             ) : (
-              <Mic className="h-5 w-5" />
-            )}
-            {isVoiceMode && (
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+              <>
+                <Mic className="h-4 w-4 mr-1" />
+                <span>Voice Chat</span>
+              </>
             )}
             <span className="sr-only">{isVoiceMode ? "Disable Voice Chat" : "Enable Voice Chat"}</span>
           </Button>

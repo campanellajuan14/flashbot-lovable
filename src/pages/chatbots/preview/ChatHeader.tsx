@@ -22,7 +22,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   voiceChatEnabled = true
 }) => {
   return (
-    <header className="flex items-center justify-between p-3 border-b">
+    <header className="flex items-center justify-between p-3 border-b bg-white">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" asChild>
           <Link to={`/chatbots/${chatbotId}`}>
@@ -37,9 +37,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
       <div className="flex items-center gap-3">
         {toggleVoiceMode && (
           <VoiceChatButton 
-            isVoiceMode={isVoiceMode} 
+            isVoiceMode={isVoiceMode || false} 
             toggleVoiceMode={toggleVoiceMode} 
-            isEnabled={voiceChatEnabled} 
+            isEnabled={voiceChatEnabled || false} 
           />
         )}
         

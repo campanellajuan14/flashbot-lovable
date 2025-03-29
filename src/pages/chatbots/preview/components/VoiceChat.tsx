@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useConversation } from "@11labs/react";
-import { Chatbot, VoiceChatMessage } from "../types";
+import { Chatbot } from "../types";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

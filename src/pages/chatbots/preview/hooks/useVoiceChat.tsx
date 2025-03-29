@@ -19,7 +19,7 @@ export const useVoiceChat = () => {
   }, []);
 
   const toggleVoiceMode = () => {
-    setIsVoiceMode(!isVoiceMode);
+    setIsVoiceMode((prev) => !prev);
   };
 
   return {

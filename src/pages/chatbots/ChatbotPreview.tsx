@@ -13,6 +13,7 @@ import { useChatMessages } from "./preview/useChatMessages";
 import { useVoiceChat } from "./preview/hooks/useVoiceChat";
 import VoiceChat from "./preview/components/VoiceChat";
 import { ChatMessage } from "./preview/types";
+import { toast } from "sonner";
 
 const ChatbotPreview = () => {
   const navigate = useNavigate();
@@ -57,6 +58,11 @@ const ChatbotPreview = () => {
     setMessage("");
   };
 
+  useEffect(() => {
+    // Display a toast message when the component mounts to indicate voice chat is available
+    toast.info("Voice chat is available! Click on the microphone icon in the header to try it.");
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -83,6 +89,7 @@ const ChatbotPreview = () => {
         chatbotName={chatbot.name}
         isVoiceMode={isVoiceMode}
         toggleVoiceMode={toggleVoiceMode}
+        voiceChatEnabled={true}
       />
       
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-background rounded-lg shadow-sm my-4 overflow-hidden">
