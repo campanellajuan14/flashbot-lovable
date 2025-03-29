@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,23 +14,48 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { MessageSquare, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        variant: "destructive",
+        title: "Campos obligatorios",
+        description: "Por favor, ingresa tu email y contraseña."
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       await signIn(email, password);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Sign in error:", error);
+      // No need to navigate here as the useEffect will handle it when isAuthenticated changes
+    } catch (error: any) {
+      console.error("Error de inicio de sesión:", error);
+      
+      // Show user-friendly error message
+      toast({
+        variant: "destructive",
+        title: "Error de inicio de sesión",
+        description: error.message || "Credenciales inválidas. Por favor, verifica tu email y contraseña."
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -44,15 +69,15 @@ const SignIn = () => {
             <MessageSquare className="h-10 w-10 text-primary" />
           </div>
           <h2 className="mt-2 text-3xl font-bold">ChatSimp</h2>
-          <p className="mt-1 text-muted-foreground">Sign in to your account</p>
+          <p className="mt-1 text-muted-foreground">Iniciar sesión en tu cuenta</p>
         </div>
         
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle>Sign In</CardTitle>
+              <CardTitle>Iniciar Sesión</CardTitle>
               <CardDescription>
-                Enter your email and password to access your dashboard
+                Ingresa tu email y contraseña para acceder a tu panel
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -61,7 +86,7 @@ const SignIn = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder="tu.email@ejemplo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -69,12 +94,12 @@ const SignIn = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Contraseña</Label>
                   <Link 
                     to="/forgot-password" 
                     className="text-xs text-primary hover:underline"
                   >
-                    Forgot password?
+                    ¿Olvidaste tu contraseña?
                   </Link>
                 </div>
                 <Input
@@ -96,16 +121,16 @@ const SignIn = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    Iniciando sesión...
                   </>
                 ) : (
-                  "Sign In"
+                  "Iniciar Sesión"
                 )}
               </Button>
               <div className="text-center text-sm">
-                Don't have an account?{" "}
+                ¿No tienes una cuenta?{" "}
                 <Link to="/sign-up" className="text-primary hover:underline">
-                  Sign up
+                  Regístrate
                 </Link>
               </div>
             </CardFooter>

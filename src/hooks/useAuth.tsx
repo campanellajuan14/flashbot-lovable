@@ -37,30 +37,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-
-  // Check for existing session on mount
+  
+  // Setup auth state listener first
   useEffect(() => {
-    const checkSession = async () => {
+    const setupAuthListener = async () => {
       setIsLoading(true);
       
-      // Check for an active session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Error checking session:', sessionError);
-        setIsLoading(false);
-        return;
-      }
-      
-      if (session) {
-        await handleSession(session);
-      }
-      
-      setIsLoading(false);
-      
       // Set up auth state listener
-      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
+          console.log("Auth state changed:", event, session?.user?.id);
+          
           if (session) {
             await handleSession(session);
           } else {
@@ -69,18 +56,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       );
       
+      // Check for existing session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        await handleSession(session);
+      } else {
+        setUser(null);
+      }
+      
+      setIsLoading(false);
+      
       return () => {
         subscription.unsubscribe();
       };
     };
     
-    checkSession();
+    setupAuthListener();
   }, []);
   
   // Helper to process session data
   const handleSession = async (session: Session) => {
     try {
       const supabaseUser = session.user;
+      console.log("Processing session for user:", supabaseUser.id);
       
       // Get profile data from profiles table
       const { data: profileData, error: profileError } = await supabase
@@ -89,18 +88,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', supabaseUser.id)
         .single();
       
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('Error fetching profile:', profileError);
+        // Don't throw error here, continue with what we have
       }
+      
+      console.log("Profile data:", profileData);
       
       // Create the user object
       const authUser: AuthUser = {
         id: supabaseUser.id,
         email: supabaseUser.email || '',
-        businessName: profileData?.business_name || '',
+        businessName: profileData?.business_name || supabaseUser.user_metadata?.business_name || '',
         role: (profileData?.role as 'admin' | 'user') || 'user',
       };
       
+      console.log("Setting user:", authUser);
       setUser(authUser);
     } catch (error) {
       console.error('Session handling error:', error);
@@ -113,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
+      console.log("Signing in with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -120,10 +124,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
+      console.log("Sign in successful:", data);
+      
       toast({
         title: "Inicio de sesión exitoso",
-        description: `Bienvenido de nuevo, ${email}!`,
+        description: `¡Bienvenido de nuevo, ${email}!`,
       });
+      
+      return data;
     } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
       toast({
@@ -142,6 +150,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
+      console.log("Signing up with:", email, businessName);
+      
       // Register the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -155,10 +165,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
+      console.log("Sign up successful:", data);
+      
       toast({
         title: "Cuenta creada con éxito",
-        description: `Bienvenido a ChatSimp, ${businessName}!`,
+        description: `¡Bienvenido a ChatSimp, ${businessName}!`,
       });
+      
+      return data;
     } catch (error: any) {
       console.error('Error de registro:', error);
       toast({
@@ -192,6 +206,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   };
+  
+  console.log("Auth state:", { user, isAuthenticated: !!user, isLoading });
 
   return (
     <AuthContext.Provider
