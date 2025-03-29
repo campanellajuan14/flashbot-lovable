@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCard";
+import SampleDocumentDownload from "@/components/chatbots/documents/SampleDocumentDownload";
 import { ChatbotFormData } from "../types";
 
 interface BasicInfoTabProps {
@@ -73,6 +75,16 @@ const BasicInfoTab = ({
               />
             </Label>
           </div>
+        </div>
+        
+        {/* Show sample document download component for all users */}
+        <div className="mt-4 pt-4 border-t">
+          <h3 className="text-lg font-medium mb-2">Knowledge Base Resources</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Download sample documents to use as knowledge base for your chatbot.
+          </p>
+          
+          <SampleDocumentDownload />
         </div>
         
         {/* Show document uploads section for Lovable Hackathon template */}
