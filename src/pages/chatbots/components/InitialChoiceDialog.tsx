@@ -7,7 +7,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wand2 } from "lucide-react";
+import { PlusCircle, Wand2, MessageCircle } from "lucide-react";
 import { chatbotTemplates } from "../templates/data";
 
 interface InitialChoiceDialogProps {
@@ -25,6 +25,20 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
 }) => {
   // Select just 3 featured templates
   const featuredTemplates = chatbotTemplates.slice(0, 3);
+  
+  // Helper function to get the correct icon component
+  const getIconComponent = (iconName: string) => {
+    switch(iconName) {
+      case "messageCircle":
+        return <MessageCircle className="h-5 w-5 text-primary" />;
+      case "wand2":
+        return <Wand2 className="h-5 w-5 text-primary" />;
+      case "plusCircle":
+        return <PlusCircle className="h-5 w-5 text-primary" />;
+      default:
+        return <MessageCircle className="h-5 w-5 text-primary" />;
+    }
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,10 +82,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
                   onClick={() => onSelectTemplate(template.id)}
                 >
                   <div className="p-2 bg-primary/10 rounded-full mb-2">
-                    {React.createElement(
-                      require("lucide-react")[template.icon.charAt(0).toUpperCase() + template.icon.slice(1) + "Icon"] || 
-                      require("lucide-react").MessageCircleIcon
-                    )}
+                    {getIconComponent(template.icon)}
                   </div>
                   <h4 className="text-sm font-medium">{template.name}</h4>
                 </div>

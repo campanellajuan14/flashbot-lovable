@@ -35,6 +35,15 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
   const handleTemplateSelect = (template: ChatbotTemplate) => {
     setSelectedTemplateId(template.id);
     
+    // Ensure we're working with numbers for maxTokens and temperature
+    const maxTokens = typeof template.settings.maxTokens === 'string' 
+      ? parseInt(template.settings.maxTokens, 10) 
+      : template.settings.maxTokens;
+    
+    const temperature = typeof template.settings.temperature === 'string'
+      ? parseFloat(template.settings.temperature)
+      : template.settings.temperature;
+    
     setForm(prev => ({
       ...prev,
       name: prev.name || template.name,
@@ -42,13 +51,8 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
       personality: template.personality,
       settings: {
         ...template.settings,
-        // Ensure numeric types are properly initialized
-        maxTokens: typeof template.settings.maxTokens === 'string' 
-          ? parseInt(template.settings.maxTokens, 10) 
-          : template.settings.maxTokens,
-        temperature: typeof template.settings.temperature === 'string'
-          ? parseFloat(template.settings.temperature)
-          : template.settings.temperature
+        maxTokens: maxTokens || 500,
+        temperature: temperature || 0.7
       }
     }));
     

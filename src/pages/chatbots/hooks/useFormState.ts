@@ -7,6 +7,15 @@ import { defaultPersonality, defaultSettings } from "../constants";
  * Hook to manage form state
  */
 export const useFormState = () => {
+  // Process default values to ensure proper types
+  const defaultMaxTokens = typeof defaultSettings.maxTokens === 'string' 
+    ? parseInt(defaultSettings.maxTokens, 10) || 500
+    : defaultSettings.maxTokens || 500;
+    
+  const defaultTemperature = typeof defaultSettings.temperature === 'string'
+    ? parseFloat(defaultSettings.temperature) || 0.7
+    : defaultSettings.temperature || 0.7;
+  
   // Form state
   const [form, setForm] = useState<ChatbotFormData>({
     name: "",
@@ -15,13 +24,8 @@ export const useFormState = () => {
     personality: defaultPersonality,
     settings: {
       ...defaultSettings,
-      // Ensure numeric types are properly initialized
-      maxTokens: typeof defaultSettings.maxTokens === 'string' 
-        ? parseInt(defaultSettings.maxTokens, 10) || 500
-        : defaultSettings.maxTokens || 500,
-      temperature: typeof defaultSettings.temperature === 'string'
-        ? parseFloat(defaultSettings.temperature) || 0.7
-        : defaultSettings.temperature || 0.7
+      maxTokens: defaultMaxTokens,
+      temperature: defaultTemperature
     }
   });
   
@@ -48,15 +52,15 @@ export const useFormState = () => {
         let processedValue = value;
         
         if (parent === 'settings' && field === 'maxTokens') {
-          processedValue = typeof value === 'string' 
+          processedValue = typeof value === 'string' && value !== '' 
             ? parseInt(value, 10) || 500
-            : value;
+            : (typeof value === 'number' ? value : 500);
         }
         
         if (parent === 'settings' && field === 'temperature') {
-          processedValue = typeof value === 'string' 
+          processedValue = typeof value === 'string' && value !== ''
             ? parseFloat(value) || 0.7 
-            : value;
+            : (typeof value === 'number' ? value : 0.7);
         }
         
         return {
