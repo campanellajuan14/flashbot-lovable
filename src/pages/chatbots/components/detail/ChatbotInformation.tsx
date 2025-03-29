@@ -100,7 +100,7 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
           <CardHeader className="bg-muted/30">
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-left">
                   {chatbot.name}
                   {chatbot.is_active ? (
                     <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
@@ -212,7 +212,7 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
                   <Textarea 
                     value={instructions} 
                     onChange={(e) => setInstructions(e.target.value)}
-                    className="min-h-[150px] text-left font-mono text-sm"
+                    className="min-h-[200px] text-left font-mono text-sm w-full"
                     placeholder="Enter instructions for your chatbot..."
                   />
                   <div className="flex justify-end gap-2">
@@ -247,7 +247,7 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="text-sm bg-muted/50 p-4 rounded-md border text-left min-h-[100px] whitespace-pre-wrap">
+                  <div className="text-sm bg-muted/50 p-4 rounded-md border text-left min-h-[150px] whitespace-pre-wrap overflow-auto max-h-[400px]">
                     {behaviorSettings.instructions ? (
                       behaviorSettings.instructions
                     ) : (
@@ -256,7 +256,7 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
                   </div>
                   <div className="flex justify-end">
                     <Button 
-                      variant="outline" 
+                      variant="primary" 
                       onClick={() => setIsEditing(true)}
                       type="button"
                     >
