@@ -26,7 +26,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <form onSubmit={handleSendMessage} className="flex items-end gap-2">
         <Input
           ref={inputRef}
-          placeholder="Escribe tu mensaje..."
+          placeholder="Type your message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="flex-1"
@@ -37,8 +37,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
         </Button>
       </form>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Esta es una vista previa de cómo aparecerá tu chatbot para los usuarios.
-        {language === 'english' && " Recuerda que este chatbot está configurado para responder en inglés."}
+        This is a preview of how your chatbot will appear to users.
+        {language === 'english' && " Remember that this chatbot is configured to respond in English."}
       </p>
     </div>
   );

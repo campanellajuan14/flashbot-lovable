@@ -60,14 +60,14 @@ const ChatbotForm = () => {
             className="mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            Back
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {isEditing ? "Editar Chatbot" : "Crear Nuevo Chatbot"}
+              {isEditing ? "Edit Chatbot" : "Create New Chatbot"}
             </h1>
             <p className="text-muted-foreground">
-              Configura la personalidad y comportamiento de tu chatbot
+              Configure your chatbot's personality and behavior
             </p>
           </div>
         </div>
@@ -80,11 +80,11 @@ const ChatbotForm = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4">
               {!isEditing && (
-                <TabsTrigger value="templates">Plantillas</TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
               )}
-              <TabsTrigger value="basic">Información Básica</TabsTrigger>
-              <TabsTrigger value="personality">Personalidad</TabsTrigger>
-              <TabsTrigger value="advanced">Configuración Avanzada</TabsTrigger>
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="personality">Personality</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
             </TabsList>
             
             {!isEditing && (
@@ -129,7 +129,7 @@ const ChatbotForm = () => {
               variant="outline"
               onClick={() => navigate("/chatbots")}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -138,12 +138,12 @@ const ChatbotForm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditing ? "Actualizando..." : "Creando..."}
+                  {isEditing ? "Updating..." : "Creating..."}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {isEditing ? "Actualizar Chatbot" : "Crear Chatbot"}
+                  {isEditing ? "Update Chatbot" : "Create Chatbot"}
                 </>
               )}
             </Button>

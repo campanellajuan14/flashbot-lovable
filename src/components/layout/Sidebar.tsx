@@ -29,7 +29,7 @@ const Sidebar = () => {
       title: "Documents",
       href: "/documents",
       icon: FileText,
-      description: "Gestiona documentos de tus chatbots"
+      description: "Manage your chatbot documents"
     },
     {
       title: "Analytics",

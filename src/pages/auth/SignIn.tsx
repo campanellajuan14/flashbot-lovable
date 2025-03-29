@@ -35,8 +35,8 @@ const SignIn = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Campos obligatorios", {
-        description: "Por favor, ingresa tu email y contraseña."
+      toast.error("Required fields", {
+        description: "Please enter your email and password."
       });
       return;
     }
@@ -49,7 +49,7 @@ const SignIn = () => {
       console.log("Sign in successful, auth state will update and redirect");
       // No navigation here, the useEffect will handle it when isAuthenticated changes
     } catch (error: any) {
-      console.error("Error de inicio de sesión:", error);
+      console.error("Login error:", error);
       
       // Error message already shown by the signIn function
     } finally {
@@ -65,15 +65,15 @@ const SignIn = () => {
             <MessageSquare className="h-10 w-10 text-primary" />
           </div>
           <h2 className="mt-2 text-3xl font-bold">ChatSimp</h2>
-          <p className="mt-1 text-muted-foreground">Iniciar sesión en tu cuenta</p>
+          <p className="mt-1 text-muted-foreground">Sign in to your account</p>
         </div>
         
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle>Iniciar Sesión</CardTitle>
+              <CardTitle>Sign In</CardTitle>
               <CardDescription>
-                Ingresa tu email y contraseña para acceder a tu panel
+                Enter your email and password to access your dashboard
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -82,7 +82,7 @@ const SignIn = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="tu.email@ejemplo.com"
+                  placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -90,12 +90,12 @@ const SignIn = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Link 
                     to="/forgot-password" 
                     className="text-xs text-primary hover:underline"
                   >
-                    ¿Olvidaste tu contraseña?
+                    Forgot your password?
                   </Link>
                 </div>
                 <Input
@@ -117,16 +117,16 @@ const SignIn = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Iniciando sesión...
+                    Signing in...
                   </>
                 ) : (
-                  "Iniciar Sesión"
+                  "Sign In"
                 )}
               </Button>
               <div className="text-center text-sm">
-                ¿No tienes una cuenta?{" "}
+                Don't have an account?{" "}
                 <Link to="/sign-up" className="text-primary hover:underline">
-                  Regístrate
+                  Sign up
                 </Link>
               </div>
             </CardFooter>

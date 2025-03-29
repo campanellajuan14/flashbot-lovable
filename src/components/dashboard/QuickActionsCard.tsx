@@ -9,9 +9,9 @@ const QuickActionsCard: React.FC = () => {
   return (
     <Card className="dashboard-card">
       <CardHeader>
-        <CardTitle>Acciones Rápidas</CardTitle>
+        <CardTitle>Quick Actions</CardTitle>
         <CardDescription>
-          Tareas y accesos directos comunes
+          Common tasks and shortcuts
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -19,19 +19,19 @@ const QuickActionsCard: React.FC = () => {
           <Button className="w-full justify-start" variant="outline" asChild>
             <Link to="/chatbots/new">
               <Plus className="mr-2 h-4 w-4" />
-              Nuevo Chatbot
+              New Chatbot
             </Link>
           </Button>
           <Button className="w-full justify-start" variant="outline" asChild>
             <Link to="/documents/upload">
               <Plus className="mr-2 h-4 w-4" />
-              Subir Documentos
+              Upload Documents
             </Link>
           </Button>
           <Button className="w-full justify-start" variant="outline" asChild>
             <Link to="/settings/integrations">
               <Plus className="mr-2 h-4 w-4" />
-              Conectar Integración
+              Connect Integration
             </Link>
           </Button>
         </div>

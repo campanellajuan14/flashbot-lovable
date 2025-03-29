@@ -21,19 +21,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ chatbotId, chatbotName }) => {
           </Button>
           <div>
             <h1 className="text-lg font-semibold">{chatbotName}</h1>
-            <p className="text-sm text-muted-foreground">Modo Vista Previa</p>
+            <p className="text-sm text-muted-foreground">Preview Mode</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to={`/chatbots/${chatbotId}/documents`}>
               <BookOpen className="h-4 w-4 mr-2" />
-              Documentos
+              Documents
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/chatbots/${chatbotId}`}>
-              Editar Chatbot
+              Edit Chatbot
             </Link>
           </Button>
         </div>

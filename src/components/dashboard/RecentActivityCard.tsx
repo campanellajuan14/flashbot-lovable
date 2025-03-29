@@ -20,14 +20,14 @@ const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities }) =
     <Card className="dashboard-card md:col-span-2">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Actividad Reciente</CardTitle>
+          <CardTitle>Recent Activity</CardTitle>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Info className="h-4 w-4" />
-            <span>Datos simulados</span>
+            <span>Sample data</span>
           </div>
         </div>
         <CardDescription>
-          Conversaciones y eventos recientes de tus chatbots
+          Recent conversations and events from your chatbots
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -37,15 +37,15 @@ const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities }) =
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">{activity.botName}</p>
                 <p className="text-xs text-muted-foreground italic">
-                  Nueva conversación con usuario{" "}
+                  New conversation with user{" "}
                   <span className="font-semibold">{activity.email}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Hace {activity.timeAgo}
+                  {activity.timeAgo} ago
                 </p>
               </div>
               <Button variant="outline" size="sm" disabled>
-                Ver
+                View
               </Button>
             </div>
           ))}

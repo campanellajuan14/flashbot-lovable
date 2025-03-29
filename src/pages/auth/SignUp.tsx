@@ -35,17 +35,17 @@ const SignUp = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación básica
+    // Basic validation
     if (!email || !password || !businessName) {
-      toast.error("Campos obligatorios", {
-        description: "Por favor, completa todos los campos."
+      toast.error("Required fields", {
+        description: "Please complete all fields."
       });
       return;
     }
     
     if (password.length < 6) {
-      toast.error("Contraseña muy corta", {
-        description: "La contraseña debe tener al menos 6 caracteres."
+      toast.error("Password too short", {
+        description: "Password must be at least 6 characters."
       });
       return;
     }
@@ -58,7 +58,7 @@ const SignUp = () => {
       console.log("Sign up successful, auth state will update and redirect");
       // No explicit navigation here - the useEffect will handle it when isAuthenticated changes
     } catch (error: any) {
-      console.error("Error de registro:", error);
+      console.error("Registration error:", error);
       
       // Error message already shown by the signUp function
     } finally {
@@ -74,23 +74,23 @@ const SignUp = () => {
             <MessageSquare className="h-10 w-10 text-primary" />
           </div>
           <h2 className="mt-2 text-3xl font-bold">ChatSimp</h2>
-          <p className="mt-1 text-muted-foreground">Crea tu cuenta</p>
+          <p className="mt-1 text-muted-foreground">Create your account</p>
         </div>
         
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle>Registro</CardTitle>
+              <CardTitle>Sign Up</CardTitle>
               <CardDescription>
-                Crea una nueva cuenta para empezar a usar ChatSimp
+                Create a new account to start using ChatSimp
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="businessName">Nombre de tu Negocio</Label>
+                <Label htmlFor="businessName">Business Name</Label>
                 <Input
                   id="businessName"
-                  placeholder="Nombre de tu Negocio"
+                  placeholder="Your Business Name"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   required
@@ -101,14 +101,14 @@ const SignUp = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="tu.email@ejemplo.com"
+                  placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -118,7 +118,7 @@ const SignUp = () => {
                   required
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  La contraseña debe tener al menos 6 caracteres.
+                  Password must be at least 6 characters.
                 </p>
               </div>
             </CardContent>
@@ -131,16 +131,16 @@ const SignUp = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creando cuenta...
+                    Creating account...
                   </>
                 ) : (
-                  "Crear Cuenta"
+                  "Create Account"
                 )}
               </Button>
               <div className="text-center text-sm">
-                ¿Ya tienes una cuenta?{" "}
+                Already have an account?{" "}
                 <Link to="/sign-in" className="text-primary hover:underline">
-                  Iniciar sesión
+                  Sign in
                 </Link>
               </div>
             </CardFooter>

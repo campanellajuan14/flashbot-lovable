@@ -89,14 +89,14 @@ export function createWidgetElements(state) {
       <input 
         type="text" 
         id="lovable-chatbot-input"
-        placeholder="${state.config.config.content.placeholder_text || 'Escribe un mensaje...'}"
+        placeholder="${state.config.config.content.placeholder_text || 'Type a message...'}"
         style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;"
       >
       <button 
         type="submit"
         style="margin-left: 10px; background: ${state.config.config.colors.primary}; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;"
       >
-        Enviar
+        Send
       </button>
     </form>
   `;
@@ -221,7 +221,7 @@ export async function handleSubmit(e, state) {
     typingIndicator.style.display = 'inline-block';
     typingIndicator.style.backgroundColor = '#f1f0f0';
     typingIndicator.style.borderRadius = '18px 18px 18px 0';
-    typingIndicator.innerHTML = 'Escribiendo...';
+    typingIndicator.innerHTML = 'Typing...';
     
     const messagesContainer = document.getElementById('lovable-chatbot-messages');
     const indicatorContainer = document.createElement('div');
@@ -264,7 +264,7 @@ export async function handleSubmit(e, state) {
     // Error message
     state.messages.push({
       role: 'assistant',
-      content: 'Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, intenta de nuevo más tarde.'
+      content: 'Sorry, an error occurred while processing your message. Please try again later.'
     });
     
     renderMessages(state);
@@ -277,7 +277,7 @@ export function showWelcomeMessage(state) {
     // Check for custom greeting in behavior.greeting first
     const greeting = state.config?.behavior?.greeting || 
                      state.config?.config?.content?.welcome_message || 
-                     '¡Hola! ¿En qué puedo ayudarte hoy?';
+                     'Hi! How can I help you today?';
     
     state.messages.push({
       role: 'assistant',

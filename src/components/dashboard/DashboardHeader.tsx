@@ -35,7 +35,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          ¡Bienvenido, {user?.businessName || "usuario"}! Aquí tienes un resumen de tus chatbots.
+          Welcome, {user?.businessName || "user"}! Here's a summary of your chatbots.
         </p>
       </div>
       <div className="flex gap-2">
@@ -43,11 +43,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">
               <Settings className="h-4 w-4" />
-              <span className="sr-only">Configuración del dashboard</span>
+              <span className="sr-only">Dashboard settings</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Personalización</DropdownMenuLabel>
+            <DropdownMenuLabel>Customization</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={cardVisibility.stats}
@@ -58,7 +58,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ) : (
                 <EyeOff className="mr-2 h-4 w-4" />
               )}
-              Estadísticas
+              Statistics
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={cardVisibility.activity}
@@ -69,7 +69,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ) : (
                 <EyeOff className="mr-2 h-4 w-4" />
               )}
-              Actividad reciente
+              Recent Activity
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={cardVisibility.actions}
@@ -80,14 +80,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ) : (
                 <EyeOff className="mr-2 h-4 w-4" />
               )}
-              Acciones rápidas
+              Quick Actions
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button asChild className="shrink-0">
           <Link to="/chatbots/new">
             <Plus className="mr-2 h-4 w-4" />
-            Crear Chatbot
+            Create Chatbot
           </Link>
         </Button>
       </div>

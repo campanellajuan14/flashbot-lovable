@@ -21,7 +21,7 @@ serve(async (req) => {
     
     if (!tempChatbotId || !document) {
       return new Response(
-        JSON.stringify({ error: "Se requieren tempChatbotId y document" }),
+        JSON.stringify({ error: "tempChatbotId and document are required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
