@@ -7,10 +7,13 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle,
+  Alert,
+  AlertTitle,
+  AlertDescription,
   useToast
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { Upload, Plus } from "lucide-react";
+import { Upload, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentUploadCardProps {
@@ -29,6 +32,7 @@ const DocumentUploadCard = ({
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [dragActive, setDragActive] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -53,6 +57,7 @@ const DocumentUploadCard = ({
     
     setUploading(true);
     setUploadProgress(0);
+    setErrorMessage(null);
     
     try {
       const interval = setInterval(() => {
@@ -88,6 +93,10 @@ const DocumentUploadCard = ({
           throw error;
         }
         
+        if (data && !data.success) {
+          throw new Error(data.error || "Error processing document");
+        }
+        
         console.log("Document processing result:", data);
         return data;
       });
@@ -112,11 +121,17 @@ const DocumentUploadCard = ({
       setUploading(false);
       setUploadProgress(0);
       
-      toast({
-        title: "Error al subir documentos",
-        description: "Ocurrió un error al procesar los documentos. Por favor, inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      // Check for specific OpenAI API key error
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes("OpenAI API key not found")) {
+        setErrorMessage("No se ha configurado la clave de API de OpenAI. Contacte al administrador del sistema para configurar esta clave.");
+      } else {
+        toast({
+          title: "Error al subir documentos",
+          description: "Ocurrió un error al procesar los documentos. Por favor, inténtalo de nuevo.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -150,6 +165,16 @@ const DocumentUploadCard = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div
           className={cn(
             "border-2 border-dashed rounded-lg p-8 text-center transition-colors",

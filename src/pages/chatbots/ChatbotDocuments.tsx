@@ -10,7 +10,6 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  useToast
 } from "@/components/ui";
 import { 
   ArrowLeft, 
@@ -23,7 +22,7 @@ import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCa
 import DocumentListCard from "@/components/chatbots/documents/DocumentListCard";
 import RetrievalSettingsCard from "@/components/chatbots/documents/RetrievalSettingsCard";
 
-// Define types
+// Define types without recursive references
 interface RecordRange {
   start?: number;
   end?: number;
@@ -76,7 +75,6 @@ const ChatbotDocuments = () => {
   const { id } = useParams<{ id: string }>();
   const [selectedTab, setSelectedTab] = useState<string>("documents");
   const navigate = useNavigate();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const chatbotId = id || '';
   const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatbotId);
@@ -181,7 +179,6 @@ const ChatbotDocuments = () => {
 
   const handleUploadClick = () => {
     setSelectedTab("documents");
-    fileInputRef.current?.click();
   };
 
   if (!isValidUUID) {
