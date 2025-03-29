@@ -18,7 +18,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-left">
         <CardTitle>Select Template</CardTitle>
         <CardDescription>
           Choose a preconfigured template for your chatbot or start from scratch
@@ -32,7 +32,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
             <div className="p-2 rounded-md bg-primary/20 text-primary">
               <PlusCircle className="h-5 w-5" />
             </div>
-            <div>
+            <div className="text-left">
               <h3 className="font-medium">Start from scratch</h3>
               <p className="text-sm text-muted-foreground">
                 Create a custom chatbot without using a predefined template

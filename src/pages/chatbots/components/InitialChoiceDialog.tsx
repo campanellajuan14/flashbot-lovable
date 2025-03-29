@@ -44,10 +44,10 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">Create a new chatbot</DialogTitle>
+          <DialogTitle className="text-xl text-left">Create a new chatbot</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-5 py-4">
           {/* Start from scratch option */}
           <div 
             className="flex items-center p-4 border rounded-lg hover:border-primary cursor-pointer hover:bg-accent/50 transition-all"
@@ -56,7 +56,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
             <div className="mr-4 p-2 bg-primary/10 rounded-full">
               <PlusCircle className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="text-left">
               <h3 className="font-medium">Start from scratch</h3>
               <p className="text-sm text-muted-foreground">Create a custom chatbot with your own settings</p>
             </div>
@@ -68,7 +68,7 @@ const InitialChoiceDialog: React.FC<InitialChoiceDialogProps> = ({
               <div className="mr-4 p-2 bg-primary/10 rounded-full">
                 <Wand2 className="h-5 w-5 text-primary" />
               </div>
-              <div>
+              <div className="text-left">
                 <h3 className="font-medium">Use a template</h3>
                 <p className="text-sm text-muted-foreground">Start with a pre-configured template</p>
               </div>

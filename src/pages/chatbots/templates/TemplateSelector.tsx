@@ -59,7 +59,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     {template.category.replace("-", " ")}
                   </Badge>
                 </div>
-                <CardDescription>{template.description}</CardDescription>
+                <CardDescription className="text-left mt-2">{template.description}</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-xs text-muted-foreground space-y-1">

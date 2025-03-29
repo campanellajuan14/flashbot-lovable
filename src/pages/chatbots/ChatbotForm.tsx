@@ -80,7 +80,7 @@ const ChatbotForm = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-6xl mx-auto">
         {/* Initial choice dialog */}
         <InitialChoiceDialog 
           open={showInitialDialog}
@@ -99,7 +99,7 @@ const ChatbotForm = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
+          <div className="text-left">
             <h1 className="text-3xl font-bold tracking-tight">
               {isEditing ? "Edit Chatbot" : "Create New Chatbot"}
             </h1>
@@ -114,8 +114,8 @@ const ChatbotForm = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="w-full grid grid-cols-3 mb-2">
               <TabsTrigger value="basic">Basic Information</TabsTrigger>
               <TabsTrigger value="personality">Personality</TabsTrigger>
               <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
@@ -123,7 +123,7 @@ const ChatbotForm = () => {
             
             {/* Templates tab is now hidden by default but can still be accessed */}
             {!isEditing && (
-              <TabsContent value="templates" className="space-y-4 pt-4">
+              <TabsContent value="templates" className="pt-4">
                 <TemplateSelectionTab 
                   selectedTemplateId={selectedTemplateId}
                   onSelectTemplate={handleTemplateSelect}
@@ -132,7 +132,7 @@ const ChatbotForm = () => {
               </TabsContent>
             )}
             
-            <TabsContent value="basic" className="space-y-4 pt-4">
+            <TabsContent value="basic" className="pt-4">
               <BasicInfoTab 
                 form={form} 
                 handleChange={handleChange}
@@ -141,14 +141,14 @@ const ChatbotForm = () => {
               />
             </TabsContent>
             
-            <TabsContent value="personality" className="space-y-4 pt-4">
+            <TabsContent value="personality" className="pt-4">
               <PersonalityTab 
                 form={form} 
                 handleNestedChange={handleNestedChange} 
               />
             </TabsContent>
             
-            <TabsContent value="advanced" className="space-y-4 pt-4">
+            <TabsContent value="advanced" className="pt-4">
               <AdvancedSettingsTab 
                 form={form} 
                 aiProvider={aiProvider}

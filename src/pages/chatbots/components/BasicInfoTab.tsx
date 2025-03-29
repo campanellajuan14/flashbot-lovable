@@ -92,29 +92,30 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Basic Information</CardTitle>
           <CardDescription>
             Configure the name and description for your chatbot
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+        <CardContent className="space-y-5">
+          <div className="space-y-2 max-w-2xl">
+            <Label htmlFor="name" className="text-left block">Name</Label>
             <Input
               id="name"
               placeholder="e.g., Customer Support Assistant"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
               required
+              className="max-w-md"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground text-left">
               A clear and descriptive name for your chatbot
             </p>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          <div className="space-y-2 max-w-2xl">
+            <Label htmlFor="description" className="text-left block">Description</Label>
             <Textarea
               id="description"
               placeholder="What does this chatbot do?"
@@ -122,8 +123,9 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
               required
+              className="max-w-2xl"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground text-left">
               A brief description of the chatbot's purpose and capabilities
             </p>
           </div>
@@ -134,7 +136,7 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               checked={form.isActive}
               onCheckedChange={(checked) => handleChange("isActive", checked)}
             />
-            <Label htmlFor="active">Active</Label>
+            <Label htmlFor="active" className="text-left">Active</Label>
           </div>
         </CardContent>
       </Card>
@@ -164,19 +166,19 @@ const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             
             {/* Show temporary documents */}
             {isLoadingDocs ? (
-              <div className="mt-4 text-center text-muted-foreground">Loading documents...</div>
+              <div className="mt-4 text-left text-muted-foreground">Loading documents...</div>
             ) : tempDocuments.length > 0 ? (
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Uploaded documents ({tempDocuments.length})</h3>
+                <h3 className="text-sm font-medium mb-2 text-left">Uploaded documents ({tempDocuments.length})</h3>
                 <div className="border rounded-md divide-y">
                   {tempDocuments.map((doc, index) => (
-                    <div key={index} className="p-2 flex items-center gap-2">
+                    <div key={index} className="p-2 flex items-center gap-2 text-left">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{doc.name}</span>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-2 text-left">
                   These documents will be processed when you save the chatbot.
                 </p>
               </div>
