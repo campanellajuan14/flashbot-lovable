@@ -103,7 +103,8 @@ const ChatbotPreview = () => {
         body: {
           messages: formattedMessages,
           behavior: chatbot.behavior,
-          chatbotName: chatbot.name
+          chatbotName: chatbot.name,
+          settings: chatbot.settings
         }
       });
       

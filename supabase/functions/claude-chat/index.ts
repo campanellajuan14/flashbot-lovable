@@ -26,28 +26,28 @@ serve(async (req) => {
     console.log('Behavior settings:', behavior);
     console.log('Model settings:', settings);
 
-    // Configuraciones predeterminadas si no se proporcionan
+    // Use provided settings or fallback to defaults
     const modelSettings = settings || {
       model: 'claude-3-haiku-20240307',
       temperature: 0.7,
       maxTokens: 1000
     };
 
-    // Construir el mensaje del sistema basado en el comportamiento configurado
+    // Build system prompt based on configured behavior
     let systemPrompt = `Eres un chatbot llamado ${chatbotName || 'Asistente'}. `;
     
     if (behavior) {
-      // Agregar instrucciones sobre el tono
+      // Add tone instructions
       if (behavior.tone) {
         systemPrompt += `Debes responder con un tono ${behavior.tone}. `;
       }
       
-      // Agregar instrucciones sobre el estilo
+      // Add style instructions
       if (behavior.style) {
         systemPrompt += `Tu estilo de respuesta debe ser ${behavior.style}. `;
       }
       
-      // Agregar instrucciones sobre el idioma
+      // Add language instructions
       if (behavior.language) {
         const languageMap: Record<string, string> = {
           'english': 'inglés',
@@ -62,30 +62,30 @@ serve(async (req) => {
         systemPrompt += `Debes comunicarte en ${languageDisplay}. `;
       }
       
-      // Agregar instrucciones sobre el uso de emojis
+      // Add emoji usage instructions
       if (behavior.useEmojis) {
         systemPrompt += `Usa emojis en tus respuestas cuando sea apropiado. `;
       } else {
         systemPrompt += `No uses emojis en tus respuestas. `;
       }
       
-      // Agregar instrucciones sobre hacer preguntas
+      // Add asking questions instructions
       if (behavior.askQuestions) {
         systemPrompt += `Haz preguntas al usuario para entender mejor sus necesidades. `;
       }
       
-      // Agregar instrucciones sobre sugerir soluciones
+      // Add suggesting solutions instructions
       if (behavior.suggestSolutions) {
         systemPrompt += `Siempre sugiere soluciones prácticas a los problemas del usuario. `;
       }
       
-      // Agregar instrucciones personalizadas adicionales
+      // Add custom instructions
       if (behavior.instructions) {
         systemPrompt += `Instrucciones adicionales: ${behavior.instructions}`;
       }
     }
 
-    // Formatear mensajes para la API de Anthropic (sin incluir el mensaje del sistema como parte de los mensajes)
+    // Format messages for Anthropic API (without including system message in the messages array)
     const formattedMessages = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
@@ -101,7 +101,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: modelSettings.model,
         messages: formattedMessages,
-        system: systemPrompt, // El mensaje del sistema se envía como un campo separado
+        system: systemPrompt, // System message sent as a separate field
         max_tokens: modelSettings.maxTokens,
         temperature: modelSettings.temperature,
       }),
