@@ -103,13 +103,13 @@ serve(async (req) => {
       chatbotId,
       text,
       fileName,
-      fileType,
-      fileContent,
+      fileType = 'text/plain',
       userId,
       retrievalSettings
     } = await req.json();
     
     console.log(`Procesando documento para chatbot ${chatbotId}, userId: ${userId}`);
+    console.log(`Filename: ${fileName}, fileType: ${fileType}`);
     
     if (!chatbotId || !text || !fileName || !userId) {
       throw new Error("Faltan parámetros requeridos");
@@ -121,6 +121,7 @@ serve(async (req) => {
     });
     
     if (settingsResponse.error) {
+      console.error("Error al obtener configuración:", settingsResponse.error);
       throw new Error(`Error al obtener configuración: ${settingsResponse.error.message}`);
     }
     
@@ -153,6 +154,7 @@ serve(async (req) => {
       .single();
     
     if (documentInsertResponse.error) {
+      console.error("Error al guardar documento:", documentInsertResponse.error);
       throw new Error(`Error al guardar documento: ${documentInsertResponse.error.message}`);
     }
     

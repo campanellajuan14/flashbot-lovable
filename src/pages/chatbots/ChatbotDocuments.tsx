@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -311,7 +312,7 @@ const ChatbotDocuments = () => {
             chatbotId,
             text,
             fileName: file.name,
-            fileType: file.type,
+            fileType: file.type || 'text/plain',
             userId: chatbot.user_id, 
             retrievalSettings: retrievalSettings || settings
           }
