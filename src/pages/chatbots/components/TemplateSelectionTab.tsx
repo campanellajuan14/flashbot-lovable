@@ -16,6 +16,17 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
   onSelectTemplate,
   onStartFromScratch
 }) => {
+  const handleStartFromScratch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onStartFromScratch();
+  };
+
+  const handleTemplateClick = (template: ChatbotTemplate) => {
+    onSelectTemplate(template);
+    onStartFromScratch(); // Navigate to the next tab on template selection
+  };
+
   return (
     <Card className="text-left">
       <CardHeader>
@@ -27,11 +38,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
       <CardContent className="space-y-6">
         <div 
           className="p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
-          onClick={(e) => {
-            e.preventDefault(); // Prevent default behavior
-            e.stopPropagation(); // Stop event propagation
-            onStartFromScratch();
-          }}
+          onClick={handleStartFromScratch}
         >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-md bg-primary/20 text-primary">
@@ -49,10 +56,7 @@ const TemplateSelectionTab: React.FC<TemplateSelectionTabProps> = ({
         <TemplateSelector 
           selectedTemplateId={selectedTemplateId} 
           onSelectTemplate={onSelectTemplate} 
-          onTemplateClick={(template) => {
-            onSelectTemplate(template);
-            onStartFromScratch(); // Navigate to the next tab on template selection
-          }}
+          onTemplateClick={handleTemplateClick}
         />
       </CardContent>
     </Card>

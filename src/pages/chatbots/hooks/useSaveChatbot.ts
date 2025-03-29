@@ -15,8 +15,10 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
   const isEditing = !!id;
   
   const handleSubmit = async (e: React.FormEvent, form: ChatbotFormData) => {
-    e.preventDefault(); // Ensure we prevent form submission
-    e.stopPropagation(); // Stop event propagation
+    if (e) {
+      e.preventDefault(); // Ensure we prevent form submission
+      e.stopPropagation(); // Stop event propagation
+    }
     
     if (!userId) {
       toast({

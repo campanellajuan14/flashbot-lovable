@@ -23,6 +23,17 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelectTemplate,
   onTemplateClick
 }) => {
+  const handleTemplateClick = (template: ChatbotTemplate, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onTemplateClick) {
+      onTemplateClick(template);
+    } else {
+      onSelectTemplate(template);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -38,15 +49,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   ? "border-2 border-primary shadow-md" 
                   : "border border-border"
               )}
-              onClick={(e) => {
-                e.preventDefault(); // Prevent default behavior
-                e.stopPropagation(); // Stop propagation
-                if (onTemplateClick) {
-                  onTemplateClick(template);
-                } else {
-                  onSelectTemplate(template);
-                }
-              }}
+              onClick={(e) => handleTemplateClick(template, e)}
             >
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
