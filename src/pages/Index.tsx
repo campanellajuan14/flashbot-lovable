@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -51,9 +52,10 @@ const Index = () => {
         <section
           ref={heroRef}
           className="w-full py-12 md:py-16 lg:py-20 xl:py-24 bg-gradient-to-b from-background via-background to-muted/10 overflow-hidden relative"
+          style={{ pointerEvents: "auto" }} {/* Ensure pointer events work */}
         >
           {/* Animated background elements */}
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: "none" }}> {/* Background elements shouldn't catch clicks */}
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
             <div className="absolute top-1/3 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
           </div>
@@ -65,6 +67,7 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 className="flex flex-col justify-center space-y-6 text-left"
+                style={{ pointerEvents: "auto" }} {/* Ensure this block is clickable */}
               >
                 <div className="space-y-4">
                   <motion.div
@@ -124,6 +127,7 @@ const Index = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="flex items-center justify-center"
+                style={{ pointerEvents: "auto" }} {/* Ensure this container is interactive */}
               >
                 {/* Flashbot Widget - Live Demo */}
                 <motion.div 
