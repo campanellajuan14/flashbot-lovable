@@ -19,6 +19,13 @@ const AnalyticsPage = () => {
     }
   }, [metricsError]);
 
+  // Log the count data for debugging
+  React.useEffect(() => {
+    if (countData) {
+      console.log("Analytics Page Count Data:", countData);
+    }
+  }, [countData]);
+
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8 space-y-8">
