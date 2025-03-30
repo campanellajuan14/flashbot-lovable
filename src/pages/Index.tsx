@@ -52,7 +52,7 @@ const Index = () => {
         <section
           ref={heroRef}
           className="w-full py-12 md:py-16 lg:py-20 xl:py-24 bg-gradient-to-b from-background via-background to-muted/10 overflow-hidden relative"
-          style={{ pointerEvents: "auto" }} {/* Ensure pointer events work */}
+          style={{ pointerEvents: "auto" }} /* Ensure pointer events work */
         >
           {/* Animated background elements */}
           <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: "none" }}> {/* Background elements shouldn't catch clicks */}
@@ -67,7 +67,7 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 className="flex flex-col justify-center space-y-6 text-left"
-                style={{ pointerEvents: "auto" }} {/* Ensure this block is clickable */}
+                style={{ pointerEvents: "auto" }} /* Ensure this block is clickable */
               >
                 <div className="space-y-4">
                   <motion.div
@@ -127,7 +127,7 @@ const Index = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="flex items-center justify-center"
-                style={{ pointerEvents: "auto" }} {/* Ensure this container is interactive */}
+                style={{ pointerEvents: "auto" }} /* Ensure this container is interactive */
               >
                 {/* Flashbot Widget - Live Demo */}
                 <motion.div 
