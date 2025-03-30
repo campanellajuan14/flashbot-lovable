@@ -71,7 +71,7 @@ export function useAnalyticsData() {
     enabled: !!user, // Only run query when user is authenticated
   });
 
-  // Fetch total counts from database for current user only - improved query logic
+  // Fetch total counts from database for current user only - Fixed query logic
   const { data: countData, isLoading: isLoadingCounts } = useQuery({
     queryKey: ["analytics-counts", user?.id],
     queryFn: async () => {
@@ -87,16 +87,6 @@ export function useAnalyticsData() {
       
       console.log("Chatbot count:", chatbotCount);
       
-      // If user has no chatbots, return zeros
-      if (!chatbotCount) {
-        return {
-          chatbots: 0,
-          conversations: 0,
-          documents: 0,
-          messages: 0
-        };
-      }
-      
       // Get user's chatbot IDs to filter related data
       const { data: userChatbots, error: chatbotListError } = await supabase
         .from("chatbots")
@@ -108,7 +98,6 @@ export function useAnalyticsData() {
       const chatbotIds = userChatbots?.map(c => c.id) || [];
       
       // Safety check - if no chatbots, use a value that will return no results
-      // rather than causing an error
       if (chatbotIds.length === 0) {
         return {
           chatbots: chatbotCount || 0,
@@ -118,13 +107,16 @@ export function useAnalyticsData() {
         };
       }
       
-      // Get conversation count for user's chatbots - direct query without joins
+      // Get conversation count for user's chatbots - Simplified direct query
       const { count: conversationCount, error: convError } = await supabase
         .from("conversations")
         .select("*", { count: "exact", head: true })
         .in("chatbot_id", chatbotIds);
       
-      if (convError) throw convError;
+      if (convError) {
+        console.error("Error fetching conversations:", convError);
+        throw convError;
+      }
       
       console.log("Conversation count:", conversationCount);
       
@@ -138,7 +130,8 @@ export function useAnalyticsData() {
       
       console.log("Document count:", documentCount);
       
-      // Get conversation IDs for messages count
+      // Get message count more directly by querying messages related to conversations
+      // that belong to the user's chatbots
       const { data: conversationIds, error: convListError } = await supabase
         .from("conversations")
         .select("id")

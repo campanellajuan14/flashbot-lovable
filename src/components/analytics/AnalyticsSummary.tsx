@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, MessageSquare, FileText, BarChart } from "lucide-react";
@@ -8,35 +9,54 @@ interface AnalyticsSummaryProps {
 }
 
 const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {
-  // Data here is already filtered for the current user in the parent component
+  // Ensure we have data to display or use zeros as fallback
+  const chatbots = data?.chatbots ?? 0;
+  const conversations = data?.conversations ?? 0;
+  const documents = data?.documents ?? 0; 
+  const messages = data?.messages ?? 0;
+
+  // Log the values to help with debugging
+  React.useEffect(() => {
+    console.log("Analytics Summary Data:", {
+      chatbots,
+      conversations,
+      documents,
+      messages
+    });
+  }, [chatbots, conversations, documents, messages]);
+
   const summaryItems = [
     {
       title: "Chatbots",
-      value: data?.chatbots || 0,
+      value: chatbots,
       icon: Bot,
       color: "text-purple-500",
       bgColor: "bg-purple-100",
+      description: "Total accumulated"
     },
     {
       title: "Conversations",
-      value: data?.conversations || 0,
+      value: conversations,
       icon: MessageSquare,
       color: "text-blue-500",
       bgColor: "bg-blue-100",
+      description: "Across all chatbots"
     },
     {
       title: "Documents",
-      value: data?.documents || 0,
+      value: documents,
       icon: FileText,
       color: "text-amber-500",
       bgColor: "bg-amber-100",
+      description: "Stored knowledge base"
     },
     {
       title: "Messages",
-      value: data?.messages || 0,
+      value: messages,
       icon: BarChart,
       color: "text-green-500",
       bgColor: "bg-green-100",
+      description: "Total exchanges"
     },
   ];
 
@@ -53,7 +73,7 @@ const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ data }) => {
           <CardContent>
             <div className="text-2xl font-bold">{item.value.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {index % 2 === 0 ? "Total accumulated" : "Last 30 days"}
+              {item.description}
             </p>
           </CardContent>
         </Card>

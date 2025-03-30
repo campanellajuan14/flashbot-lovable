@@ -24,36 +24,49 @@ export function useDashboardData() {
     enabled: !!user?.id,
   });
 
-  // Improved fetch real conversation count - no longer using join to ensure all conversations are counted
+  // Improved conversation count fetching with better error handling and logging
   const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
     queryKey: ['dashboard-conversations', user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
       
-      // First get the user's chatbot IDs
-      const { data: chatbots, error: chatbotsError } = await supabase
-        .from('chatbots')
-        .select('id')
-        .eq('user_id', user.id);
-      
-      if (chatbotsError) throw chatbotsError;
-      
-      if (!chatbots || chatbots.length === 0) {
-        return 0;
+      try {
+        // First get the user's chatbot IDs
+        const { data: chatbots, error: chatbotsError } = await supabase
+          .from('chatbots')
+          .select('id')
+          .eq('user_id', user.id);
+        
+        if (chatbotsError) {
+          console.error("Error fetching chatbots:", chatbotsError);
+          throw chatbotsError;
+        }
+        
+        if (!chatbots || chatbots.length === 0) {
+          console.log("No chatbots found for user", user.id);
+          return 0;
+        }
+        
+        const chatbotIds = chatbots.map(chatbot => chatbot.id);
+        console.log("Found chatbot IDs:", chatbotIds);
+        
+        // Direct count of all conversations for these chatbots
+        const { count, error: conversationsError } = await supabase
+          .from('conversations')
+          .select('id', { count: 'exact', head: true })
+          .in('chatbot_id', chatbotIds);
+        
+        if (conversationsError) {
+          console.error("Error fetching conversations count:", conversationsError);
+          throw conversationsError;
+        }
+        
+        console.log(`Found ${count} conversations for user ${user.id}'s chatbots`);
+        return count || 0;
+      } catch (error) {
+        console.error("Error in conversationsData query:", error);
+        throw error;
       }
-      
-      const chatbotIds = chatbots.map(chatbot => chatbot.id);
-      
-      // Then count all conversations for these chatbots
-      const { count, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('id', { count: 'exact', head: true })
-        .in('chatbot_id', chatbotIds);
-      
-      if (conversationsError) throw conversationsError;
-      
-      console.log(`Found ${count} conversations for user ${user.id}`);
-      return count || 0;
     },
     enabled: !!user?.id,
   });
@@ -97,61 +110,66 @@ export function useDashboardData() {
     enabled: !!user?.id,
   });
 
-  // Fetch recent activity - getting real data now
+  // Improved recent activity fetch with better error handling
   const { data: recentActivityData, isLoading: isLoadingActivity } = useQuery({
     queryKey: ['dashboard-recent-activity', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get user's chatbot IDs
-      const { data: chatbots, error: chatbotsError } = await supabase
-        .from('chatbots')
-        .select('id, name')
-        .eq('user_id', user.id);
-      
-      if (chatbotsError) throw chatbotsError;
-      
-      if (!chatbots || chatbots.length === 0) {
-        return [];
-      }
-      
-      const chatbotIds = chatbots.map(chatbot => chatbot.id);
-      const chatbotMap = Object.fromEntries(chatbots.map(c => [c.id, c.name]));
-      
-      // Fetch recent conversations
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('id, chatbot_id, user_identifier, created_at')
-        .in('chatbot_id', chatbotIds)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (error) throw error;
-      
-      // Transform into activity items
-      return (data || []).map(conv => {
-        const minutesAgo = Math.floor((Date.now() - new Date(conv.created_at).getTime()) / (1000 * 60));
-        let timeAgo;
+      try {
+        // Get user's chatbot IDs
+        const { data: chatbots, error: chatbotsError } = await supabase
+          .from('chatbots')
+          .select('id, name')
+          .eq('user_id', user.id);
         
-        if (minutesAgo < 60) {
-          timeAgo = `${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''}`;
-        } else {
-          const hoursAgo = Math.floor(minutesAgo / 60);
-          if (hoursAgo < 24) {
-            timeAgo = `${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''}`;
-          } else {
-            const daysAgo = Math.floor(hoursAgo / 24);
-            timeAgo = `${daysAgo} day${daysAgo !== 1 ? 's' : ''}`;
-          }
+        if (chatbotsError) throw chatbotsError;
+        
+        if (!chatbots || chatbots.length === 0) {
+          return [];
         }
         
-        return {
-          botName: chatbotMap[conv.chatbot_id] || 'Unknown Bot',
-          email: conv.user_identifier || 'Anonymous User',
-          timeAgo: `${timeAgo} ago`,
-          isReal: true
-        };
-      });
+        const chatbotIds = chatbots.map(chatbot => chatbot.id);
+        const chatbotMap = Object.fromEntries(chatbots.map(c => [c.id, c.name]));
+        
+        // Fetch recent conversations
+        const { data, error } = await supabase
+          .from('conversations')
+          .select('id, chatbot_id, user_identifier, created_at')
+          .in('chatbot_id', chatbotIds)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        
+        // Transform into activity items
+        return (data || []).map(conv => {
+          const minutesAgo = Math.floor((Date.now() - new Date(conv.created_at).getTime()) / (1000 * 60));
+          let timeAgo;
+          
+          if (minutesAgo < 60) {
+            timeAgo = `${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''}`;
+          } else {
+            const hoursAgo = Math.floor(minutesAgo / 60);
+            if (hoursAgo < 24) {
+              timeAgo = `${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''}`;
+            } else {
+              const daysAgo = Math.floor(hoursAgo / 24);
+              timeAgo = `${daysAgo} day${daysAgo !== 1 ? 's' : ''}`;
+            }
+          }
+          
+          return {
+            botName: chatbotMap[conv.chatbot_id] || 'Unknown Bot',
+            email: conv.user_identifier || 'Anonymous User',
+            timeAgo: `${timeAgo} ago`,
+            isReal: true
+          };
+        });
+      } catch (error) {
+        console.error("Error fetching recent activity:", error);
+        return [];
+      }
     },
     enabled: !!user?.id,
   });

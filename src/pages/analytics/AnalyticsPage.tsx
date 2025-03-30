@@ -7,9 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AnalyticsError from "@/components/analytics/AnalyticsError";
 import AnalyticsTabs from "@/components/analytics/AnalyticsTabs";
 import { useAnalyticsData } from "@/hooks/useAnalyticsData";
+import { toast } from "sonner";
 
 const AnalyticsPage = () => {
   const { metricsData, countData, isLoading, metricsError } = useAnalyticsData();
+
+  React.useEffect(() => {
+    if (metricsError) {
+      toast.error("Failed to load analytics data");
+      console.error("Analytics data error:", metricsError);
+    }
+  }, [metricsError]);
 
   return (
     <DashboardLayout>
