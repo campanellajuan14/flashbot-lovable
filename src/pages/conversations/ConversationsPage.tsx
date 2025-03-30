@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Separator } from "@/components/ui/separator";
 import { useConversationsData } from "@/hooks/useConversationsData";
@@ -7,7 +7,7 @@ import ConversationsTable from "@/components/conversations/ConversationsTable";
 import ConversationsFilters from "@/components/conversations/ConversationsFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Rename this interface to avoid conflict with component name
@@ -33,12 +33,19 @@ const ConversationsPage = () => {
     setFilters(prev => ({ ...prev, dateRange }));
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       toast.error("Error al cargar las conversaciones");
       console.error("Error cargando conversaciones:", error);
     }
   }, [error]);
+  
+  // Debug
+  useEffect(() => {
+    console.log("Current filters:", filters);
+    console.log("Conversations data:", conversations);
+    console.log("Chatbots data:", chatbots);
+  }, [filters, conversations, chatbots]);
   
   return (
     <DashboardLayout>
@@ -77,11 +84,21 @@ const ConversationsPage = () => {
                   onDateRangeChange={handleDateRangeChange}
                 />
                 
-                <ConversationsTable 
-                  conversations={conversations || []} 
-                  isLoading={isLoading}
-                  chatbots={chatbots || []}
-                />
+                {chatbots && chatbots.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Información</AlertTitle>
+                    <AlertDescription>
+                      No tienes chatbots creados. Crea un chatbot primero para ver conversaciones.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <ConversationsTable 
+                    conversations={conversations || []} 
+                    isLoading={isLoading}
+                    chatbots={chatbots || []}
+                  />
+                )}
               </>
             )}
           </>

@@ -38,12 +38,18 @@ export function useConversationsData(filters?: ConversationsFilters) {
     queryFn: async () => {
       if (!user) return [];
 
+      console.log("Fetching chatbots for user:", user.id);
       const { data, error } = await supabase
         .from("chatbots")
         .select("*")
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching chatbots:", error);
+        throw error;
+      }
+      
+      console.log("Found chatbots:", data?.length || 0);
       return data as Chatbot[];
     },
     enabled: !!user,
@@ -61,7 +67,22 @@ export function useConversationsData(filters?: ConversationsFilters) {
       if (!user) return [];
 
       try {
-        // First get the chatbot IDs for this user
+        // Wait for chatbots to be loaded first
+        if (!chatbots) {
+          console.log("Chatbots not loaded yet, waiting...");
+          return [];
+        }
+        
+        // Get the chatbot IDs for this user
+        const chatbotIds = chatbots.map(c => c.id);
+        console.log("User's chatbot IDs:", chatbotIds);
+        
+        if (chatbotIds.length === 0) {
+          console.log("No chatbots found for this user");
+          return [];
+        }
+        
+        // Start building the query
         let query = supabase.from("conversations").select(`
           id,
           created_at,
@@ -73,17 +94,12 @@ export function useConversationsData(filters?: ConversationsFilters) {
         
         // Apply chatbot filter if selected
         if (chatbotId) {
-          console.log("Filtering by chatbot ID:", chatbotId);
+          console.log("Filtering by specific chatbot ID:", chatbotId);
           query = query.eq("chatbot_id", chatbotId);
-        } else if (chatbots && chatbots.length > 0) {
+        } else {
           // Otherwise filter for all user's chatbots
-          const chatbotIds = chatbots.map(c => c.id);
           console.log("Filtering by user's chatbot IDs:", chatbotIds);
           query = query.in("chatbot_id", chatbotIds);
-        } else {
-          // If no chatbots found, return empty array
-          console.log("No chatbots found, returning empty array");
-          return [];
         }
 
         // Apply date filters if provided
@@ -104,7 +120,10 @@ export function useConversationsData(filters?: ConversationsFilters) {
         const { data: conversationsData, error: conversationsError } = await query
           .order("updated_at", { ascending: false });
 
-        if (conversationsError) throw conversationsError;
+        if (conversationsError) {
+          console.error("Error fetching conversations:", conversationsError);
+          throw conversationsError;
+        }
 
         // If there are no conversations, return empty array
         if (!conversationsData || conversationsData.length === 0) {
@@ -115,9 +134,6 @@ export function useConversationsData(filters?: ConversationsFilters) {
         console.log(`Found ${conversationsData.length} conversations`);
 
         // For each conversation, get the message count and most recent message
-        const conversationIds = conversationsData.map(c => c.id);
-        
-        // Enrich each conversation with message count and latest message
         const enrichedConversations = await Promise.all(
           conversationsData.map(async (conversation) => {
             // Get message count
@@ -131,7 +147,7 @@ export function useConversationsData(filters?: ConversationsFilters) {
               return { ...conversation, message_count: 0 };
             }
             
-            // Get latest message (optional enhancement)
+            // Get latest message
             const { data: latestMessageData, error: latestMessageError } = await supabase
               .from("messages")
               .select("content, role")
@@ -166,7 +182,7 @@ export function useConversationsData(filters?: ConversationsFilters) {
         throw error;
       }
     },
-    enabled: !!user && (!!chatbots || !!chatbotId),
+    enabled: !!user && !!chatbots,
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
