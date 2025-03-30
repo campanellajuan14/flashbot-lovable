@@ -329,24 +329,35 @@ Important instructions about using these documents:
     // If we're generating a new conversation ID (not using an existing one),
     // register it in the database to ensure it's properly tracked
     if (!conversationId && chatbotId) {
+      // ADD LOG HERE (1)
+      console.log(`[AutoReg] Attempting auto-registration for chatbot ${chatbotId}. New Conversation ID: ${generatedConversationId}`);
       try {
-        console.log(`Auto-registering new conversation ${generatedConversationId} for chatbot ${chatbotId}`);
-        
+        console.log(`[AutoReg] Checking if conversation ${generatedConversationId} already exists.`); // ADD LOG HERE (2)
         // Check if conversation already exists (shouldn't, but being safe)
-        const { data: existingConv } = await supabase
+        const { data: existingConv, error: checkError } = await supabase // Capture potential checkError
           .from('conversations')
           .select('id')
           .eq('id', generatedConversationId)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid error if not found
+
+        // ADD LOG HERE (3) - Log check result and any error
+        if (checkError) {
+           console.error(`[AutoReg] Error checking for existing conversation ${generatedConversationId}:`, checkError);
+        } else {
+           console.log(`[AutoReg] Existing conversation check for ${generatedConversationId}: Found = ${!!existingConv}`);
+        }
           
-        if (!existingConv) {
+        // Only proceed if no error during check AND conversation doesn't exist
+        if (!checkError && !existingConv) { 
+          console.log(`[AutoReg] Attempting to insert new conversation record ${generatedConversationId}...`); // ADD LOG HERE (4)
           // Insert the new conversation record
           const { error: insertError } = await supabase
             .from('conversations')
             .insert({
               id: generatedConversationId,
               chatbot_id: chatbotId,
-              user_identifier: user_info?.id || 'anonymous',
+              // MODIFIED: Use requestData directly for user_identifier
+              user_identifier: requestData.user_identifier || 'anonymous', 
               metadata: { 
                 source: source || 'api',
                 widget_id: widget_id || null,
@@ -355,9 +366,11 @@ Important instructions about using these documents:
             });
             
           if (insertError) {
-            console.error('Error auto-registering conversation:', insertError);
+            // ADD LOG HERE (5) - Log conversation insert error
+            console.error(`[AutoReg] FAILED to insert conversation ${generatedConversationId}:`, insertError);
           } else {
-            console.log(`Successfully auto-registered conversation ${generatedConversationId}`);
+            // ADD LOG HERE (6) - Log conversation insert success
+            console.log(`[AutoReg] SUCCESS inserting conversation ${generatedConversationId}.`);
             
             // Also register initial messages
             if (messages && Array.isArray(messages) && messages.length > 0) {
@@ -376,21 +389,29 @@ Important instructions about using these documents:
                   metadata: {}
                 }
               ];
+
+              console.log(`[AutoReg] Attempting to insert ${messagesToInsert.length} initial messages for conversation ${generatedConversationId}...`); // ADD LOG HERE (7)
               
               const { error: messagesError } = await supabase
                 .from('messages')
                 .insert(messagesToInsert);
                 
               if (messagesError) {
-                console.error('Error registering initial messages:', messagesError);
+                 // ADD LOG HERE (8) - Log messages insert error
+                console.error(`[AutoReg] FAILED to insert initial messages for ${generatedConversationId}:`, messagesError);
               } else {
-                console.log(`Successfully registered ${messagesToInsert.length} initial messages`);
+                 // ADD LOG HERE (9) - Log messages insert success
+                console.log(`[AutoReg] SUCCESS inserting initial messages for ${generatedConversationId}.`);
               }
             }
           }
+        } else if (!checkError && existingConv) {
+            // ADD LOG HERE (10) - Log if conversation already existed
+            console.log(`[AutoReg] Skipped inserting conversation ${generatedConversationId} because it already exists.`);
         }
       } catch (regError) {
-        console.error('Error in conversation auto-registration:', regError);
+        // ADD LOG HERE (11) - Log any error caught by the outer try...catch
+        console.error(`[AutoReg] CRITICAL ERROR during auto-registration block for conversation ${generatedConversationId}:`, regError);
         // Continue despite error - don't block the response
       }
     }
