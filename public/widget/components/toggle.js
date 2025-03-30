@@ -1,5 +1,6 @@
 
 import { trackEvent } from '../analytics.js';
+import { registerConversation } from '../api.js';
 
 /**
  * Toggle widget visibility
@@ -25,5 +26,21 @@ export function toggleWidget(open, state) {
   } else {
     chatWindow.style.display = 'none';
     button.style.display = 'flex';
+    
+    // Register conversation when closing the chat if there are messages
+    if (state.messages && state.messages.length > 0 && state.conversationId) {
+      console.log('Registering conversation on widget close:', state.conversationId);
+      registerConversation(state)
+        .then(result => console.log('Conversation registered on widget close:', result))
+        .catch(err => console.error('Error registering conversation on close:', err));
+      
+      // Track widget close with conversation
+      trackEvent('widget_close_with_conversation');
+    } else {
+      console.log('Closing widget without registering conversation:', 
+                 state.messages ? state.messages.length : 0, 'messages, conversationId:', state.conversationId);
+      // Track widget close without conversation
+      trackEvent('widget_close');
+    }
   }
 }
