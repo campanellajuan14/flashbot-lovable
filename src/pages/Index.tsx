@@ -125,55 +125,25 @@ const Index = () => {
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="flex items-center justify-center"
               >
-                {/* Chat widget preview */}
-                <div className="relative w-full max-w-[600px] overflow-hidden rounded-xl border bg-background p-3 shadow-2xl">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/80 via-primary to-primary/80"></div>
-                  <div className="flex items-center justify-between border-b p-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-red-500" />
-                      <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                      <div className="h-3 w-3 rounded-full bg-green-500" />
-                    </div>
-                    <div className="text-xs font-medium">Flashbot Widget Preview</div>
-                    <div className="w-16" />
+                {/* Flashbot Widget - Live Demo */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                  className="w-full max-w-[600px] rounded-xl shadow-2xl overflow-hidden"
+                >
+                  <iframe 
+                    src="https://flashbot.lovable.app/widget/387d9841-f59d-418b-b7b6-113012ef5a72"
+                    width="100%" 
+                    height="500" 
+                    style={{ border: "none", borderRadius: "12px" }}
+                    allow="microphone"
+                    title="Flashbot Demo"
+                  ></iframe>
+                  <div className="bg-muted/50 text-center py-2 text-sm text-muted-foreground">
+                    <span>⬆️ Ask me anything about Flashbot (try it now!)</span>
                   </div>
-                  <div className="space-y-4 p-4">
-                    <div className="ml-auto max-w-[80%] rounded-lg bg-primary p-3 text-primary-foreground">
-                      <p>How can I help you today?</p>
-                    </div>
-                    <div className="max-w-[80%] rounded-lg bg-muted p-3">
-                      <p>What's your return policy for international orders?</p>
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.8, duration: 0.5 }}
-                      className="ml-auto max-w-[80%] rounded-lg bg-primary p-3 text-primary-foreground"
-                    >
-                      <p>
-                        According to our policy, international orders can be returned within 30 days of delivery. Return
-                        shipping costs are covered for defective items, but otherwise are the responsibility of the
-                        customer.
-                      </p>
-                      <div className="mt-2 text-xs opacity-70 flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Source: Returns_Policy.pdf
-                      </div>
-                    </motion.div>
-                    <div className="flex items-center">
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          placeholder="Ask a question..."
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary">
-                          <ArrowRight className="h-4 w-4" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </motion.div>
               </motion.div>
             </div>
           </div>
