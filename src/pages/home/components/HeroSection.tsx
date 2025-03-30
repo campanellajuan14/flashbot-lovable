@@ -100,8 +100,6 @@ const HeroSection = () => {
                 style={{ border: "none", borderRadius: "12px" }}
                 allow="microphone"
                 title="Flashbot Demo"
-                loading="lazy"
-                frameBorder="0"
               ></iframe>
               <div className="bg-muted/50 text-center py-2 text-sm text-muted-foreground">
                 <span>⬆️ Ask me anything about Flashbot (try it now!)</span>
