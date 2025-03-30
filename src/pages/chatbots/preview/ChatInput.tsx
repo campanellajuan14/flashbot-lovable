@@ -1,7 +1,7 @@
 
 import React, { RefObject } from "react";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface ChatInputProps {
   message: string;
@@ -18,44 +18,48 @@ const ChatInput: React.FC<ChatInputProps> = ({
   handleSendMessage,
   isTyping,
   inputRef,
-  language = "es",
+  language = "spanish"
 }) => {
-  const placeholderText = language === "en" ? "Type a message..." : "Escribe un mensaje...";
-  const sendText = language === "en" ? "Send" : "Enviar";
+  const placeholderText = language?.toLowerCase() === "english" 
+    ? "Type your message..." 
+    : "Escribe tu mensaje...";
 
-  const handleSubmit = (e: React.FormEvent) => {
-    handleSendMessage(e);
-    setMessage(""); // Clear the input after sending
+  // Also handle key press for Enter
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="border-t p-4"
-    >
-      <div className="flex items-center gap-2">
+    <div className="p-4 border-t">
+      <form onSubmit={handleSendMessage} className="flex items-center gap-3">
         <div className="relative flex-1">
           <input
-            type="text"
             ref={inputRef}
+            type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
             placeholder={placeholderText}
-            className="w-full px-4 py-2.5 rounded-full border bg-background focus-visible:ring-1 focus-visible:ring-offset-0"
             disabled={isTyping}
+            className="w-full p-3 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
-        <Button
-          type="submit"
-          size="icon"
-          className="rounded-full h-10 w-10 flex-shrink-0"
-          disabled={isTyping || !message.trim()}
+        <Button 
+          type="submit" 
+          disabled={!message.trim() || isTyping}
+          variant="default"
         >
-          <Send className="h-5 w-5" />
-          <span className="sr-only">{sendText}</span>
+          {isTyping ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            language?.toLowerCase() === "english" ? "Send" : "Enviar"
+          )}
         </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 

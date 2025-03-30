@@ -35,6 +35,14 @@ const ChatbotPreview = () => {
     setMessage("");
   };
 
+  useEffect(() => {
+    // Debug logging
+    console.log("ChatbotPreview render - ID:", id, "Loading:", isLoading, "Error:", isError);
+    if (chatbot) {
+      console.log("Chatbot data loaded:", chatbot.name);
+    }
+  }, [id, isLoading, isError, chatbot]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

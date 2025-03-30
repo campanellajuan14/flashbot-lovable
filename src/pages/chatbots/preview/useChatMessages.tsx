@@ -28,6 +28,8 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     if (!chatbot) return null;
     
     try {
+      console.log("Llamando a la API de Claude con:", messageHistory.length, "mensajes");
+      
       const formattedMessages = messageHistory.map(msg => ({
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content
@@ -47,7 +49,7 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
       });
       
       if (response.error) {
-        console.error("Error calling Claude API:", response.error);
+        console.error("Error llamando a la API de Claude:", response.error);
         toast({
           title: "Error",
           description: "No se pudo conectar con el asistente IA",
@@ -56,9 +58,10 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
         return null;
       }
       
+      console.log("Respuesta recibida de la API:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Error calling Claude API:", error);
+      console.error("Error llamando a la API de Claude:", error);
       toast({
         title: "Error",
         description: "Ocurrió un error al procesar tu mensaje",
@@ -70,9 +73,9 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messages || !chatbot) return;
+    if (!inputRef.current || !chatbot) return;
     
-    const message = inputRef.current?.value || "";
+    const message = inputRef.current.value;
     if (!message.trim() || isTyping) return;
     
     const userMessage: ChatMessage = {
@@ -85,7 +88,7 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     
     // Clear the input field
-    if (inputRef.current) inputRef.current.value = "";
+    inputRef.current.value = "";
     
     setIsTyping(true);
     
@@ -105,7 +108,7 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
         handleBotResponse("Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.");
       }
     } catch (error) {
-      console.error("Error processing message:", error);
+      console.error("Error procesando el mensaje:", error);
       handleBotResponse("Ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo.");
     } finally {
       setIsTyping(false);
