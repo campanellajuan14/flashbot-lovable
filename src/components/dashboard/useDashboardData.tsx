@@ -24,17 +24,36 @@ export function useDashboardData() {
     enabled: !!user?.id,
   });
 
-  // Fetch real conversation count
+  // Improved fetch real conversation count - no longer using join to ensure all conversations are counted
   const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
     queryKey: ['dashboard-conversations', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('id, chatbot_id, chatbots!inner(user_id)')
-        .eq('chatbots.user_id', user?.id);
+      if (!user?.id) return 0;
       
-      if (error) throw error;
-      return data?.length || 0;
+      // First get the user's chatbot IDs
+      const { data: chatbots, error: chatbotsError } = await supabase
+        .from('chatbots')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (chatbotsError) throw chatbotsError;
+      
+      if (!chatbots || chatbots.length === 0) {
+        return 0;
+      }
+      
+      const chatbotIds = chatbots.map(chatbot => chatbot.id);
+      
+      // Then count all conversations for these chatbots
+      const { count, error: conversationsError } = await supabase
+        .from('conversations')
+        .select('id', { count: 'exact', head: true })
+        .in('chatbot_id', chatbotIds);
+      
+      if (conversationsError) throw conversationsError;
+      
+      console.log(`Found ${count} conversations for user ${user.id}`);
+      return count || 0;
     },
     enabled: !!user?.id,
   });
@@ -43,10 +62,27 @@ export function useDashboardData() {
   const { data: metricsData, isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['dashboard-metrics', user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
+      
+      // Get user's chatbot IDs first
+      const { data: chatbots, error: chatbotsError } = await supabase
+        .from('chatbots')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (chatbotsError) throw chatbotsError;
+      
+      if (!chatbots || chatbots.length === 0) {
+        return null;
+      }
+      
+      const chatbotIds = chatbots.map(chatbot => chatbot.id);
+      
+      // Get metrics for all these chatbots
       const { data, error } = await supabase
         .from('retrieval_metrics')
-        .select('precision, chatbots!inner(user_id)')
-        .eq('chatbots.user_id', user?.id);
+        .select('precision')
+        .in('chatbot_id', chatbotIds);
       
       if (error) throw error;
       
@@ -57,6 +93,65 @@ export function useDashboardData() {
       }
       
       return null;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch recent activity - getting real data now
+  const { data: recentActivityData, isLoading: isLoadingActivity } = useQuery({
+    queryKey: ['dashboard-recent-activity', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get user's chatbot IDs
+      const { data: chatbots, error: chatbotsError } = await supabase
+        .from('chatbots')
+        .select('id, name')
+        .eq('user_id', user.id);
+      
+      if (chatbotsError) throw chatbotsError;
+      
+      if (!chatbots || chatbots.length === 0) {
+        return [];
+      }
+      
+      const chatbotIds = chatbots.map(chatbot => chatbot.id);
+      const chatbotMap = Object.fromEntries(chatbots.map(c => [c.id, c.name]));
+      
+      // Fetch recent conversations
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('id, chatbot_id, user_identifier, created_at')
+        .in('chatbot_id', chatbotIds)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      
+      // Transform into activity items
+      return (data || []).map(conv => {
+        const minutesAgo = Math.floor((Date.now() - new Date(conv.created_at).getTime()) / (1000 * 60));
+        let timeAgo;
+        
+        if (minutesAgo < 60) {
+          timeAgo = `${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''}`;
+        } else {
+          const hoursAgo = Math.floor(minutesAgo / 60);
+          if (hoursAgo < 24) {
+            timeAgo = `${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''}`;
+          } else {
+            const daysAgo = Math.floor(hoursAgo / 24);
+            timeAgo = `${daysAgo} day${daysAgo !== 1 ? 's' : ''}`;
+          }
+        }
+        
+        return {
+          botName: chatbotMap[conv.chatbot_id] || 'Unknown Bot',
+          email: conv.user_identifier || 'Anonymous User',
+          timeAgo: `${timeAgo} ago`,
+          isReal: true
+        };
+      });
     },
     enabled: !!user?.id,
   });
@@ -75,7 +170,7 @@ export function useDashboardData() {
     {
       title: "Total Conversations",
       value: isLoadingConversations ? "..." : String(conversationsData || 0),
-      description: "Conversations in the last 30 days",
+      description: "All conversations with your chatbots",
       icon: Users,
       color: "text-cyan-500",
       link: "/analytics",
@@ -94,27 +189,28 @@ export function useDashboardData() {
     },
   ];
 
-  // Mock recent activity data
-  const recentActivity: ActivityItem[] = [
-    {
-      botName: "Customer Support",
-      email: "user1@example.com",
-      timeAgo: "2 hours",
-      isReal: false
-    },
-    {
-      botName: "Sales Assistant",
-      email: "user2@example.com",
-      timeAgo: "4 hours",
-      isReal: false
-    },
-    {
-      botName: "Product Guide",
-      email: "user3@example.com",
-      timeAgo: "6 hours",
-      isReal: false
-    }
-  ];
+  // Use real activity data if available, otherwise use fallback mock data
+  const recentActivity: ActivityItem[] = isLoadingActivity || !recentActivityData || recentActivityData.length === 0 ? 
+    [
+      {
+        botName: "Customer Support",
+        email: "user1@example.com",
+        timeAgo: "2 hours ago",
+        isReal: false
+      },
+      {
+        botName: "Sales Assistant",
+        email: "user2@example.com",
+        timeAgo: "4 hours ago",
+        isReal: false
+      },
+      {
+        botName: "Product Guide",
+        email: "user3@example.com",
+        timeAgo: "6 hours ago",
+        isReal: false
+      }
+    ] : recentActivityData;
 
   return {
     user,

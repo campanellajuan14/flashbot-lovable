@@ -71,7 +71,7 @@ export function useAnalyticsData() {
     enabled: !!user, // Only run query when user is authenticated
   });
 
-  // Fetch total counts from database for current user only
+  // Fetch total counts from database for current user only - improved query logic
   const { data: countData, isLoading: isLoadingCounts } = useQuery({
     queryKey: ["analytics-counts", user?.id],
     queryFn: async () => {
@@ -109,13 +109,20 @@ export function useAnalyticsData() {
       
       // Safety check - if no chatbots, use a value that will return no results
       // rather than causing an error
-      const validChatbotIds = chatbotIds.length > 0 ? chatbotIds : [null];
+      if (chatbotIds.length === 0) {
+        return {
+          chatbots: chatbotCount || 0,
+          conversations: 0,
+          documents: 0,
+          messages: 0
+        };
+      }
       
-      // Get conversation count for user's chatbots
+      // Get conversation count for user's chatbots - direct query without joins
       const { count: conversationCount, error: convError } = await supabase
         .from("conversations")
         .select("*", { count: "exact", head: true })
-        .in("chatbot_id", validChatbotIds);
+        .in("chatbot_id", chatbotIds);
       
       if (convError) throw convError;
       
@@ -125,22 +132,22 @@ export function useAnalyticsData() {
       const { count: documentCount, error: docError } = await supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
-        .in("chatbot_id", validChatbotIds);
+        .in("chatbot_id", chatbotIds);
       
       if (docError) throw docError;
       
       console.log("Document count:", documentCount);
       
       // Get conversation IDs for messages count
-      const { data: userConversations, error: convListError } = await supabase
+      const { data: conversationIds, error: convListError } = await supabase
         .from("conversations")
         .select("id")
-        .in("chatbot_id", validChatbotIds);
+        .in("chatbot_id", chatbotIds);
       
       if (convListError) throw convListError;
       
       // If no conversations, return known counts with 0 messages
-      if (!userConversations || userConversations.length === 0) {
+      if (!conversationIds || conversationIds.length === 0) {
         return {
           chatbots: chatbotCount || 0,
           conversations: conversationCount || 0,
@@ -149,13 +156,13 @@ export function useAnalyticsData() {
         };
       }
       
-      const conversationIds = userConversations.map(c => c.id);
-      const validConversationIds = conversationIds.length > 0 ? conversationIds : [null];
+      const convIds = conversationIds.map(c => c.id);
       
+      // Get message count
       const { count: messageCount, error: msgError } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
-        .in("conversation_id", validConversationIds);
+        .in("conversation_id", convIds);
       
       if (msgError) throw msgError;
       
