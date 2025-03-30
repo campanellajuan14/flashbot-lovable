@@ -20,14 +20,14 @@ export function renderMessages(state) {
     if (msg.role === 'user') {
       messageEl.style.justifyContent = 'flex-end';
       messageEl.innerHTML = `
-        <div style="background-color: ${state.config.config.colors.user_bubble || state.config.config.colors.primary}; color: white; padding: 8px 12px; border-radius: 18px 18px 0 18px; max-width: 80%;">
+        <div style="background-color: ${state.config.config.colors.user_bubble || state.config.config.colors.primary}; color: white; padding: 8px 12px; border-radius: 18px 18px 0 18px; max-width: 80%; text-align: left;">
           ${formatMessageContent(msg.content, state.config.config.colors)}
         </div>
       `;
     } else {
       messageEl.style.justifyContent = 'flex-start';
       messageEl.innerHTML = `
-        <div style="background-color: ${state.config.config.colors.bot_bubble || '#f1f0f0'}; color: ${state.config.config.colors.text || '#333333'}; padding: 8px 12px; border-radius: 18px 18px 18px 0; max-width: 80%;">
+        <div style="background-color: ${state.config.config.colors.bot_bubble || '#f1f0f0'}; color: ${state.config.config.colors.text || '#333333'}; padding: 8px 12px; border-radius: 18px 18px 18px 0; max-width: 80%; text-align: left;">
           ${formatMessageContent(msg.content, state.config.config.colors)}
         </div>
       `;

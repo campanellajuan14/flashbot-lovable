@@ -1,16 +1,16 @@
 
 import React from "react";
 
-// Procesa formato inline (negritas, cursivas, enlaces)
+// Process inline formatting (bold, italics, links)
 export const formatInlineText = (text: string): React.ReactNode => {
   if (!text) return null;
   
-  // Primero dividimos el texto en segmentos por los diferentes formatos
+  // First divide the text into segments by the different formats
   const segments: React.ReactNode[] = [];
   let currentText = text;
   let lastIndex = 0;
   
-  // Procesar negritas con **texto** o __texto__
+  // Process bold with **text** or __text__
   const boldRegex = /(\*\*|__)(.*?)\1/g;
   let boldMatch;
   while ((boldMatch = boldRegex.exec(currentText)) !== null) {
@@ -21,21 +21,21 @@ export const formatInlineText = (text: string): React.ReactNode => {
     lastIndex = boldMatch.index + boldMatch[0].length;
   }
   
-  // Añadir el texto restante
+  // Add remaining text
   if (lastIndex < currentText.length) {
     segments.push(currentText.substring(lastIndex));
   }
   
-  // Si no encontramos segmentos, devolvemos el texto original
+  // If no segments found, return original text
   if (segments.length === 0) {
     return text;
   }
   
-  // Procesar cursivas y enlaces en los segmentos de texto plano
+  // Process italics and links in plain text segments
   return segments.map((segment, i) => {
     if (typeof segment !== 'string') return segment;
     
-    // Procesar cursivas
+    // Process italics
     const italicSegments: React.ReactNode[] = [];
     const italicRegex = /(\*|_)(.*?)\1/g;
     let italicMatch;
@@ -53,12 +53,12 @@ export const formatInlineText = (text: string): React.ReactNode => {
       italicSegments.push(segment.substring(itLastIndex));
     }
     
-    // Procesar links
+    // Process links
     return italicSegments.length > 0 
       ? italicSegments.map((itSegment, j) => {
           if (typeof itSegment !== 'string') return itSegment;
           
-          // Formatear links [texto](url)
+          // Format links [text](url)
           return itSegment.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
             (_, text, url) => `<a href="${url}" target="_blank" class="text-primary underline">${text}</a>`);
         })
@@ -66,20 +66,20 @@ export const formatInlineText = (text: string): React.ReactNode => {
   });
 };
 
-// Función para formatear el texto con markdown básico
+// Function to format text with basic markdown
 export const formatMessageText = (text: string): React.ReactNode => {
   if (!text) return null;
   
-  // Dividir por saltos de línea para procesarlos correctamente
+  // Split by line breaks to process them correctly
   const paragraphs = text.split('\n\n');
   
   return (
     <>
       {paragraphs.map((paragraph, i) => {
-        // Saltar párrafos vacíos
+        // Skip empty paragraphs
         if (!paragraph.trim()) return <br key={i} />;
         
-        // Formatear listas
+        // Format lists
         if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
           const items = paragraph.split(/\n[*-] /);
           return (
@@ -91,18 +91,18 @@ export const formatMessageText = (text: string): React.ReactNode => {
           );
         }
         
-        // Formatear listas numeradas
+        // Format numbered lists
         if (paragraph.trim().match(/^\d+\.\s/)) {
-          // Separar el párrafo en líneas
+          // Split paragraph into lines
           const lines = paragraph.split('\n');
           
-          // Filtrar líneas que comienzan con un número seguido de un punto
+          // Filter lines starting with a number followed by a period
           const numberedItems = lines.filter(line => line.trim().match(/^\d+\.\s/));
           
           return (
             <ol key={i} className="list-decimal pl-5 my-2">
               {numberedItems.map((item, j) => {
-                // Extraer el número del ítem para mantener la numeración correcta
+                // Extract the number from the item to maintain correct numbering
                 const numberMatch = item.match(/^(\d+)\.\s/);
                 const itemText = item.replace(/^\d+\.\s/, '');
                 
@@ -116,7 +116,7 @@ export const formatMessageText = (text: string): React.ReactNode => {
           );
         }
         
-        // Procesar títulos
+        // Process headers
         if (paragraph.startsWith('# ')) {
           return <h2 key={i} className="text-lg font-bold my-2">{formatInlineText(paragraph.substring(2))}</h2>;
         }
@@ -124,7 +124,7 @@ export const formatMessageText = (text: string): React.ReactNode => {
           return <h3 key={i} className="text-md font-bold my-2">{formatInlineText(paragraph.substring(3))}</h3>;
         }
         
-        // Párrafo normal con posible formato inline
+        // Normal paragraph with possible inline formatting
         return <p key={i} className="my-2">{formatInlineText(paragraph)}</p>;
       })}
     </>
