@@ -127,6 +127,44 @@ export type Database = {
           },
         ]
       }
+      message_metrics: {
+        Row: {
+          chatbot_id: string | null
+          created_at: string | null
+          document_count: number | null
+          has_documents: boolean | null
+          id: string
+          message_tokens: number | null
+          query: string | null
+        }
+        Insert: {
+          chatbot_id?: string | null
+          created_at?: string | null
+          document_count?: number | null
+          has_documents?: boolean | null
+          id?: string
+          message_tokens?: number | null
+          query?: string | null
+        }
+        Update: {
+          chatbot_id?: string | null
+          created_at?: string | null
+          document_count?: number | null
+          has_documents?: boolean | null
+          id?: string
+          message_tokens?: number | null
+          query?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_metrics_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "chatbots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string

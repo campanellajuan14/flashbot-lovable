@@ -1,0 +1,4 @@
+
+project_id = "obiiomoqhpbgaymfphdz"
+[functions.register-conversation]
+verify_jwt = false

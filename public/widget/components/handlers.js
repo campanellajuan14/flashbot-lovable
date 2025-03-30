@@ -1,5 +1,5 @@
 
-import { sendChatMessage } from '../api.js';
+import { sendChatMessage, registerConversation } from '../api.js';
 import { renderMessages } from './renderer.js';
 import { persistConversation } from '../state.js';
 import { trackEvent } from '../analytics.js';
@@ -74,6 +74,9 @@ export async function handleSubmit(e, state) {
     
     // Persist conversation if configured
     persistConversation(state);
+    
+    // Register conversation in database
+    registerConversation(state);
     
   } catch (error) {
     console.error('Error sending message:', error);

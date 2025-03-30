@@ -1,4 +1,3 @@
-
 // API interactions
 const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
@@ -188,5 +187,64 @@ export async function sendChatMessage(message, state) {
   } catch (error) {
     console.error('Message send error:', error);
     throw error;
+  }
+}
+
+/**
+ * Register conversation and messages in the database
+ * @param {object} state - The widget state
+ * @returns {Promise<object>} - The result of the registration
+ */
+export async function registerConversation(state) {
+  // Only register if there are messages and a conversation ID
+  if (!state.messages || state.messages.length === 0 || !state.conversationId) {
+    console.log('Skipping conversation registration: no messages or conversation ID');
+    return;
+  }
+  
+  try {
+    console.log('Registering conversation to database:', {
+      conversationId: state.conversationId,
+      messageCount: state.messages.length
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/register-conversation`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'apikey': ANON_KEY,
+        'Authorization': `Bearer ${ANON_KEY}`,
+        'Origin': window.location.origin,
+        'Referer': document.referrer || window.location.href,
+        'x-client-info': 'widget-client'
+      },
+      body: JSON.stringify({
+        conversation_id: state.conversationId,
+        chatbot_id: state.config.id,
+        messages: state.messages,
+        user_identifier: state.userInfo?.id || 'anonymous'
+      }),
+      credentials: 'omit',
+    });
+    
+    if (!response.ok) {
+      console.error(`Error registering conversation: ${response.status} ${response.statusText}`);
+      try {
+        const errorData = await response.json();
+        console.error('Error details:', errorData);
+      } catch (e) {
+        console.error('Could not parse error response');
+      }
+      return;
+    }
+    
+    const data = await response.json();
+    console.log('Conversation registered successfully:', data);
+    return data;
+    
+  } catch (error) {
+    console.error('Error registering conversation:', error);
+    // Silent error to not disrupt user experience
+    return null;
   }
 }
