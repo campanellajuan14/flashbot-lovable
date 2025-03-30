@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ChatbotFormData } from "../types";
 import { defaultPersonality, defaultSettings } from "../constants";
 
@@ -35,15 +35,15 @@ export const useFormState = () => {
   // AI provider state (Claude or OpenAI)
   const [aiProvider, setAiProvider] = useState<"claude" | "openai">("claude");
 
-  // Form state change handlers
-  const handleChange = (field: string, value: any) => {
+  // Form state change handlers - memoized with useCallback
+  const handleChange = useCallback((field: string, value: any) => {
     setForm(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
   
-  const handleNestedChange = (parent: string, field: string, value: any) => {
+  const handleNestedChange = useCallback((parent: string, field: string, value: any) => {
     setForm(prev => {
       const parentValue = prev[parent as keyof typeof prev];
       
@@ -73,9 +73,9 @@ export const useFormState = () => {
       }
       return prev;
     });
-  };
+  }, []);
   
-  const handleProviderChange = (provider: "claude" | "openai") => {
+  const handleProviderChange = useCallback((provider: "claude" | "openai") => {
     setAiProvider(provider);
     // Set a default model based on the provider
     const defaultModel = provider === "claude" 
@@ -83,7 +83,7 @@ export const useFormState = () => {
       : "gpt-4o";
     
     handleNestedChange("settings", "model", defaultModel);
-  };
+  }, [handleNestedChange]);
 
   return {
     form,

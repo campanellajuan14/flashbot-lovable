@@ -1,4 +1,5 @@
 
+import { useState, useCallback } from "react";
 import { ChatbotTemplate } from "../templates/types";
 import { UseChatbotFormProps, UseChatbotFormReturn } from "./form-types";
 import { useFormState } from "./useFormState";
@@ -6,6 +7,8 @@ import { useChatbotData } from "./useChatbotData";
 import { useSaveChatbot } from "./useSaveChatbot";
 
 export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotFormReturn => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   // Form state management
   const {
     form,
@@ -19,11 +22,22 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
     handleProviderChange
   } = useFormState();
   
+  console.log("useChatbotForm: Initialized form state", { 
+    id, 
+    userId, 
+    isEditing: !!id,
+    selectedTemplateId 
+  });
+  
   // Load chatbot data if editing
   const { isLoading } = useChatbotData(
     id, 
     userId, 
-    setForm, 
+    useCallback((newForm) => {
+      console.log("useChatbotForm: Setting form from loaded data", newForm);
+      setForm(newForm);
+      setIsInitialized(true);
+    }, [setForm]),
     setAiProvider,
     handleNestedChange
   );
@@ -32,7 +46,8 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
   const { isSubmitting, isEditing, handleSubmit: submitChatbot } = useSaveChatbot(userId, id);
   
   // Handle template selection
-  const handleTemplateSelect = (template: ChatbotTemplate) => {
+  const handleTemplateSelect = useCallback((template: ChatbotTemplate) => {
+    console.log("useChatbotForm: Template selected", template);
     setSelectedTemplateId(template.id);
     
     // Ensure we're working with numbers for maxTokens and temperature
@@ -62,12 +77,13 @@ export const useChatbotForm = ({ id, userId }: UseChatbotFormProps): UseChatbotF
     } else {
       setAiProvider("openai");
     }
-  };
+  }, [setSelectedTemplateId, setForm, setAiProvider]);
   
   // Handle form submission with the form parameter
-  const handleSubmit = (formData = form) => {
+  const handleSubmit = useCallback((formData = form) => {
+    console.log("useChatbotForm: Submitting form", formData);
     return submitChatbot(formData);
-  };
+  }, [form, submitChatbot]);
 
   return {
     form,
