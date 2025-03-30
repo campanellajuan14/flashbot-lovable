@@ -27,26 +27,22 @@
     console.log('Initializing widget with ID:', widgetId);
     
     // Base URL for modules - derive from the current script's src
-    // IMPORTANTE: Asegurar que esta URL sea accesible y correcta en producción
-    const scriptSrc = scriptTag ? scriptTag.src : '';
-    const baseURL = new URL('./', scriptSrc).href;
-    
-    console.log('Script base URL:', baseURL);
+    const basePath = scriptTag ? new URL('./', scriptTag.src).href : '';
     
     // Create script elements for each module
     const modules = [
-      `${baseURL}widget/state.js`,
-      `${baseURL}widget/api.js`,
-      `${baseURL}widget/analytics.js`,
-      `${baseURL}widget/ui.js`,
-      `${baseURL}widget/index.js`
+      `${basePath}widget/state.js`,
+      `${basePath}widget/api.js`,
+      `${basePath}widget/analytics.js`,
+      `${basePath}widget/ui.js`,
+      `${basePath}widget/index.js`
     ];
     
     // Count loaded modules to know when all are ready
     let loadedCount = 0;
     
     // Debug info for troubleshooting
-    console.log('Script base path:', baseURL);
+    console.log('Script base path:', basePath);
     console.log('Using Supabase project: obiiomoqhpbgaymfphdz');
     console.log('Current page origin:', window.location.origin);
     console.log('Current page URL:', window.location.href);
@@ -70,7 +66,7 @@
         if (loadedCount === modules.length) {
           clearTimeout(loadTimeout);
           console.log('All modules loaded, initializing widget...');
-          import(`${baseURL}widget/index.js`)
+          import(`${basePath}widget/index.js`)
             .then(module => {
               // Expose the API globally
               window.flashbotChat = module.default;

@@ -1,9 +1,9 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
-// Definimos una versión reducida de la configuración del widget
+// Defining a reduced version of the widget configuration
 interface WidgetConfig {
   id: string;
   name: string;
@@ -54,32 +54,22 @@ const WidgetEmbed: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // API key for the widget
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
-  // Auto scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, sending]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        setError("ID del widget no encontrado");
+        setError("Widget ID not found");
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
+        console.log(`Loading configuration for widget ID: ${widgetId}`);
         const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
-        console.log(`URL completo: ${apiUrl}`);
+        console.log(`Full URL: ${apiUrl}`);
 
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -92,11 +82,11 @@ const WidgetEmbed: React.FC = () => {
           }
         });
         
-        console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
+        console.log(`Response received with status: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
-          console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
-          let errorMessage = `Error al cargar la configuración del widget`;
+          console.error(`Error loading widget: ${response.status} ${response.statusText}`);
+          let errorMessage = `Error loading widget configuration`;
           
           try {
             const errorData = await response.json();
@@ -105,16 +95,16 @@ const WidgetEmbed: React.FC = () => {
             }
           } catch (e) {
             const errorText = await response.text();
-            console.error(`Contenido de la respuesta: ${errorText}`);
+            console.error(`Response content: ${errorText}`);
           }
           
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("Configuración del widget cargada:", data);
+        console.log("Widget configuration loaded:", data);
         
-        // Asegurémonos de que la configuración tiene valores por defecto para evitar errores
+        // Ensure the configuration has default values to avoid errors
         const defaultConfig: WidgetConfig = {
           id: data.id || widgetId,
           name: data.name || "Chat",
@@ -122,8 +112,8 @@ const WidgetEmbed: React.FC = () => {
             appearance: data.config?.appearance || {},
             content: data.config?.content || {
               title: "Chat",
-              placeholder_text: "Escribe tu mensaje...",
-              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?"
+              placeholder_text: "Type your message...",
+              welcome_message: "Hello! How can I help you today?"
             },
             colors: data.config?.colors || {
               primary: "#2563eb",
@@ -151,12 +141,10 @@ const WidgetEmbed: React.FC = () => {
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
-              if (savedMessages && Array.isArray(savedMessages)) {
-                setMessages(savedMessages);
-              }
+              if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("Error procesando la conversación guardada:", e);
+              console.error("Error processing saved conversation:", e);
             }
           }
         }
@@ -169,8 +157,8 @@ const WidgetEmbed: React.FC = () => {
         }
 
       } catch (error: any) {
-        console.error("Error cargando la configuración del widget:", error);
-        setError(error.message || "Error al cargar la configuración del widget");
+        console.error("Error loading widget configuration:", error);
+        setError(error.message || "Error loading widget configuration");
       } finally {
         setLoading(false);
       }
@@ -223,10 +211,10 @@ const WidgetEmbed: React.FC = () => {
       });
       
       if (!response.ok) {
-        console.error(`Error enviando mensaje: ${response.status} ${response.statusText}`);
+        console.error(`Error sending message: ${response.status} ${response.statusText}`);
         
         // Try to get the error message
-        let errorMessage = "Error al enviar mensaje";
+        let errorMessage = "Error sending message";
         try {
           const errorData = await response.json();
           if (errorData && errorData.error) {
@@ -234,14 +222,14 @@ const WidgetEmbed: React.FC = () => {
           }
         } catch (e) {
           const errorText = await response.text();
-          console.error(`Contenido de la respuesta de error: ${errorText}`);
+          console.error(`Error response content: ${errorText}`);
         }
         
         throw new Error(errorMessage);
       }
       
       const result = await response.json();
-      console.log("Respuesta del servidor:", result);
+      console.log("Server response:", result);
       
       // Save conversation ID if first response
       if (result.conversation_id && !conversationId) {
@@ -260,17 +248,16 @@ const WidgetEmbed: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error("Error enviando mensaje:", error);
+      console.error("Error sending message:", error);
       
       // Add error message
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo más tarde." 
+        content: "Sorry, an error occurred while processing your message. Please try again later." 
       }]);
       
     } finally {
       setSending(false);
-      scrollToBottom();
     }
   };
 
@@ -287,9 +274,9 @@ const WidgetEmbed: React.FC = () => {
       <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground p-4 text-center gap-3">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <h3 className="text-lg font-medium">Error</h3>
-        <p>{error || "Error al cargar la configuración del widget :("}</p>
+        <p>{error || "Error loading widget configuration :("}</p>
         <p className="text-xs text-muted-foreground max-w-xs">
-          Este widget puede no estar habilitado o podría requerir permisos de acceso de dominio.
+          This widget may not be enabled or might require domain access permissions.
         </p>
       </div>
     );
@@ -369,13 +356,10 @@ const WidgetEmbed: React.FC = () => {
                 display: 'inline-block'
               }}
             >
-              <span className="text-muted">Escribiendo...</span>
+              <span className="text-muted">Typing...</span>
             </div>
           </div>
         )}
-        
-        {/* Invisible div to scroll to */}
-        <div ref={messagesEndRef} />
       </div>
       
       {/* Input */}
@@ -385,7 +369,7 @@ const WidgetEmbed: React.FC = () => {
             type="text"
             value={inputValue}
             onChange={handleInputChange}
-            placeholder={content.placeholder_text || "Escribe un mensaje..."}
+            placeholder={content.placeholder_text || "Type a message..."}
             className="flex-1 p-2 border rounded"
             style={{ 
               borderColor: 'rgba(0,0,0,0.2)',
@@ -406,7 +390,7 @@ const WidgetEmbed: React.FC = () => {
               opacity: inputValue.trim() && !sending ? 1 : 0.7
             }}
           >
-            Enviar
+            Send
           </button>
         </form>
       </div>
@@ -418,7 +402,7 @@ const WidgetEmbed: React.FC = () => {
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
         >
           <a 
-            href="https://flashbot.lovable.app" 
+            href="https://flashbot.com" 
             target="_blank" 
             rel="noopener noreferrer"
             style={{ color: '#999', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
