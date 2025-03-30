@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -137,7 +136,7 @@ const Index = () => {
                     src="https://flashbot.lovable.app/widget/83bb2e5a-c785-4eb1-a67f-90aef2550553"
                     width="100%" 
                     height="500" 
-                    style={{ border: "none", borderRadius: "12px" }}
+                    style={{ border: "none", borderRadius: "12px", pointerEvents: "auto" }}
                     allow="microphone"
                     title="AI Chat Widget"
                   ></iframe>
