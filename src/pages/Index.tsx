@@ -81,7 +81,7 @@ const Index = () => {
                     </div>
                   </motion.div>
                   <h1 className="text-4xl font-bold tracking-tight sm:text-5xl xl:text-6xl/none">
-                    Create Smart AI Agents From <span className="text-primary">Your Documents</span> in Minutes
+                    Create Smart <span className="text-primary">AI Agents</span> From Your Documents <span className="text-primary">in Minutes</span>
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground text-lg md:text-xl">
                     Turn any document into an intelligent AI assistant{" "}
