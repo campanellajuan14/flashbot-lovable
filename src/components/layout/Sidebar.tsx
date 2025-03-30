@@ -7,7 +7,8 @@ import {
   Zap, 
   FileText, 
   Settings, 
-  BarChart 
+  BarChart,
+  MessageSquare
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -25,10 +26,16 @@ const Sidebar = () => {
       icon: Zap,
     },
     {
-      title: "Documents",
+      title: "Conversaciones",
+      href: "/conversations",
+      icon: MessageSquare,
+      description: "Ver las conversaciones de tus chatbots"
+    },
+    {
+      title: "Documentos",
       href: "/documents",
       icon: FileText,
-      description: "Manage your chatbot documents"
+      description: "Gestionar los documentos de tus chatbots"
     },
     {
       title: "Analytics",

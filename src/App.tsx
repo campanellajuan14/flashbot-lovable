@@ -17,6 +17,8 @@ import AuthRequired from "./components/auth/AuthRequired";
 import { Toaster } from "./components/ui/toaster";
 import "./App.css";
 import SettingsPage from "./pages/settings/SettingsPage";
+import ConversationsPage from "./pages/conversations/ConversationsPage";
+import ConversationDetailPage from "./pages/conversations/ConversationDetailPage";
 
 const WidgetRoute = () => (
   <Routes>
@@ -42,6 +44,9 @@ const AppRoutes = () => (
       <Route path="/chatbots/:id/edit" element={<ChatbotForm />} />
       <Route path="/chatbots/:id/documents" element={<ChatbotDocuments />} />
       <Route path="/chatbots/:id/preview" element={<ChatbotPreview />} />
+      
+      <Route path="/conversations" element={<ConversationsPage />} />
+      <Route path="/conversations/:id" element={<ConversationDetailPage />} />
       
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
