@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Separator } from "@/components/ui/separator";
-import { useConversationsData, ConversationsFilters } from "@/hooks/useConversationsData";
+import { useConversationsData } from "@/hooks/useConversationsData";
 import ConversationsTable from "@/components/conversations/ConversationsTable";
 import ConversationsFilters from "@/components/conversations/ConversationsFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,14 @@ import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Rename this interface to avoid conflict with component name
+interface ConversationsFilterState {
+  chatbotId: string | undefined;
+  dateRange: { from: Date | undefined; to: Date | undefined };
+}
+
 const ConversationsPage = () => {
-  const [filters, setFilters] = useState<ConversationsFilters>({
+  const [filters, setFilters] = useState<ConversationsFilterState>({
     chatbotId: undefined,
     dateRange: { from: undefined, to: undefined }
   });

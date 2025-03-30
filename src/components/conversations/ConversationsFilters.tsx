@@ -109,7 +109,10 @@ const ConversationsFilters: React.FC<ConversationsFiltersProps> = ({
                 from: dateRange.from || undefined,
                 to: dateRange.to || undefined,
               }}
-              onSelect={(range) => onDateRangeChange(range || { from: undefined, to: undefined })}
+              onSelect={(range) => onDateRangeChange({
+                from: range?.from,
+                to: range?.to
+              })}
               locale={es}
             />
           </PopoverContent>
