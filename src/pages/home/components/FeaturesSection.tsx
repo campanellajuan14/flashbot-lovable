@@ -68,7 +68,7 @@ const FeaturesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="group flex flex-col items-start space-y-4 rounded-xl border p-6 hover:bg-muted/50 transition-colors text-left"
+              className="group flex flex-col items-start space-y-4 rounded-xl border p-6 hover:bg-muted/50 transition-colors"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 {feature.icon}

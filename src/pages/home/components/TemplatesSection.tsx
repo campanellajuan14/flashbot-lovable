@@ -63,18 +63,18 @@ const TemplatesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="flex flex-col items-start space-y-4 rounded-xl border bg-background p-6 shadow-md hover:shadow-lg transition-all text-left"
+              className="flex flex-col items-start space-y-4 rounded-xl border bg-background p-6 shadow-md hover:shadow-lg transition-all"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 {template.icon}
               </div>
-              <div className="space-y-2 w-full">
+              <div className="space-y-2">
                 <h3 className="text-xl font-bold">{template.title}</h3>
                 <p className="text-muted-foreground">{template.description}</p>
                 <ul className="space-y-1 pt-2">
                   {template.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
                       <span>{feature}</span>
                     </li>
                   ))}

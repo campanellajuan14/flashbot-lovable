@@ -15,7 +15,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
   
-  // Base script URL - updated to the new domain
+  // Base script URL - actualizado al nuevo dominio
   const scriptBaseUrl = "https://flashbot.lovable.app";
   
   // The ID to use in the embed code - make sure we're using the correct ID
@@ -43,7 +43,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate the preview URL for the widget with the new domain
+  // Generate the preview URL for the widget con el nuevo dominio
   const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
 
   return (
