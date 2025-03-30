@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     const requestData = await req.json();
-    const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source, conversationId } = requestData;
+    const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source, conversationId, user_info } = requestData;
 
     // Log request details for debugging
     console.log('Request received:');
@@ -306,12 +306,15 @@ Important instructions about using these documents:
     const data = await response.json();
     console.log('Anthropic API response:', data);
 
+    // Generate or use provided conversation ID
+    const generatedConversationId = conversationId || crypto.randomUUID();
+
     // Build response with document references if there are relevant documents
     const responseData = {
       message: data.content[0].text,
       model: data.model,
       usage: data.usage,
-      conversation_id: conversationId || crypto.randomUUID()
+      conversation_id: generatedConversationId
     };
     
     // Add document references
@@ -321,6 +324,75 @@ Important instructions about using these documents:
         name: doc.name,
         similarity: doc.similarity
       }));
+    }
+
+    // If we're generating a new conversation ID (not using an existing one),
+    // register it in the database to ensure it's properly tracked
+    if (!conversationId && chatbotId) {
+      try {
+        console.log(`Auto-registering new conversation ${generatedConversationId} for chatbot ${chatbotId}`);
+        
+        // Check if conversation already exists (shouldn't, but being safe)
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('id', generatedConversationId)
+          .single();
+          
+        if (!existingConv) {
+          // Insert the new conversation record
+          const { error: insertError } = await supabase
+            .from('conversations')
+            .insert({
+              id: generatedConversationId,
+              chatbot_id: chatbotId,
+              user_identifier: user_info?.id || 'anonymous',
+              metadata: { 
+                source: source || 'api',
+                widget_id: widget_id || null,
+                auto_registered: true
+              }
+            });
+            
+          if (insertError) {
+            console.error('Error auto-registering conversation:', insertError);
+          } else {
+            console.log(`Successfully auto-registered conversation ${generatedConversationId}`);
+            
+            // Also register initial messages
+            if (messages && Array.isArray(messages) && messages.length > 0) {
+              const lastMessage = messages[messages.length - 1];
+              const messagesToInsert = [
+                {
+                  conversation_id: generatedConversationId,
+                  content: lastMessage.content,
+                  role: lastMessage.role,
+                  metadata: {}
+                },
+                {
+                  conversation_id: generatedConversationId,
+                  content: data.content[0].text,
+                  role: 'assistant',
+                  metadata: {}
+                }
+              ];
+              
+              const { error: messagesError } = await supabase
+                .from('messages')
+                .insert(messagesToInsert);
+                
+              if (messagesError) {
+                console.error('Error registering initial messages:', messagesError);
+              } else {
+                console.log(`Successfully registered ${messagesToInsert.length} initial messages`);
+              }
+            }
+          }
+        }
+      } catch (regError) {
+        console.error('Error in conversation auto-registration:', regError);
+        // Continue despite error - don't block the response
+      }
     }
 
     // Log this interaction for analysis (optional)
