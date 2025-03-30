@@ -14,8 +14,19 @@ export interface Conversation {
   latest_message?: string;
 }
 
-export function useConversationsData(selectedChatbotId?: string) {
+export interface ConversationsFilters {
+  chatbotId?: string;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+}
+
+export function useConversationsData(filters?: ConversationsFilters) {
   const { user } = useAuth();
+  const chatbotId = filters?.chatbotId;
+  const dateFrom = filters?.dateRange?.from;
+  const dateTo = filters?.dateRange?.to;
 
   // Fetch all chatbots owned by the user
   const {
@@ -45,13 +56,13 @@ export function useConversationsData(selectedChatbotId?: string) {
     error: conversationsError,
     refetch,
   } = useQuery({
-    queryKey: ["conversations", user?.id, selectedChatbotId],
+    queryKey: ["conversations", user?.id, chatbotId, dateFrom?.toISOString(), dateTo?.toISOString()],
     queryFn: async () => {
       if (!user) return [];
 
       try {
         // First get the chatbot IDs for this user
-        const query = supabase.from("conversations").select(`
+        let query = supabase.from("conversations").select(`
           id,
           created_at,
           updated_at,
@@ -61,15 +72,32 @@ export function useConversationsData(selectedChatbotId?: string) {
         `);
         
         // Apply chatbot filter if selected
-        if (selectedChatbotId) {
-          query.eq("chatbot_id", selectedChatbotId);
+        if (chatbotId) {
+          console.log("Filtering by chatbot ID:", chatbotId);
+          query = query.eq("chatbot_id", chatbotId);
         } else if (chatbots && chatbots.length > 0) {
           // Otherwise filter for all user's chatbots
           const chatbotIds = chatbots.map(c => c.id);
-          query.in("chatbot_id", chatbotIds);
+          console.log("Filtering by user's chatbot IDs:", chatbotIds);
+          query = query.in("chatbot_id", chatbotIds);
         } else {
           // If no chatbots found, return empty array
+          console.log("No chatbots found, returning empty array");
           return [];
+        }
+
+        // Apply date filters if provided
+        if (dateFrom) {
+          console.log("Filtering conversations from:", dateFrom.toISOString());
+          query = query.gte('created_at', dateFrom.toISOString());
+        }
+        
+        if (dateTo) {
+          // Add one day to include the entire end date
+          const nextDay = new Date(dateTo);
+          nextDay.setDate(nextDay.getDate() + 1);
+          console.log("Filtering conversations to:", nextDay.toISOString());
+          query = query.lt('created_at', nextDay.toISOString());
         }
         
         // Order by most recent first
@@ -84,20 +112,11 @@ export function useConversationsData(selectedChatbotId?: string) {
           return [];
         }
 
+        console.log(`Found ${conversationsData.length} conversations`);
+
         // For each conversation, get the message count and most recent message
         const conversationIds = conversationsData.map(c => c.id);
         
-        // Get message counts
-        const { data: messageCounts, error: messageCountError } = await supabase
-          .from("messages")
-          .select("conversation_id, id", { count: "exact", head: false })
-          .in("conversation_id", conversationIds)
-          .limit(1);
-          
-        if (messageCountError) {
-          console.error("Error fetching message counts:", messageCountError);
-        }
-
         // Enrich each conversation with message count and latest message
         const enrichedConversations = await Promise.all(
           conversationsData.map(async (conversation) => {
@@ -141,14 +160,13 @@ export function useConversationsData(selectedChatbotId?: string) {
           })
         );
 
-        console.log(`Retrieved ${enrichedConversations.length} conversations`);
         return enrichedConversations as Conversation[];
       } catch (error) {
         console.error("Error in conversations query:", error);
         throw error;
       }
     },
-    enabled: !!user && (!!chatbots || !!selectedChatbotId),
+    enabled: !!user && (!!chatbots || !!chatbotId),
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
 

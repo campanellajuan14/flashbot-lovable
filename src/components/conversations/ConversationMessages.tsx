@@ -6,12 +6,33 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ConversationMessagesProps {
   messages: Message[];
+  isLoading?: boolean;
 }
 
-const ConversationMessages: React.FC<ConversationMessagesProps> = ({ messages }) => {
+const ConversationMessages: React.FC<ConversationMessagesProps> = ({ 
+  messages,
+  isLoading = false
+}) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-start gap-3">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (messages.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">

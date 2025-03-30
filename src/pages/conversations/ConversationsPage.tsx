@@ -2,22 +2,29 @@
 import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Separator } from "@/components/ui/separator";
-import { useConversationsData } from "@/hooks/useConversationsData";
+import { useConversationsData, ConversationsFilters } from "@/hooks/useConversationsData";
 import ConversationsTable from "@/components/conversations/ConversationsTable";
 import ConversationsFilters from "@/components/conversations/ConversationsFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Chatbot } from "@/pages/chatbots/types";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const ConversationsPage = () => {
-  const [selectedChatbotId, setSelectedChatbotId] = useState<string | undefined>(undefined);
-  const { conversations, chatbots, isLoading, error, refetch } = useConversationsData(selectedChatbotId);
+  const [filters, setFilters] = useState<ConversationsFilters>({
+    chatbotId: undefined,
+    dateRange: { from: undefined, to: undefined }
+  });
+  
+  const { conversations, chatbots, isLoading, error, refetch } = useConversationsData(filters);
 
   // Handle filter changes
   const handleChatbotFilterChange = (chatbotId: string | undefined) => {
-    setSelectedChatbotId(chatbotId);
+    setFilters(prev => ({ ...prev, chatbotId }));
+  };
+  
+  const handleDateRangeChange = (dateRange: { from: Date | undefined; to: Date | undefined }) => {
+    setFilters(prev => ({ ...prev, dateRange }));
   };
 
   React.useEffect(() => {
@@ -58,8 +65,10 @@ const ConversationsPage = () => {
               <>
                 <ConversationsFilters 
                   chatbots={chatbots || []} 
-                  selectedChatbotId={selectedChatbotId}
+                  selectedChatbotId={filters.chatbotId}
                   onChatbotChange={handleChatbotFilterChange}
+                  dateRange={filters.dateRange || { from: undefined, to: undefined }}
+                  onDateRangeChange={handleDateRangeChange}
                 />
                 
                 <ConversationsTable 

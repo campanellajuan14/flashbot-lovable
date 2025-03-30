@@ -49,6 +49,13 @@ const Sidebar = () => {
     },
   ];
 
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return location.pathname === href;
+    }
+    return location.pathname === href || location.pathname.startsWith(`${href}/`);
+  };
+
   return (
     <div className="w-64 border-r bg-sidebar shadow-sm">
       <div className="h-full py-4">
@@ -59,8 +66,7 @@ const Sidebar = () => {
               to={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-                location.pathname === item.href || 
-                (item.href !== "/dashboard" && location.pathname.startsWith(item.href))
+                isActive(item.href)
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
               )}
