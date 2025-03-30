@@ -1,9 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
-// Definimos una versión reducida de la configuración del widget
 interface WidgetConfig {
   id: string;
   name: string;
@@ -55,7 +53,6 @@ const WidgetEmbed: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
-  // API key for the widget
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
   useEffect(() => {
@@ -104,7 +101,6 @@ const WidgetEmbed: React.FC = () => {
         const data = await response.json();
         console.log("Configuración del widget cargada:", data);
         
-        // Asegurémonos de que la configuración tiene valores por defecto para evitar errores
         const defaultConfig: WidgetConfig = {
           id: data.id || widgetId,
           name: data.name || "Chat",
@@ -135,7 +131,6 @@ const WidgetEmbed: React.FC = () => {
         
         setConfig(defaultConfig);
 
-        // Check if we have a saved conversation
         if (defaultConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
           if (savedConversation) {
@@ -149,7 +144,6 @@ const WidgetEmbed: React.FC = () => {
           }
         }
 
-        // Show welcome message if no messages and welcome message exists
         if (defaultConfig.config.content.welcome_message && (!messages || messages.length === 0)) {
           setMessages([
             { role: "assistant", content: defaultConfig.config.content.welcome_message }
@@ -179,12 +173,10 @@ const WidgetEmbed: React.FC = () => {
     const userMessage = inputValue.trim();
     setInputValue("");
     
-    // Add user message to state
     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
     setSending(true);
     
     try {
-      // Send message to API
       console.log("Sending message with conversation ID:", conversationId);
       
       const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/claude-chat', {
@@ -211,9 +203,8 @@ const WidgetEmbed: React.FC = () => {
       });
       
       if (!response.ok) {
-        console.error(`Error enviando mensaje: ${response.status} ${response.statusText}`);
+        console.error(`Error sending message: ${response.status} ${response.statusText}`);
         
-        // Try to get the error message
         let errorMessage = "Error al enviar mensaje";
         try {
           const errorData = await response.json();
@@ -222,24 +213,21 @@ const WidgetEmbed: React.FC = () => {
           }
         } catch (e) {
           const errorText = await response.text();
-          console.error(`Contenido de la respuesta de error: ${errorText}`);
+          console.error(`Error response content: ${errorText}`);
         }
         
         throw new Error(errorMessage);
       }
       
       const result = await response.json();
-      console.log("Respuesta del servidor:", result);
+      console.log("Server response:", result);
       
-      // Save conversation ID if first response
       if (result.conversation_id && !conversationId) {
         setConversationId(result.conversation_id);
       }
       
-      // Add bot response to state
       setMessages(prev => [...prev, { role: "assistant", content: result.message }]);
       
-      // Save conversation if needed
       if (config.config.behavior.persist_conversation) {
         localStorage.setItem(`flashbot_chat_${widgetId}`, JSON.stringify({
           messages: [...messages, { role: "user", content: userMessage }, { role: "assistant", content: result.message }],
@@ -248,9 +236,8 @@ const WidgetEmbed: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error("Error enviando mensaje:", error);
+      console.error("Error sending message:", error);
       
-      // Add error message
       setMessages(prev => [...prev, { 
         role: "assistant", 
         content: "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo más tarde." 
@@ -282,7 +269,11 @@ const WidgetEmbed: React.FC = () => {
     );
   }
 
-  const { appearance, content, colors } = config.config;
+  const { appearance, content, colors } = config?.config || {
+    appearance: {},
+    content: {},
+    colors: {}
+  };
   
   const DEFAULT_COLORS = {
     text: "#333333",
@@ -295,22 +286,20 @@ const WidgetEmbed: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col" style={{ 
-      backgroundColor: colors.background || DEFAULT_COLORS.background,
-      color: colors.text || DEFAULT_COLORS.text,
-      borderRadius: `${appearance.border_radius || 0}px`,
+      backgroundColor: colors?.background || DEFAULT_COLORS.background,
+      color: colors?.text || DEFAULT_COLORS.text,
+      borderRadius: `${appearance?.border_radius || 0}px`,
       overflow: 'hidden'
     }}>
-      {/* Header */}
-      <div className="p-4" style={{ backgroundColor: colors.primary || DEFAULT_COLORS.primary, color: '#ffffff' }}>
+      <div className="p-4" style={{ backgroundColor: colors?.primary || DEFAULT_COLORS.primary, color: '#ffffff' }}>
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="font-medium">{content.title || 'Chat'}</h3>
-            {content.subtitle && <p className="text-sm opacity-90">{content.subtitle}</p>}
+            <h3 className="font-medium">{content?.title || 'Chat'}</h3>
+            {content?.subtitle && <p className="text-sm opacity-90">{content.subtitle}</p>}
           </div>
         </div>
       </div>
       
-      {/* Messages */}
       <div 
         className="flex-1 p-4 overflow-y-auto"
         style={{ 
@@ -327,9 +316,9 @@ const WidgetEmbed: React.FC = () => {
             <div 
               style={{
                 backgroundColor: msg.role === 'user' ? 
-                  (colors.user_bubble || DEFAULT_COLORS.user_bubble) : 
-                  (colors.bot_bubble || DEFAULT_COLORS.bot_bubble),
-                color: msg.role === 'user' ? '#ffffff' : (colors.text || DEFAULT_COLORS.text),
+                  (colors?.user_bubble || DEFAULT_COLORS.user_bubble) : 
+                  (colors?.bot_bubble || DEFAULT_COLORS.bot_bubble),
+                color: msg.role === 'user' ? '#ffffff' : (colors?.text || DEFAULT_COLORS.text),
                 padding: '8px 12px',
                 borderRadius: msg.role === 'user' ? '18px 18px 0 18px' : '18px 18px 18px 0',
                 maxWidth: '80%',
@@ -338,7 +327,7 @@ const WidgetEmbed: React.FC = () => {
               dangerouslySetInnerHTML={{
                 __html: msg.content.replace(
                   /(https?:\/\/[^\s]+)/g, 
-                  `<a href="$1" target="_blank" style="color: ${colors.links || DEFAULT_COLORS.links};">$1</a>`
+                  `<a href="$1" target="_blank" style="color: ${colors?.links || DEFAULT_COLORS.links};">$1</a>`
                 ).replace(/\n/g, '<br>')
               }}
             />
@@ -349,8 +338,8 @@ const WidgetEmbed: React.FC = () => {
           <div className="flex justify-start">
             <div 
               style={{
-                backgroundColor: colors.bot_bubble || DEFAULT_COLORS.bot_bubble,
-                color: colors.text || DEFAULT_COLORS.text,
+                backgroundColor: colors?.bot_bubble || DEFAULT_COLORS.bot_bubble,
+                color: colors?.text || DEFAULT_COLORS.text,
                 padding: '8px 12px',
                 borderRadius: '18px 18px 18px 0',
                 display: 'inline-block'
@@ -362,26 +351,25 @@ const WidgetEmbed: React.FC = () => {
         )}
       </div>
       
-      {/* Input */}
       <div className="p-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
             value={inputValue}
             onChange={handleInputChange}
-            placeholder={content.placeholder_text || "Escribe un mensaje..."}
+            placeholder={content?.placeholder_text || "Escribe un mensaje..."}
             className="flex-1 p-2 border rounded"
             style={{ 
               borderColor: 'rgba(0,0,0,0.2)',
               borderRadius: '4px',
-              color: colors.text || DEFAULT_COLORS.text
+              color: colors?.text || DEFAULT_COLORS.text
             }}
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || sending}
             style={{
-              backgroundColor: colors.primary || DEFAULT_COLORS.primary,
+              backgroundColor: colors?.primary || DEFAULT_COLORS.primary,
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -395,8 +383,7 @@ const WidgetEmbed: React.FC = () => {
         </form>
       </div>
       
-      {/* Branding */}
-      {(content.branding !== false) && (
+      {(content?.branding !== false) && (
         <div 
           className="p-2 text-center text-xs" 
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
