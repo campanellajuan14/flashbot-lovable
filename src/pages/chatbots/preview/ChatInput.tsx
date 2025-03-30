@@ -24,10 +24,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const sendText = language === "en" ? "Send" : "Enviar";
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || isTyping) return;
-    
     handleSendMessage(e);
+    setMessage(""); // Clear the input after sending
   };
 
   return (
@@ -45,7 +43,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
             placeholder={placeholderText}
             className="w-full px-4 py-2.5 rounded-full border bg-background focus-visible:ring-1 focus-visible:ring-offset-0"
             disabled={isTyping}
-            aria-label={placeholderText}
           />
         </div>
         <Button
@@ -53,7 +50,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
           size="icon"
           className="rounded-full h-10 w-10 flex-shrink-0"
           disabled={isTyping || !message.trim()}
-          aria-label={sendText}
         >
           <Send className="h-5 w-5" />
           <span className="sr-only">{sendText}</span>

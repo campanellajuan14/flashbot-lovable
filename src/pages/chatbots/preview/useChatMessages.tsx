@@ -13,18 +13,13 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
   const { toast } = useToast();
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
     if (messages.length === 0 && chatbot) {
-      const initialGreeting = chatbot.behavior?.greeting || 
-        (chatbot.behavior?.language === 'en' 
-          ? `Hello! I'm a virtual assistant. How can I help you today?`
-          : `¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?`);
+      const initialGreeting = chatbot.behavior?.greeting || `¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?`;
       handleBotResponse(initialGreeting);
     }
   }, [messages, chatbot]);
@@ -37,8 +32,6 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content
       }));
-      
-      console.log("Calling Claude API with chatbot:", chatbot.id, "and messages:", formattedMessages);
       
       const response = await supabase.functions.invoke('claude-chat', {
         body: {
@@ -57,18 +50,18 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
         console.error("Error calling Claude API:", response.error);
         toast({
           title: "Error",
-          description: response.error.message || "No se pudo conectar con el asistente IA",
+          description: "No se pudo conectar con el asistente IA",
           variant: "destructive"
         });
         return null;
       }
       
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error calling Claude API:", error);
       toast({
         title: "Error",
-        description: error.message || "Ocurrió un error al procesar tu mensaje",
+        description: "Ocurrió un error al procesar tu mensaje",
         variant: "destructive"
       });
       return null;
@@ -103,24 +96,17 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     try {
       const updatedMessages = [...messages, userMessage];
       
-      console.log("Sending message to chatbot:", chatbot.id);
       const apiResponse = await callClaudeAPI(updatedMessages);
       
       if (apiResponse) {
         const { message: responseText, references } = apiResponse;
         handleBotResponse(responseText, references);
       } else {
-        const errorMessage = chatbot.behavior?.language === 'en'
-          ? "I'm sorry, I'm having trouble responding. Please try again later."
-          : "Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.";
-        handleBotResponse(errorMessage);
+        handleBotResponse("Lo siento, estoy teniendo problemas para responder. Por favor, inténtalo de nuevo más tarde.");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing message:", error);
-      const errorMessage = chatbot.behavior?.language === 'en'
-        ? "An error occurred while processing your message. Please try again."
-        : "Ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo.";
-      handleBotResponse(errorMessage);
+      handleBotResponse("Ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo.");
     } finally {
       setIsTyping(false);
     }
@@ -136,7 +122,6 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     };
     
     setMessages(prev => [...prev, botMessage]);
-    scrollToBottom();
   };
 
   const toggleSourceDetails = (messageId: string) => {
