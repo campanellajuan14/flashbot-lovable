@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,10 +22,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-background to-purple-50/30 dark:from-purple-900/20 dark:via-background dark:to-purple-900/10 pointer-events-none z-0"></div>
+      
       <header
         className={`sticky top-0 z-40 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200 ${isScrolled ? "bg-background/95 shadow-sm" : "bg-transparent border-transparent"}`}
       >
-        <div className="container mx-auto px-4 flex h-16 items-center justify-between">
+        <div className="container mx-auto px-6 lg:px-8 flex h-16 items-center justify-between">
           <div className="flex gap-2 items-center">
             <Zap className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">Flashbot</span>
@@ -47,27 +48,26 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="flex-1">
-        {/* Hero Section */}
+      <main className="flex-1 relative z-10">
         <section
           ref={heroRef}
-          className="w-full py-12 md:py-16 lg:py-20 xl:py-24 bg-gradient-to-b from-background via-background to-muted/10 overflow-hidden relative"
-          style={{ pointerEvents: "auto" }} /* Ensure pointer events work */
+          className="w-full py-16 md:py-20 lg:py-24 xl:py-28 overflow-hidden relative"
+          style={{ pointerEvents: "auto" }}
         >
-          {/* Animated background elements */}
-          <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: "none" }}> {/* Background elements shouldn't catch clicks */}
+          <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: "none" }}>
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
             <div className="absolute top-1/3 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-20 right-10 w-64 h-64 bg-purple-400/5 rounded-full blur-3xl" />
           </div>
 
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-6 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_600px] lg:gap-16 xl:grid-cols-[1fr_700px]">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 className="flex flex-col justify-center space-y-6 text-left"
-                style={{ pointerEvents: "auto" }} /* Ensure this block is clickable */
+                style={{ pointerEvents: "auto" }}
               >
                 <div className="space-y-4">
                   <motion.div
@@ -127,9 +127,8 @@ const Index = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="flex items-center justify-center"
-                style={{ pointerEvents: "auto" }} /* Ensure this container is interactive */
+                style={{ pointerEvents: "auto" }}
               >
-                {/* Flashbot Widget - Live Demo */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -151,7 +150,7 @@ const Index = () => {
               </motion.div>
             </div>
           </div>
-          <div className="flex justify-center mt-12">
+          <div className="flex justify-center mt-16">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -173,10 +172,9 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="w-full py-20 md:py-28 lg:py-32 bg-background relative">
+        <section id="features" className="w-full py-20 md:py-28 lg:py-32 bg-background/80 backdrop-blur-sm relative">
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
-          <div className="container mx-auto max-w-6xl px-4">
+          <div className="container mx-auto max-w-6xl px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -217,13 +215,12 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Templates Section */}
-        <section id="templates" className="w-full py-20 md:py-28 lg:py-32 bg-muted relative overflow-hidden">
+        <section id="templates" className="w-full py-20 md:py-28 lg:py-32 bg-muted/80 backdrop-blur-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 -left-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
 
-          <div className="container mx-auto max-w-6xl px-4 relative">
+          <div className="container mx-auto max-w-6xl px-6 lg:px-8 relative">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -274,9 +271,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* How It Works Section - Improved without the line */}
-        <section id="how-it-works" className="w-full py-20 md:py-28 lg:py-32 bg-background">
-          <div className="container mx-auto max-w-6xl px-4">
+        <section id="how-it-works" className="w-full py-20 md:py-28 lg:py-32 bg-background/80 backdrop-blur-sm">
+          <div className="container mx-auto max-w-6xl px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -320,9 +316,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Dashboard Preview Section */}
-        <section className="w-full py-20 md:py-28 lg:py-32 bg-background border-t">
-          <div className="container mx-auto max-w-6xl px-4">
+        <section className="w-full py-20 md:py-28 lg:py-32 bg-background/80 backdrop-blur-sm border-t">
+          <div className="container mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_500px] lg:gap-16 xl:grid-cols-[1fr_550px]">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -394,14 +389,13 @@ const Index = () => {
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="w-full py-20 md:py-28 lg:py-32 bg-primary text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
           </div>
 
-          <div className="container mx-auto max-w-6xl px-4 relative">
+          <div className="container mx-auto max-w-6xl px-6 lg:px-8 relative">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -441,7 +435,7 @@ const Index = () => {
         </section>
       </main>
       
-      <footer className="border-t py-8 px-4">
+      <footer className="border-t py-8 px-6 lg:px-8 relative z-10 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center mb-4">
@@ -461,7 +455,6 @@ const Index = () => {
   );
 };
 
-// Data
 const features = [
   {
     icon: <FileText className="h-6 w-6" />,
