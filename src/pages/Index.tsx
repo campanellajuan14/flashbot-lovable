@@ -327,11 +327,11 @@ const Index = () => {
                 className="relative mx-auto aspect-square w-full max-w-[550px] overflow-hidden rounded-xl border bg-background p-2 shadow-xl sm:w-full lg:order-last"
               >
                 <img
-                  src="/placeholder.svg"
+                  src="/lovable-uploads/a156bad4-f430-4396-aa9a-0029e2a94346.png"
                   width="550"
                   height="550"
                   alt="Dashboard preview"
-                  className="h-full w-full object-cover object-center"
+                  className="h-full w-full object-cover object-top rounded-lg"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
                 <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-background/80 backdrop-blur-sm p-4 shadow-lg">
