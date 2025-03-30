@@ -59,67 +59,71 @@ serve(async (req) => {
     
     console.log(`Looking for widget with ID: ${widgetId}`);
     
-    // Try multiple approaches to find the chatbot with specific widget ID
+    // Try multiple approaches to find the chatbot
     let chatbot = null;
     let error = null;
     
-    // 1. First approach: Search by widget_id in share_settings
-    console.log("Method 1: Searching by widget_id in share_settings");
-    const { data: widgetData, error: widgetError } = await supabase
+    // 1. First try: Direct match based on widget_id in share_settings
+    console.log("Method 1: Direct widget_id match in share_settings");
+    const { data: directMatchData, error: directMatchError } = await supabase
       .from('chatbots')
       .select('id, name, description, share_settings')
-      .eq('share_settings->widget_id', widgetId)
+      .filter('share_settings->widget_id', 'eq', widgetId)
       .single();
-    
-    if (!widgetError && widgetData) {
-      chatbot = widgetData;
-      console.log("Found widget by widget_id in share_settings:", chatbot.id);
-    } else {
-      console.log("Not found by widget_id in share_settings. Error:", widgetError?.message);
       
-      // 2. Second approach: Search directly by chatbot ID (in case widget_id is actually a chatbot ID)
+    if (!directMatchError && directMatchData) {
+      chatbot = directMatchData;
+      console.log("Found widget by direct match in share_settings:", chatbot.id);
+    } else {
+      console.log("Not found by direct match. Error:", directMatchError?.message);
+      
+      // 2. Second try: Looking directly by chatbot ID
       console.log("Method 2: Searching directly by chatbot ID");
-      const { data: directData, error: directError } = await supabase
+      const { data: chatbotIdData, error: chatbotIdError } = await supabase
         .from('chatbots')
         .select('id, name, description, share_settings')
         .eq('id', widgetId)
         .single();
         
-      if (!directError && directData) {
-        chatbot = directData;
-        console.log("Found widget by direct ID:", chatbot.id);
+      if (!chatbotIdError && chatbotIdData) {
+        chatbot = chatbotIdData;
+        console.log("Found widget by direct chatbot ID:", chatbot.id);
       } else {
-        console.log("Not found by direct ID. Error:", directError?.message);
+        console.log("Not found by chatbot ID. Error:", chatbotIdError?.message);
         
-        // 3. Third approach: Search all enabled widgets
-        console.log("Method 3: Searching all enabled widgets");
+        // 3. Third try: Get all enabled widgets and check manually
+        console.log("Method 3: Searching all enabled chatbots");
         const { data: allChatbots, error: allChatbotsError } = await supabase
           .from('chatbots')
           .select('id, name, description, share_settings')
-          .eq('share_settings->enabled', true);
-          
-        if (!allChatbotsError && allChatbots) {
+          .filter('share_settings->enabled', 'eq', true);
+        
+        if (!allChatbotsError && allChatbots && allChatbots.length > 0) {
           console.log(`Found ${allChatbots.length} chatbots with enabled widgets`);
           
-          // Manually check each chatbot for matching widget_id
+          // Loop through each chatbot and check if widget_id matches
           for (const bot of allChatbots) {
-            console.log(`Checking chatbot ${bot.id} with widget_id:`, bot.share_settings?.widget_id);
-            if (bot.share_settings?.widget_id === widgetId) {
+            console.log(`Checking chatbot ${bot.id} with share_settings:`, JSON.stringify(bot.share_settings));
+            
+            if (bot.share_settings && bot.share_settings.widget_id === widgetId) {
               chatbot = bot;
               console.log("Found widget in enabled widgets list:", chatbot.id);
               break;
             }
           }
         } else {
-          console.log("Error searching all chatbots:", allChatbotsError?.message);
+          console.error("Error getting all chatbots:", allChatbotsError?.message);
         }
-          
-        error = directError || widgetError;
+        
+        // Remember the errors
+        error = chatbotIdError || directMatchError || allChatbotsError;
       }
     }
     
     if (!chatbot) {
       console.error("Widget not found with any method:", error);
+      
+      // Return detailed error to help debugging
       return new Response(
         JSON.stringify({ 
           error: "Widget not found or not active", 

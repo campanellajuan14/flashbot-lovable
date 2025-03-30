@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
@@ -54,9 +54,19 @@ const WidgetEmbed: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // API key for the widget
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
+
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, sending]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     const loadWidgetConfig = async () => {
@@ -141,7 +151,9 @@ const WidgetEmbed: React.FC = () => {
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
-              if (savedMessages) setMessages(savedMessages);
+              if (savedMessages && Array.isArray(savedMessages)) {
+                setMessages(savedMessages);
+              }
               if (savedId) setConversationId(savedId);
             } catch (e) {
               console.error("Error procesando la conversación guardada:", e);
@@ -258,6 +270,7 @@ const WidgetEmbed: React.FC = () => {
       
     } finally {
       setSending(false);
+      scrollToBottom();
     }
   };
 
@@ -360,6 +373,9 @@ const WidgetEmbed: React.FC = () => {
             </div>
           </div>
         )}
+        
+        {/* Invisible div to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
       
       {/* Input */}
@@ -402,7 +418,7 @@ const WidgetEmbed: React.FC = () => {
           style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
         >
           <a 
-            href="https://flashbot.com" 
+            href="https://flashbot.lovable.app" 
             target="_blank" 
             rel="noopener noreferrer"
             style={{ color: '#999', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
