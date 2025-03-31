@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
@@ -11,9 +10,15 @@ interface EmbedCodeTabProps {
   widgetId: string | null;
   widgetConfig: ShareSettings | null;
   chatbotId: string;
+  onAppearanceChange: (key: keyof NonNullable<ShareSettings['appearance']>, value: any) => void;
 }
 
-const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, chatbotId }) => {
+const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ 
+  widgetId, 
+  widgetConfig, 
+  chatbotId,
+  onAppearanceChange
+}) => {
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
   
@@ -53,10 +58,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   
   // Función para manejar el cambio en el modo minimalista
   const handleMinimalModeChange = (checked: boolean) => {
-    if (widgetConfig) {
-      if (!widgetConfig.appearance) widgetConfig.appearance = {};
-      widgetConfig.appearance.minimalIframe = checked;
-    }
+    onAppearanceChange('minimalIframe', checked);
   };
 
   return (

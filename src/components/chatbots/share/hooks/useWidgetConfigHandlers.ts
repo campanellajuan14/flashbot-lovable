@@ -32,6 +32,8 @@ export const useWidgetConfigHandlers = (
   const handleAppearanceChange = (key: keyof NonNullable<ShareSettings['appearance']>, value: any) => {
     if (!widgetConfig) return;
     
+    console.log(`Appearance change: ${key} = ${value}`);
+    
     const newConfig = { ...widgetConfig };
     if (!newConfig.appearance) newConfig.appearance = {};
     
