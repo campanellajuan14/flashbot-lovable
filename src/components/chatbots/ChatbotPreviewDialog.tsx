@@ -69,7 +69,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                       color: colors?.text || '#333333',
                       padding: '8px 12px',
                       borderRadius: '18px 18px 18px 0',
-                      maxWidth: '80%'
+                      maxWidth: '80%',
+                      textAlign: 'left'
                     }}
                   >
                     {content?.welcome_message}
@@ -84,7 +85,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                     color: '#ffffff',
                     padding: '8px 12px',
                     borderRadius: '18px 18px 0 18px',
-                    maxWidth: '80%'
+                    maxWidth: '80%',
+                    textAlign: 'left'
                   }}
                 >
                   How can I help you today?
@@ -98,7 +100,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                     color: colors?.text || '#333333',
                     padding: '8px 12px',
                     borderRadius: '18px 18px 18px 0',
-                    maxWidth: '80%'
+                    maxWidth: '80%',
+                    textAlign: 'left'
                   }}
                 >
                   I'm here to answer your questions. What can I help you with?
@@ -145,7 +148,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                         color: colors?.text || '#333333',
                         padding: '8px 12px',
                         borderRadius: '18px 18px 18px 0',
-                        maxWidth: '80%'
+                        maxWidth: '80%',
+                        textAlign: 'left'
                       }}
                     >
                       {content?.welcome_message}
@@ -160,7 +164,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                       color: '#ffffff',
                       padding: '8px 12px',
                       borderRadius: '18px 18px 0 18px',
-                      maxWidth: '80%'
+                      maxWidth: '80%',
+                      textAlign: 'left'
                     }}
                   >
                     How can I help you today?
@@ -174,7 +179,8 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
                       color: colors?.text || '#333333',
                       padding: '8px 12px',
                       borderRadius: '18px 18px 18px 0',
-                      maxWidth: '80%'
+                      maxWidth: '80%',
+                      textAlign: 'left'
                     }}
                   >
                     I'm here to answer your questions. What can I help you with?

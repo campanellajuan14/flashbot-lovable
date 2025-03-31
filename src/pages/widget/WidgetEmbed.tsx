@@ -333,7 +333,8 @@ const WidgetEmbed: React.FC = () => {
                 padding: '8px 12px',
                 borderRadius: msg.role === 'user' ? '18px 18px 0 18px' : '18px 18px 18px 0',
                 maxWidth: '80%',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                textAlign: 'left'
               }}
               dangerouslySetInnerHTML={{
                 __html: msg.content.replace(
@@ -353,7 +354,8 @@ const WidgetEmbed: React.FC = () => {
                 color: colors.text || DEFAULT_COLORS.text,
                 padding: '8px 12px',
                 borderRadius: '18px 18px 18px 0',
-                display: 'inline-block'
+                display: 'inline-block',
+                textAlign: 'left'
               }}
             >
               <span className="text-muted">Escribiendo...</span>
