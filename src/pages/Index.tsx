@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowRight, FileText, Zap, Code, Users, BarChart, Bot, CheckCircle2, ChevronDown } from "lucide-react";
+import { MessageSquare, ArrowRight, FileText, Zap, Code, Users, BarChart, Bot, CheckCircle2, ChevronDown, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const Index = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,11 +101,10 @@ const Index = () => {
                       Get Started <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="group relative overflow-hidden" asChild>
-                    <Link to="/docs">
-                      <span className="relative z-10">Learn More</span>
-                      <span className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                    </Link>
+                  <Button size="lg" variant="outline" className="group relative overflow-hidden flex gap-1" onClick={() => setVideoOpen(true)}>
+                    <Play className="h-4 w-4" />
+                    <span className="relative z-10">Watch Video</span>
+                    <span className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
                   </Button>
                 </motion.div>
                 <motion.div
@@ -451,6 +452,21 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* YouTube Video Dialog */}
+      <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden bg-black">
+          <div className="w-full h-[450px] relative">
+            <iframe 
+              src="https://www.youtube.com/embed/Nbd9pcuLVWA?autoplay=1&controls=0" 
+              title="Flashbot Demo Video"
+              className="absolute top-0 left-0 w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
