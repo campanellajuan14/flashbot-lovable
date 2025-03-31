@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Card,
@@ -25,6 +26,8 @@ interface BehaviorSettings {
   askQuestions?: boolean;
   suggestSolutions?: boolean;
   instructions?: string;
+  greeting?: string;
+  usePersonality?: boolean;
   [key: string]: any;
 }
 
@@ -121,28 +124,37 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
             <div className="space-y-5">
               <div>
                 <h3 className="text-sm font-medium mb-2 text-left">Personality</h3>
-                <div className="grid grid-cols-2 gap-y-3 text-sm">
-                  <div className="text-left">
-                    <span className="font-medium text-muted-foreground">Tone:</span>{" "}
-                    <span className="text-foreground">{behaviorSettings.tone || "Not specified"}</span>
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium text-muted-foreground">Style:</span>{" "}
-                    <span className="text-foreground">{behaviorSettings.style || "Not specified"}</span>
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium text-muted-foreground">Language:</span>{" "}
+                <div className="grid grid-cols-1 gap-y-3 text-sm">
+                  <div className="text-left mb-2">
+                    <span className="font-medium text-muted-foreground">Apply personality traits:</span>{" "}
                     <span className="text-foreground">
-                      {behaviorSettings.language === "es"
-                        ? "Spanish"
-                        : behaviorSettings.language === "en"
-                        ? "English"
-                        : behaviorSettings.language || "Not specified"}
+                      {behaviorSettings.usePersonality !== false ? "Yes" : "No"}
                     </span>
                   </div>
-                  <div className="text-left">
-                    <span className="font-medium text-muted-foreground">Emojis:</span>{" "}
-                    <span className="text-foreground">{behaviorSettings.useEmojis ? "Yes" : "No"}</span>
+                  
+                  <div className="grid grid-cols-2 gap-y-3">
+                    <div className="text-left">
+                      <span className="font-medium text-muted-foreground">Tone:</span>{" "}
+                      <span className="text-foreground">{behaviorSettings.tone || "Not specified"}</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium text-muted-foreground">Style:</span>{" "}
+                      <span className="text-foreground">{behaviorSettings.style || "Not specified"}</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium text-muted-foreground">Language:</span>{" "}
+                      <span className="text-foreground">
+                        {behaviorSettings.language === "es"
+                          ? "Spanish"
+                          : behaviorSettings.language === "en"
+                          ? "English"
+                          : behaviorSettings.language || "Not specified"}
+                      </span>
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium text-muted-foreground">Emojis:</span>{" "}
+                      <span className="text-foreground">{behaviorSettings.useEmojis ? "Yes" : "No"}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -263,6 +275,20 @@ const ChatbotInformation: React.FC<ChatbotInformationProps> = ({ chatbot, onDele
                   </div>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-t-4 border-t-primary">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="text-left">Initial Greeting</CardTitle>
+            <CardDescription className="text-left">
+              Message shown when a user starts a conversation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="text-sm bg-muted/50 p-4 rounded-md border text-left">
+              {behaviorSettings.greeting || "Hello! How can I help you today?"}
             </div>
           </CardContent>
         </Card>
