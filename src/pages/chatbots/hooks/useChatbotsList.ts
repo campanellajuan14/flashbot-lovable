@@ -48,7 +48,7 @@ export const useChatbotsList = () => {
           
           return {
             ...chatbot,
-            documentCount: count || 0
+            document_count: count || 0
           };
         })
       );

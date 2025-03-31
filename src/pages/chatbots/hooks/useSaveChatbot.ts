@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ChatbotFormData, ChatbotData } from "../types";
+import { ChatbotFormData, ChatbotPersonality, Settings } from "../types";
 
 /**
  * Hook to handle saving chatbot data
@@ -27,14 +27,19 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
     setIsSubmitting(true);
     
     try {
-      const chatbotData: ChatbotData = {
+      // Convert our strongly typed data to Json for Supabase
+      const chatbotData = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
-        behavior: form.personality as any,
-        settings: form.settings as any,
+        behavior: form.personality as any, // Cast to any for Json compatibility
+        settings: form.settings as any,    // Cast to any for Json compatibility
         user_id: userId
       };
+      
+      if (isEditing && id) {
+        chatbotData.id = id; // Add id for updates
+      }
       
       console.log("Saving chatbot with data:", chatbotData);
       

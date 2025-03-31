@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { parsePersonalityData, parseSettingsData, determineAiProvider } from "./form-utils";
+import { parsePersonalityData, parseSettingsData } from "./form-utils";
 import { defaultPersonality, defaultSettings } from "../constants";
+import { Settings, ChatbotPersonality } from "../types";
 
 /**
  * Hook to load chatbot data for editing
@@ -55,7 +56,20 @@ export const useChatbotData = (
           console.log("useChatbotData: Received chatbot data:", data);
           
           // Parse personality data with defaults
-          let personalityData = { ...defaultPersonality };
+          const personalityDefaults: ChatbotPersonality = {
+            tone: defaultPersonality.tone,
+            style: defaultPersonality.style,
+            language: defaultPersonality.language,
+            useEmojis: defaultPersonality.useEmojis,
+            askQuestions: defaultPersonality.askQuestions,
+            suggestSolutions: defaultPersonality.suggestSolutions,
+            instructions: defaultPersonality.instructions || "",
+            greeting: defaultPersonality.greeting,
+            usePersonality: defaultPersonality.usePersonality
+          };
+          
+          let personalityData = personalityDefaults;
+          
           if (data.behavior) {
             console.log("useChatbotData: Parsing behavior data:", data.behavior);
             try {
@@ -73,7 +87,15 @@ export const useChatbotData = (
           }
           
           // Parse settings data with defaults
-          let settingsData = { ...defaultSettings };
+          const settingsDefaults: Settings = {
+            model: defaultSettings.model,
+            temperature: defaultSettings.temperature,
+            maxTokens: defaultSettings.maxTokens,
+            includeReferences: defaultSettings.includeReferences
+          };
+          
+          let settingsData = settingsDefaults;
+          
           if (data.settings) {
             console.log("useChatbotData: Parsing settings data:", data.settings);
             try {
@@ -109,6 +131,7 @@ export const useChatbotData = (
           }
           
           const formData = {
+            id: data.id,
             name: data.name || "",
             description: data.description || "",
             isActive: data.is_active ?? true,
