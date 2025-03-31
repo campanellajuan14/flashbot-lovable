@@ -24,7 +24,7 @@ const ColorField = ({
   description?: string 
 }) => (
   <div className="space-y-2">
-    <Label htmlFor={id} className="font-medium text-left">{label}</Label>
+    <Label htmlFor={id} className="font-medium">{label}</Label>
     <div className="flex gap-3 items-center">
       <div className="relative">
         <div 
@@ -45,7 +45,7 @@ const ColorField = ({
         className="max-w-xs"
       />
     </div>
-    {description && <p className="text-xs text-muted-foreground text-left">{description}</p>}
+    {description && <p className="text-xs text-muted-foreground">{description}</p>}
   </div>
 );
 
@@ -73,8 +73,8 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-left">Widget Colors</h3>
-        <p className="text-sm text-muted-foreground mt-1 text-left">
+        <h3 className="text-lg font-medium">Widget Colors</h3>
+        <p className="text-sm text-muted-foreground mt-1">
           Customize the colors of your chat widget to match your brand.
         </p>
       </div>
@@ -132,7 +132,7 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
       </div>
       
       <div className="pt-4 bg-muted/30 p-5 rounded-lg mt-6 border border-dashed border-muted">
-        <h4 className="font-medium mb-2 text-left">Color Preview</h4>
+        <h4 className="font-medium mb-2">Color Preview</h4>
         <div 
           className="flex flex-col gap-3"
           style={{ 

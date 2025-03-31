@@ -3,21 +3,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShareSettings } from "../types";
 import { createDefaultWidgetConfig } from "../utils";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export const useWidgetSettings = (chatbotId: string | undefined) => {
   const [widgetId, setWidgetId] = useState<string | null>(null);
   const [widgetConfig, setWidgetConfig] = useState<ShareSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
       if (!chatbotId) return;
       
       setIsLoading(true);
-      setError(null);
       
       try {
         // Fetch the chatbot settings
@@ -29,7 +27,6 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
         
         if (chatbotError) {
           console.error('Error fetching chatbot:', chatbotError);
-          setError(chatbotError.message);
           throw chatbotError;
         }
         
@@ -58,22 +55,24 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
           const { error: updateError } = await supabase
             .from("chatbots")
             .update({ 
-              share_settings: defaultConfig as any
+              share_settings: defaultConfig as any // Type cast to any to avoid TypeScript error
             })
             .eq("id", chatbotId);
             
           if (updateError) {
             console.error('Error updating chatbot with new widget ID:', updateError);
-            setError(updateError.message);
             throw updateError;
           }
             
           console.log("Chatbot updated with new widget ID");
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error fetching widget settings:', error);
-        setError(error?.message || "Could not load widget settings");
-        toast.error("Could not load widget settings");
+        toast({
+          title: "Error",
+          description: "Could not load widget settings",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -82,37 +81,37 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
     fetchSettings();
   }, [chatbotId]);
   
-  const saveWidgetConfig = async (newConfig: ShareSettings) => {
-    if (!newConfig || !chatbotId) return;
+  const updateSettings = async () => {
+    if (!widgetConfig || !chatbotId) return;
     
     setIsSaving(true);
-    setError(null);
     
     try {
-      console.log("Saving widget settings with ID:", newConfig.widget_id);
+      console.log("Saving widget settings with ID:", widgetConfig.widget_id);
       
       // Update existing settings in the share_settings field
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("chatbots")
         .update({ 
-          share_settings: newConfig as any
+          share_settings: widgetConfig as any // Type cast to any to avoid TypeScript error
         })
         .eq("id", chatbotId);
       
-      if (updateError) {
-        setError(updateError.message);
-        throw updateError;
-      }
+      if (error) throw error;
       
-      // Update local widget config state
-      setWidgetConfig(newConfig);
+      toast({
+        title: "Success",
+        description: "Widget settings saved successfully",
+      });
       
-      toast.success("Widget settings saved successfully");
       console.log("Widget settings saved successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving widget settings:', error);
-      setError(error?.message || "Could not save widget settings");
-      toast.error("Could not save widget settings");
+      toast({
+        title: "Error",
+        description: "Could not save widget settings",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -124,8 +123,6 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
     setWidgetConfig,
     isLoading,
     isSaving,
-    error,
-    saveWidgetConfig,
-    updateSettings: saveWidgetConfig // Maintain for compatibility
+    updateSettings
   };
 };

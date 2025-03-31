@@ -25,7 +25,6 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
 
   const { appearance, content, colors, behavior } = widgetConfig;
   const hideBackground = appearance?.hideBackground || false;
-  const minimalIframe = appearance?.minimalIframe || false;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -51,96 +50,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPrev
         </div>
         
         <div className="flex-1 p-6 overflow-auto">
-          {minimalIframe ? (
-            // Minimal iframe mode - only messages without container
-            <div className="h-full flex flex-col" 
-              style={{ 
-                backgroundColor: 'transparent',
-                color: colors?.text || '#333333',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-              {/* Messages only */}
-              {content?.welcome_message && (
-                <div className="flex justify-start">
-                  <div 
-                    style={{
-                      backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                      color: colors?.text || '#333333',
-                      padding: '8px 12px',
-                      borderRadius: '18px 18px 18px 0',
-                      maxWidth: '80%'
-                    }}
-                  >
-                    {content?.welcome_message}
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex justify-end">
-                <div 
-                  style={{
-                    backgroundColor: colors?.user_bubble || colors?.primary || '#2563eb',
-                    color: '#ffffff',
-                    padding: '8px 12px',
-                    borderRadius: '18px 18px 0 18px',
-                    maxWidth: '80%'
-                  }}
-                >
-                  How can I help you today?
-                </div>
-              </div>
-              
-              <div className="flex justify-start">
-                <div 
-                  style={{
-                    backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                    color: colors?.text || '#333333',
-                    padding: '8px 12px',
-                    borderRadius: '18px 18px 18px 0',
-                    maxWidth: '80%'
-                  }}
-                >
-                  I'm here to answer your questions. What can I help you with?
-                </div>
-              </div>
-              
-              {/* Floating input */}
-              <div className="mt-4 p-2 rounded-full shadow-md border" style={{
-                backgroundColor: 'white',
-                maxWidth: '100%'
-              }}>
-                <div className="flex">
-                  <input
-                    type="text"
-                    placeholder={content?.placeholder_text || "Type a message..."}
-                    className="flex-1 bg-transparent border-none focus:outline-none px-4 py-2"
-                    style={{ color: colors?.text || '#333333' }}
-                  />
-                  <button
-                    style={{
-                      backgroundColor: colors?.primary || '#2563eb',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '36px',
-                      height: '36px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : hideBackground ? (
+          {hideBackground ? (
             <div className="h-full flex flex-col" 
               style={{ 
                 backgroundColor: 'transparent',

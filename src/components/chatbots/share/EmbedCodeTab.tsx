@@ -1,24 +1,17 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
 import { ShareSettings } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 interface EmbedCodeTabProps {
   widgetId: string | null;
   widgetConfig: ShareSettings | null;
   chatbotId: string;
-  onAppearanceChange: (key: keyof NonNullable<ShareSettings['appearance']>, value: any) => void;
 }
 
-const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ 
-  widgetId, 
-  widgetConfig, 
-  chatbotId,
-  onAppearanceChange
-}) => {
+const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, chatbotId }) => {
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
   
@@ -27,9 +20,6 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({
   
   // The ID to use in the embed code - make sure we're using the correct ID
   const embedWidgetId = widgetConfig?.widget_id || widgetId;
-  
-  // Parámetro para iframes minimalistas
-  const minimalMode = widgetConfig?.appearance?.minimalIframe ? '&minimal=true' : '';
 
   const scriptCode = `<script 
   src="${scriptBaseUrl}/widget.js" 
@@ -38,7 +28,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({
 </script>`;
 
   const iframeCode = `<iframe 
-  src="${scriptBaseUrl}/widget/${embedWidgetId}${minimalMode}"
+  src="${scriptBaseUrl}/widget/${embedWidgetId}"
   width="100%" 
   height="600" 
   style="border:none;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)" 
@@ -54,12 +44,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({
   };
 
   // Generate the preview URL for the widget con el nuevo dominio
-  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}${minimalMode}`;
-  
-  // Función para manejar el cambio en el modo minimalista
-  const handleMinimalModeChange = (checked: boolean) => {
-    onAppearanceChange('minimalIframe', checked);
-  };
+  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
 
   return (
     <div className="space-y-6">
@@ -115,21 +100,6 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({
         </TabsContent>
         
         <TabsContent value="iframe" className="mt-0">
-          {embedType === "iframe" && (
-            <div className="mb-4 bg-accent/20 p-4 rounded-md border border-accent/30">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="minimal-iframe"
-                  checked={widgetConfig?.appearance?.minimalIframe || false}
-                  onCheckedChange={handleMinimalModeChange}
-                />
-                <Label htmlFor="minimal-iframe" className="font-medium">Power Integration Mode</Label>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 ml-7">
-                Shows only messages without header, footer or background, for seamless integration with your website.
-              </p>
-            </div>
-          )}
           <div className="relative">
             <div className="p-3 border rounded-md bg-black">
               <pre className="overflow-x-auto p-2 text-xs text-white font-mono">

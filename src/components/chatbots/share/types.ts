@@ -16,7 +16,6 @@ export interface ShareSettings {
     box_shadow?: boolean;
     z_index?: number;
     hideBackground?: boolean;
-    minimalIframe?: boolean; // Nuevo campo para mostrar solo los mensajes en iframe
   };
   content?: {
     title?: string;
