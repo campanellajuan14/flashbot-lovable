@@ -6,6 +6,7 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') as string;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,8 +73,8 @@ serve(async (req) => {
     console.log('Model settings:', settings);
     console.log('Chatbot ID:', chatbotId);
 
-    // Initialize Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Initialize Supabase client with SERVICE_ROLE_KEY to bypass RLS
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     // Get chatbot info if not provided (for widget requests)
     let chatbotInfo = null;
