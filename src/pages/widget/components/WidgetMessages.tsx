@@ -34,7 +34,9 @@ const WidgetMessages: React.FC<WidgetMessagesProps> = ({
       style={{ 
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px'
+        gap: '12px',
+        minHeight: '100px',
+        maxHeight: 'calc(100% - 180px)'
       }}
     >
       {messages.map((msg, idx) => (

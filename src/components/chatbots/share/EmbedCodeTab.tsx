@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
@@ -30,7 +29,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const iframeCode = `<iframe 
   src="${scriptBaseUrl}/widget/${embedWidgetId}"
   width="100%" 
-  height="600" 
+  height="650" 
   style="border:none;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)" 
   allow="microphone"
   title="AI Chat Widget">

@@ -1,8 +1,13 @@
 
 import React from "react";
 
+interface Message {
+  role: string;
+  content: string;
+}
+
 interface MessagesOnlyViewProps {
-  messages: Array<{ role: string; content: string }>;
+  messages: Message[];
   sending: boolean;
   welcomeMessage?: string;
   userBubbleColor?: string;
@@ -13,39 +18,29 @@ interface MessagesOnlyViewProps {
 const MessagesOnlyView: React.FC<MessagesOnlyViewProps> = ({
   messages,
   sending,
-  welcomeMessage,
   userBubbleColor = "#2563eb",
-  botBubbleColor = "#f1f0f0",
+  botBubbleColor = "#f1f5f9",
   textColor = "#333333"
 }) => {
+  const DEFAULT_COLORS = {
+    text: "#333333",
+    bot_bubble: "#f1f5f9",
+    user_bubble: "#2563eb",
+    links: "#0078ff"
+  };
+
   return (
-    <div className="h-full flex flex-col" 
+    <div 
+      className="h-full flex flex-col"
       style={{ 
-        backgroundColor: 'transparent',
-        color: textColor,
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px'
-      }}>
-      {/* Messages only */}
-      {welcomeMessage && (
-        <div className="flex justify-start">
-          <div 
-            style={{
-              backgroundColor: botBubbleColor,
-              color: textColor,
-              padding: '8px 12px',
-              borderRadius: '18px 18px 18px 0',
-              maxWidth: '80%',
-              textAlign: 'left'
-            }}
-          >
-            {welcomeMessage}
-          </div>
-        </div>
-      )}
-      
+        gap: '12px',
+        padding: '16px',
+        overflow: 'auto',
+        flex: 1
+      }}
+    >
       {messages.map((msg, idx) => (
         <div 
           key={idx} 
@@ -58,10 +53,14 @@ const MessagesOnlyView: React.FC<MessagesOnlyViewProps> = ({
               padding: '8px 12px',
               borderRadius: msg.role === 'user' ? '18px 18px 0 18px' : '18px 18px 18px 0',
               maxWidth: '80%',
+              overflowWrap: 'break-word',
               textAlign: 'left'
             }}
             dangerouslySetInnerHTML={{
-              __html: msg.content.replace(/\n/g, '<br>')
+              __html: msg.content.replace(
+                /(https?:\/\/[^\s]+)/g, 
+                `<a href="$1" target="_blank" style="color: ${DEFAULT_COLORS.links};">$1</a>`
+              ).replace(/\n/g, '<br>')
             }}
           />
         </div>

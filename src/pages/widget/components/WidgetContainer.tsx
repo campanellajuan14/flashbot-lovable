@@ -53,14 +53,11 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
 
   return (
     <div 
-      className="h-full border rounded-md overflow-hidden shadow-md" 
+      className="h-full border rounded-md overflow-hidden shadow-md flex flex-col" 
       style={{ 
         backgroundColor: colors?.background || DEFAULT_COLORS.background,
         color: colors?.text || DEFAULT_COLORS.text,
         borderRadius: `${appearance?.border_radius || 8}px`,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
       }}
     >
       <WidgetHeader 
@@ -77,17 +74,19 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
         textColor={colors?.text}
       />
       
-      <WidgetMessageInput 
-        inputValue={inputValue}
-        handleInputChange={handleInputChange}
-        handleSendMessage={handleSendMessage}
-        sending={sending}
-        placeholder={content?.placeholder_text}
-        primaryColor={colors?.primary}
-        textColor={colors?.text}
-      />
-      
-      <WidgetBranding showBranding={content?.branding} />
+      <div className="mt-auto">
+        <WidgetMessageInput 
+          inputValue={inputValue}
+          handleInputChange={handleInputChange}
+          handleSendMessage={handleSendMessage}
+          sending={sending}
+          placeholder={content?.placeholder_text}
+          primaryColor={colors?.primary}
+          textColor={colors?.text}
+        />
+        
+        <WidgetBranding showBranding={content?.branding} />
+      </div>
     </div>
   );
 };

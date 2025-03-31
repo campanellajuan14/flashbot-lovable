@@ -71,11 +71,16 @@ export function createWidgetElements(state) {
   messagesContainer.style.flex = '1';
   messagesContainer.style.padding = '15px';
   messagesContainer.style.overflowY = 'auto';
+  messagesContainer.style.display = 'flex';
+  messagesContainer.style.flexDirection = 'column';
+  messagesContainer.style.gap = '12px';
+  messagesContainer.style.minHeight = '200px';
   
   // Input
   const inputContainer = document.createElement('div');
   inputContainer.style.borderTop = '1px solid #eee';
   inputContainer.style.padding = '10px 15px';
+  inputContainer.style.marginTop = 'auto';
   inputContainer.innerHTML = `
     <form id="lovable-chatbot-form" style="display: flex;">
       <input 
@@ -110,16 +115,22 @@ export function createWidgetElements(state) {
   debugContainer.style.borderTop = '1px solid #eee';
   debugContainer.innerHTML = `Widget ID: ${state.widgetId}`;
   
+  // Create a wrapper for input and footer to ensure they stay at bottom
+  const bottomSection = document.createElement('div');
+  bottomSection.style.marginTop = 'auto';
+  
   // Assemble components
   chatWindow.appendChild(header);
   chatWindow.appendChild(messagesContainer);
-  chatWindow.appendChild(inputContainer);
-  chatWindow.appendChild(debugContainer);
   
+  bottomSection.appendChild(inputContainer);
   // Always add footer
   const footer = document.createElement('div');
   footer.innerHTML = footerHTML;
-  chatWindow.appendChild(footer);
+  bottomSection.appendChild(footer);
+  bottomSection.appendChild(debugContainer);
+  
+  chatWindow.appendChild(bottomSection);
   
   container.appendChild(button);
   container.appendChild(chatWindow);
