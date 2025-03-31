@@ -30,13 +30,14 @@ const WidgetMessages: React.FC<WidgetMessagesProps> = ({
 
   return (
     <div 
-      className="flex-1 p-4 overflow-y-auto"
+      className="flex-1 overflow-y-auto"
       style={{ 
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
-        minHeight: '100px',
-        maxHeight: 'calc(100% - 180px)'
+        padding: '16px',
+        height: '100%',
+        overflowY: 'auto'
       }}
     >
       {messages.map((msg, idx) => (

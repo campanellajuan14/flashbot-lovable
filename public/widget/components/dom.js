@@ -74,7 +74,14 @@ export function createWidgetElements(state) {
   messagesContainer.style.display = 'flex';
   messagesContainer.style.flexDirection = 'column';
   messagesContainer.style.gap = '12px';
-  messagesContainer.style.minHeight = '200px';
+  
+  // Create a flex layout to ensure proper positioning
+  const layoutContainer = document.createElement('div');
+  layoutContainer.style.display = 'flex';
+  layoutContainer.style.flexDirection = 'column';
+  layoutContainer.style.height = '100%';
+  layoutContainer.style.flex = '1';
+  layoutContainer.appendChild(messagesContainer);
   
   // Input
   const inputContainer = document.createElement('div');
@@ -121,7 +128,7 @@ export function createWidgetElements(state) {
   
   // Assemble components
   chatWindow.appendChild(header);
-  chatWindow.appendChild(messagesContainer);
+  chatWindow.appendChild(layoutContainer);
   
   bottomSection.appendChild(inputContainer);
   // Always add footer

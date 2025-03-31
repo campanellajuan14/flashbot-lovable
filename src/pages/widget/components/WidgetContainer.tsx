@@ -58,6 +58,9 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
         backgroundColor: colors?.background || DEFAULT_COLORS.background,
         color: colors?.text || DEFAULT_COLORS.text,
         borderRadius: `${appearance?.border_radius || 8}px`,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       <WidgetHeader 
@@ -74,7 +77,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
         textColor={colors?.text}
       />
       
-      <div className="mt-auto">
+      <div style={{ marginTop: 'auto' }}>
         <WidgetMessageInput 
           inputValue={inputValue}
           handleInputChange={handleInputChange}

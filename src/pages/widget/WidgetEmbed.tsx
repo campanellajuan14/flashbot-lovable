@@ -45,24 +45,28 @@ const WidgetEmbed: React.FC = () => {
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;
 
-  return hideBackground ? (
-    <MessagesOnlyView
-      messages={messages}
-      sending={sending}
-      welcomeMessage={content?.welcome_message}
-      userBubbleColor={colors?.user_bubble}
-      botBubbleColor={colors?.bot_bubble}
-      textColor={colors?.text}
-    />
-  ) : (
-    <WidgetContainer
-      config={config.config}
-      messages={messages}
-      inputValue={inputValue}
-      sending={sending}
-      handleInputChange={handleInputChange}
-      handleSendMessage={handleSendMessage}
-    />
+  return (
+    <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
+      {hideBackground ? (
+        <MessagesOnlyView
+          messages={messages}
+          sending={sending}
+          welcomeMessage={content?.welcome_message}
+          userBubbleColor={colors?.user_bubble}
+          botBubbleColor={colors?.bot_bubble}
+          textColor={colors?.text}
+        />
+      ) : (
+        <WidgetContainer
+          config={config.config}
+          messages={messages}
+          inputValue={inputValue}
+          sending={sending}
+          handleInputChange={handleInputChange}
+          handleSendMessage={handleSendMessage}
+        />
+      )}
+    </div>
   );
 };
 
