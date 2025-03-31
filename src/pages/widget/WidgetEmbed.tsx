@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
 
 // Definimos una versión reducida de la configuración del widget
@@ -19,6 +19,8 @@ interface WidgetConfig {
       border_radius?: number;
       box_shadow?: boolean;
       z_index?: number;
+      hideBackground?: boolean;
+      minimalIframe?: boolean;
     };
     content: {
       title?: string;
@@ -47,6 +49,9 @@ interface WidgetConfig {
 
 const WidgetEmbed: React.FC = () => {
   const { widgetId } = useParams<{ widgetId: string }>();
+  const [searchParams] = useSearchParams();
+  const isMinimal = searchParams.get('minimal') === 'true';
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<WidgetConfig | null>(null);
@@ -133,6 +138,13 @@ const WidgetEmbed: React.FC = () => {
           }
         };
         
+        // Si el modo minimal está activado por la URL, actualizamos la configuración
+        if (isMinimal) {
+          defaultConfig.config.appearance.minimalIframe = true;
+          // También activamos el hideBackground cuando es minimal
+          defaultConfig.config.appearance.hideBackground = true;
+        }
+        
         setConfig(defaultConfig);
 
         // Check if we have a saved conversation
@@ -165,7 +177,7 @@ const WidgetEmbed: React.FC = () => {
     };
 
     loadWidgetConfig();
-  }, [widgetId]);
+  }, [widgetId, isMinimal]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -283,6 +295,7 @@ const WidgetEmbed: React.FC = () => {
   }
 
   const { appearance, content, colors } = config.config;
+  const isMinimalMode = isMinimal || appearance.minimalIframe;
   
   const DEFAULT_COLORS = {
     text: "#333333",
@@ -293,6 +306,96 @@ const WidgetEmbed: React.FC = () => {
     links: "#0078ff"
   };
 
+  // Modo minimalista para iframe 
+  if (isMinimalMode) {
+    return (
+      <div className="h-screen flex flex-col" style={{ backgroundColor: 'transparent' }}>
+        {/* Solo mensajes */}
+        <div 
+          className="flex-1 overflow-y-auto py-4 px-2"
+          style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          {messages.map((msg, idx) => (
+            <div 
+              key={idx} 
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div 
+                style={{
+                  backgroundColor: msg.role === 'user' ? 
+                    (colors.user_bubble || DEFAULT_COLORS.user_bubble) : 
+                    (colors.bot_bubble || DEFAULT_COLORS.bot_bubble),
+                  color: msg.role === 'user' ? '#ffffff' : (colors.text || DEFAULT_COLORS.text),
+                  padding: '8px 12px',
+                  borderRadius: msg.role === 'user' ? '18px 18px 0 18px' : '18px 18px 18px 0',
+                  maxWidth: '80%',
+                  overflowWrap: 'break-word'
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: msg.content.replace(
+                    /(https?:\/\/[^\s]+)/g, 
+                    `<a href="$1" target="_blank" style="color: ${colors.links || DEFAULT_COLORS.links};">$1</a>`
+                  ).replace(/\n/g, '<br>')
+                }}
+              />
+            </div>
+          ))}
+          
+          {sending && (
+            <div className="flex justify-start">
+              <div 
+                style={{
+                  backgroundColor: colors.bot_bubble || DEFAULT_COLORS.bot_bubble,
+                  color: colors.text || DEFAULT_COLORS.text,
+                  padding: '8px 12px',
+                  borderRadius: '18px 18px 18px 0',
+                  display: 'inline-block'
+                }}
+              >
+                <span className="text-muted">Escribiendo...</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Input flotante */}
+        <div className="p-4">
+          <form onSubmit={handleSendMessage} className="flex rounded-full shadow-md border bg-white">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              placeholder={content.placeholder_text || "Escribe un mensaje..."}
+              className="flex-1 py-3 px-5 rounded-l-full border-0 focus:outline-none"
+              style={{ color: colors.text || DEFAULT_COLORS.text }}
+            />
+            <button
+              type="submit"
+              disabled={!inputValue.trim() || sending}
+              className="px-5 rounded-r-full flex items-center justify-center"
+              style={{
+                backgroundColor: colors.primary || DEFAULT_COLORS.primary,
+                color: 'white',
+                opacity: inputValue.trim() && !sending ? 1 : 0.7,
+                cursor: inputValue.trim() && !sending ? 'pointer' : 'default',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Modo normal
   return (
     <div className="h-screen flex flex-col" style={{ 
       backgroundColor: colors.background || DEFAULT_COLORS.background,
