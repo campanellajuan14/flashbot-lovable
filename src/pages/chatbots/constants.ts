@@ -23,30 +23,12 @@ export const defaultSettings = {
 // Add available AI models
 export const availableModels = {
   claude: [
-    {
-      id: "claude-3-5-sonnet-20241022",
-      name: "Claude 3.5 Sonnet",
-      description: "Newest and most advanced model for complex tasks",
-      cost: "Premium"
-    },
-    {
-      id: "claude-3-opus-20240229",
-      name: "Claude 3 Opus",
-      description: "Most powerful model for complex tasks",
-      cost: "Premium"
-    },
-    {
-      id: "claude-3-sonnet-20240229",
-      name: "Claude 3 Sonnet",
-      description: "Balance of intelligence and speed",
-      cost: "Standard"
-    },
-    {
-      id: "claude-3-haiku-20240307",
-      name: "Claude 3 Haiku",
-      description: "Fast and efficient for simpler tasks",
-      cost: "Basic"
-    }
+    { id: "claude-3-7-sonnet-20250219", name: "Claude 3.7 Sonnet", description: "🚀 Smartest model available", cost: "$$$" },
+    { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", description: "⚡ Fastest model for quick responses", cost: "$$" },
+    { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet v2", description: "✨ Previous version, very capable", cost: "$$" },
+    { id: "claude-3-opus-20240229", name: "Claude 3 Opus", description: "🧠 Powerful for complex tasks", cost: "$$$" },
+    { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet", description: "⚖️ Balance of intelligence and speed", cost: "$$" },
+    { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku", description: "🔋 Fast and efficient", cost: "$" }
   ],
   openai: [
     {
