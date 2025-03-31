@@ -28,7 +28,14 @@ const ShareSettingsComponent = () => {
   const [isEnabled, setIsEnabled] = useState(false);
   
   // Get widget settings from hooks
-  const { widgetConfig, isLoading, error, saveWidgetConfig } = useWidgetSettings(chatbotId || "");
+  const { 
+    widgetConfig, 
+    isLoading, 
+    error, 
+    saveWidgetConfig, 
+    setWidgetConfig 
+  } = useWidgetSettings(chatbotId || "");
+  
   const { handleColorChange, handleContentChange, handleAppearanceChange } = useWidgetConfigHandlers(widgetConfig, (newConfig) => {
     // This is called when a handler updates the widget config
     saveWidgetConfig(newConfig);
@@ -150,7 +157,7 @@ const ShareSettingsComponent = () => {
         <TabsContent value="restrictions" className="space-y-4">
           <RestrictionsTab 
             widgetConfig={widgetConfig}
-            saveWidgetConfig={saveWidgetConfig}
+            setWidgetConfig={setWidgetConfig}
           />
         </TabsContent>
       </Tabs>
