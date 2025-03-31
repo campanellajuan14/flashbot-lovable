@@ -27,13 +27,16 @@ const ShareSettingsComponent = () => {
   const { 
     widgetConfig, 
     isLoading, 
-    error, 
-    saveWidgetConfig
+    error,
+    isSaving, 
+    saveWidgetConfig 
   } = useWidgetSettings(chatbotId || "");
   
   const { handleColorChange, handleContentChange, handleAppearanceChange } = useWidgetConfigHandlers(widgetConfig, (newConfig) => {
     // This is called when a handler updates the widget config
-    saveWidgetConfig(newConfig);
+    if (newConfig) {
+      saveWidgetConfig(newConfig);
+    }
   });
 
   // Set initial enabled state from config when it loads

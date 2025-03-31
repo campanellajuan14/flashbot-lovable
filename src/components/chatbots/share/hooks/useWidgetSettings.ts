@@ -10,14 +10,14 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
   const [widgetConfig, setWidgetConfig] = useState<ShareSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null); // Add error state
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
       if (!chatbotId) return;
       
       setIsLoading(true);
-      setError(null); // Reset error state
+      setError(null);
       
       try {
         // Fetch the chatbot settings
@@ -58,7 +58,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
           const { error: updateError } = await supabase
             .from("chatbots")
             .update({ 
-              share_settings: defaultConfig as any // Type cast to any to avoid TypeScript error
+              share_settings: defaultConfig as any
             })
             .eq("id", chatbotId);
             
@@ -82,7 +82,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
     fetchSettings();
   }, [chatbotId]);
   
-  const saveWidgetConfig = async (newConfig: ShareSettings | null) => {
+  const saveWidgetConfig = async (newConfig: ShareSettings) => {
     if (!newConfig || !chatbotId) return;
     
     setIsSaving(true);
@@ -95,7 +95,7 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
       const { error: updateError } = await supabase
         .from("chatbots")
         .update({ 
-          share_settings: newConfig as any // Type cast to any to avoid TypeScript error
+          share_settings: newConfig as any
         })
         .eq("id", chatbotId);
       
