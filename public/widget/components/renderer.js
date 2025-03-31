@@ -17,7 +17,7 @@ export function renderMessages(state) {
     messageEl.style.marginBottom = '10px';
     messageEl.style.display = 'flex';
     
-    // Cambiamos la alineación para que los mensajes siempre estén alineados a la izquierda
+    // Changed alignment to always left-align messages
     messageEl.style.justifyContent = msg.role === 'user' ? 'flex-end' : 'flex-start';
     messageEl.innerHTML = `
       <div style="background-color: ${msg.role === 'user' ? 

@@ -1,4 +1,5 @@
 
+// Only updating the message display part
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, Zap, ExternalLink } from "lucide-react";
