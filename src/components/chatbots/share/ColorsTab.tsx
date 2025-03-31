@@ -52,17 +52,19 @@ const ColorField = ({
 const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) => {
   if (!widgetConfig) return null;
 
-  // This function handles the hideBackground toggle
+  // Esta función maneja el cambio del toggle para ocultar el fondo
   const handleHideBackgroundChange = (checked: boolean) => {
     if (widgetConfig) {
       if (!widgetConfig.appearance) widgetConfig.appearance = {};
+      
+      // Actualizar el valor en la configuración
       widgetConfig.appearance.hideBackground = checked;
       
-      // If hiding background, make all backgrounds transparent
+      // Si se oculta el fondo, hacer todos los fondos transparentes
       if (checked) {
         onColorChange('background', 'transparent');
       } else {
-        // Restore default background color
+        // Restaurar el color de fondo predeterminado
         onColorChange('background', '#ffffff');
       }
     }

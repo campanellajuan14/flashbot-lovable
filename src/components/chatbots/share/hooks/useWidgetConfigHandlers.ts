@@ -37,8 +37,8 @@ export const useWidgetConfigHandlers = (
     
     if ((key === 'border_radius' || key === 'width' || key === 'height' || key === 'offset_x' || key === 'offset_y' || key === 'z_index') && typeof value === 'string') {
       (newConfig.appearance as any)[key] = parseInt(value, 10);
-    } else if (key === 'box_shadow' && typeof value === 'boolean') {
-      newConfig.appearance.box_shadow = value;
+    } else if ((key === 'box_shadow' || key === 'hideBackground') && typeof value === 'boolean') {
+      (newConfig.appearance as any)[key] = value;
     } else if (typeof value === 'string') {
       (newConfig.appearance as any)[key] = value;
     }
