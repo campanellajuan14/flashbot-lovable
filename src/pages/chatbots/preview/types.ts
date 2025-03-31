@@ -16,6 +16,10 @@ export interface Chatbot {
   description: string;
   user_id: string;
   is_active: boolean;
-  behavior: ChatbotPersonality;
+  behavior: ChatbotPersonality | Json;  // Allow Json type for API responses
   settings?: Record<string, any>;
+  // Include additional fields from DB schema
+  created_at?: string;
+  updated_at?: string;
+  share_settings?: Json;
 }

@@ -58,7 +58,8 @@ export function useConversationDetails(conversationId?: string) {
 
       if (error) throw error;
       
-      return data as Chatbot;
+      // Cast the data to Chatbot type
+      return data as unknown as Chatbot;
     },
     enabled: !!user && !!conversation?.chatbot_id,
   });

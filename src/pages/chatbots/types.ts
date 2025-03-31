@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export interface ChatMessage {
@@ -15,12 +14,14 @@ export interface Chatbot {
   description: string;
   user_id: string;
   is_active: boolean;
-  behavior: ChatbotPersonality;
+  behavior: ChatbotPersonality | Json;
   settings?: Record<string, any>;
   document_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  share_settings?: Json;
 }
 
-// Update the personality type to include the new usePersonality flag
 export interface ChatbotPersonality {
   tone: string;
   style: string;
@@ -30,7 +31,7 @@ export interface ChatbotPersonality {
   suggestSolutions: boolean;
   instructions: string;
   greeting: string;
-  usePersonality: boolean; // New flag to toggle personality features
+  usePersonality: boolean;
 }
 
 export interface ChatbotFormData {
@@ -50,7 +51,6 @@ export interface ChatbotTemplate {
   settings: Settings;
 }
 
-// Define Settings type for consistent usage across components
 export interface Settings {
   model: string;
   temperature: number;
@@ -60,12 +60,10 @@ export interface Settings {
 
 export interface Personality extends ChatbotPersonality {}
 
-// Define ChatbotWithDocuments type with required document_count
 export interface ChatbotWithDocuments extends Chatbot {
   document_count: number;
 }
 
-// Define ChatbotData type for database operations
 export interface ChatbotData {
   id?: string;
   name: string;

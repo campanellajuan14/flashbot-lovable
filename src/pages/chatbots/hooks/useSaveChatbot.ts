@@ -37,7 +37,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         user_id: userId
       };
       
-      if (isEditing && id) {
+      if (isEditing) {
         chatbotData.id = id; // Add id for updates
       }
       
@@ -47,7 +47,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       let newChatbotId: string | undefined;
       let tempChatbotId: string | undefined;
       
-      if (isEditing) {
+      if (isEditing && id) {
         result = await supabase
           .from('chatbots')
           .update(chatbotData)
