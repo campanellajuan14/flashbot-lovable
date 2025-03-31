@@ -5,7 +5,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useParams } from "react-router-dom";
 
 // Tabs
@@ -14,9 +13,6 @@ import ColorsTab from "./ColorsTab";
 import ContentTab from "./ContentTab";
 import EmbedCodeTab from "./EmbedCodeTab";
 import RestrictionsTab from "./RestrictionsTab";
-
-// Types
-import { ShareSettings } from "./types";
 
 // Hooks
 import { useWidgetSettings } from "./hooks/useWidgetSettings";
@@ -32,8 +28,7 @@ const ShareSettingsComponent = () => {
     widgetConfig, 
     isLoading, 
     error, 
-    saveWidgetConfig, 
-    setWidgetConfig 
+    saveWidgetConfig
   } = useWidgetSettings(chatbotId || "");
   
   const { handleColorChange, handleContentChange, handleAppearanceChange } = useWidgetConfigHandlers(widgetConfig, (newConfig) => {
@@ -157,7 +152,7 @@ const ShareSettingsComponent = () => {
         <TabsContent value="restrictions" className="space-y-4">
           <RestrictionsTab 
             widgetConfig={widgetConfig}
-            setWidgetConfig={setWidgetConfig}
+            setWidgetConfig={saveWidgetConfig}
           />
         </TabsContent>
       </Tabs>

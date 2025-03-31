@@ -124,8 +124,8 @@ export const useWidgetSettings = (chatbotId: string | undefined) => {
     setWidgetConfig,
     isLoading,
     isSaving,
-    error,        // Ahora exportamos el error
-    saveWidgetConfig,  // Ahora exportamos la función saveWidgetConfig
-    updateSettings: saveWidgetConfig // Mantener por compatibilidad
+    error,
+    saveWidgetConfig,
+    updateSettings: saveWidgetConfig // Maintain for compatibility
   };
 };

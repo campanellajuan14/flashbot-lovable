@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface RestrictionsTabProps {
   widgetConfig: ShareSettings | null;
-  setWidgetConfig: React.Dispatch<React.SetStateAction<ShareSettings | null>>;
+  setWidgetConfig: (config: ShareSettings) => void;
 }
 
 const RestrictionsTab: React.FC<RestrictionsTabProps> = ({ widgetConfig, setWidgetConfig }) => {
