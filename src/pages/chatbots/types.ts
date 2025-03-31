@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 
 export interface ChatMessage {
@@ -47,4 +48,24 @@ export interface ChatbotTemplate {
   description: string;
   personality: ChatbotPersonality;
   settings: Record<string, any>;
+}
+
+// Add missing types that were referenced in the errors
+export interface ChatbotData extends Omit<Chatbot, 'behavior' | 'settings'> {
+  behavior: ChatbotPersonality;
+  settings: Settings;
+}
+
+export interface Settings {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  includeReferences: boolean;
+}
+
+export interface Personality extends ChatbotPersonality {}
+
+// Add the ChatbotWithDocuments type that was referenced in errors
+export interface ChatbotWithDocuments extends Chatbot {
+  document_count: number;
 }
