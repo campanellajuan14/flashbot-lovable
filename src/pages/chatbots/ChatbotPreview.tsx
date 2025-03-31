@@ -33,7 +33,9 @@ const ChatbotPreview = () => {
     
     // If behavior is a ChatbotPersonality object
     if (typeof chatbot.behavior === 'object' && 'language' in chatbot.behavior) {
-      return chatbot.behavior.language;
+      const language = chatbot.behavior.language;
+      // Ensure language is a string to fix the TS error
+      return typeof language === 'string' ? language : "es";
     }
     
     // Default to spanish if we can't determine the language

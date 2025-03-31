@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +23,9 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
     
     // If behavior is a ChatbotPersonality object
     if (typeof chatbot.behavior === 'object' && 'greeting' in chatbot.behavior) {
-      return chatbot.behavior.greeting;
+      const greeting = chatbot.behavior.greeting;
+      // Ensure greeting is a string to fix the TS error
+      return typeof greeting === 'string' ? greeting : "¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?";
     }
     
     // Default greeting if we can't determine it
