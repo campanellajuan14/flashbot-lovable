@@ -15,6 +15,7 @@ export interface ShareSettings {
     border_radius?: number;
     box_shadow?: boolean;
     z_index?: number;
+    hideBackground?: boolean;
   };
   content?: {
     title?: string;

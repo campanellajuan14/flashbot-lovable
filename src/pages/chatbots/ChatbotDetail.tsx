@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -244,21 +243,7 @@ const ChatbotDetail = () => {
             </TabsContent>
             
             <TabsContent value="share" className="animate-fade-in">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center">
-                      <Share2 className="mr-2 h-5 w-5 text-primary" />
-                      Share Chatbot
-                    </CardTitle>
-                    <CardDescription>
-                      Configure how to share your chatbot on other websites
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-                
-                <ShareSettings />
-              </div>
+              <ShareSettings />
             </TabsContent>
           </Tabs>
           

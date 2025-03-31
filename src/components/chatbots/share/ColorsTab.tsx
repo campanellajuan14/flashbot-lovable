@@ -2,6 +2,7 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { ShareSettings } from "./types";
 
 interface ColorsTabProps {
@@ -50,6 +51,22 @@ const ColorField = ({
 
 const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) => {
   if (!widgetConfig) return null;
+
+  // This function handles the hideBackground toggle
+  const handleHideBackgroundChange = (checked: boolean) => {
+    if (widgetConfig) {
+      if (!widgetConfig.appearance) widgetConfig.appearance = {};
+      widgetConfig.appearance.hideBackground = checked;
+      
+      // If hiding background, make all backgrounds transparent
+      if (checked) {
+        onColorChange('background', 'transparent');
+      } else {
+        // Restore default background color
+        onColorChange('background', '#ffffff');
+      }
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -58,6 +75,16 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         <p className="text-sm text-muted-foreground mt-1">
           Customize the colors of your chat widget to match your brand.
         </p>
+      </div>
+      
+      <div className="flex items-center space-x-2 mb-4">
+        <Switch
+          id="hide-background"
+          checked={widgetConfig?.appearance?.hideBackground || false}
+          onCheckedChange={handleHideBackgroundChange}
+        />
+        <Label htmlFor="hide-background">Hide widget background</Label>
+        <span className="text-xs text-muted-foreground ml-2">(Only show messages without container)</span>
       </div>
       
       <div className="grid grid-cols-1 gap-6">
@@ -102,20 +129,27 @@ const ColorsTab: React.FC<ColorsTabProps> = ({ widgetConfig, onColorChange }) =>
         />
       </div>
       
-      <div className="pt-4 bg-muted/30 p-5 rounded-lg mt-6 border border-dashed border-muted max-w-md">
+      <div className="pt-4 bg-muted/30 p-5 rounded-lg mt-6 border border-dashed border-muted">
         <h4 className="font-medium mb-2">Color Preview</h4>
-        <div className="flex flex-col gap-3">
-          <div 
-            style={{ 
-              background: widgetConfig?.colors?.primary || '#2563eb',
-              color: '#ffffff',
-              borderRadius: '8px 8px 8px 0',
-              padding: '12px',
-              maxWidth: '100%'
-            }}
-          >
-            Header Background
-          </div>
+        <div 
+          className="flex flex-col gap-3"
+          style={{ 
+            background: widgetConfig?.appearance?.hideBackground ? 'transparent' : (widgetConfig?.colors?.background || '#ffffff')
+          }}
+        >
+          {!widgetConfig?.appearance?.hideBackground && (
+            <div 
+              style={{ 
+                background: widgetConfig?.colors?.primary || '#2563eb',
+                color: '#ffffff',
+                borderRadius: '8px 8px 8px 0',
+                padding: '12px',
+                maxWidth: '100%'
+              }}
+            >
+              Header Background
+            </div>
+          )}
           <div className="space-y-3">
             <div 
               style={{ 
