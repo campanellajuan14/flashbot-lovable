@@ -34,7 +34,12 @@ const Header = ({ isScrolled = false, variant = "default" }: HeaderProps) => {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" asChild className="hidden md:flex">
+              <Button 
+                variant="ghost" 
+                asChild 
+                size={isHomeVariant ? "sm" : "default"}
+                className="flex"
+              >
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
               <UserButton />
