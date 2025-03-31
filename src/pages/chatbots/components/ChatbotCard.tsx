@@ -92,7 +92,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
           
           <Badge variant="outline" className="bg-blue-50 text-blue-800 hover:bg-blue-50">
             <FileText className="mr-1 h-3 w-3" />
-            {chatbot.document_count} {chatbot.document_count === 1 ? 'document' : 'documents'}
+            {chatbot.documentCount} {chatbot.documentCount === 1 ? 'document' : 'documents'}
           </Badge>
         </div>
         

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ChatbotFormData, ChatbotPersonality, Settings } from "../types";
+import { ChatbotFormData, ChatbotData } from "../types";
 
 /**
  * Hook to handle saving chatbot data
@@ -27,27 +27,14 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
     setIsSubmitting(true);
     
     try {
-      // Convert our strongly typed data to Json for Supabase
-      const chatbotData: {
-        name: string;
-        description: string;
-        is_active: boolean;
-        behavior: any; // Using any for Json compatibility
-        settings: any;  // Using any for Json compatibility
-        user_id: string;
-        id?: string;   // Make id optional but add it if editing
-      } = {
+      const chatbotData: ChatbotData = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
-        behavior: form.personality as any, // Cast to any for Json compatibility
-        settings: form.settings as any,    // Cast to any for Json compatibility
+        behavior: form.personality as any,
+        settings: form.settings as any,
         user_id: userId
       };
-      
-      if (isEditing && id) {
-        chatbotData.id = id; // Add id for updates
-      }
       
       console.log("Saving chatbot with data:", chatbotData);
       
@@ -55,10 +42,10 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       let newChatbotId: string | undefined;
       let tempChatbotId: string | undefined;
       
-      if (isEditing && id) {
+      if (isEditing) {
         result = await supabase
           .from('chatbots')
-          .update(chatbotData as any)
+          .update(chatbotData)
           .eq('id', id)
           .eq('user_id', userId);
         newChatbotId = id;
@@ -68,7 +55,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         
         result = await supabase
           .from('chatbots')
-          .insert(chatbotData as any)
+          .insert(chatbotData)
           .select('id');
         
         // Get the new chatbot ID from the insert response

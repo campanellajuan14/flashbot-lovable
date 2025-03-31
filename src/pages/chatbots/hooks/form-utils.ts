@@ -11,11 +11,7 @@ export const parsePersonalityData = (behavior: Record<string, unknown>): Persona
     style: typeof behavior.style === 'string' ? behavior.style : defaultPersonality.style,
     language: typeof behavior.language === 'string' ? behavior.language : defaultPersonality.language,
     instructions: typeof behavior.instructions === 'string' ? behavior.instructions : defaultPersonality.instructions,
-    greeting: typeof behavior.greeting === 'string' ? behavior.greeting : defaultPersonality.greeting,
-    useEmojis: typeof behavior.useEmojis === 'boolean' ? behavior.useEmojis : defaultPersonality.useEmojis,
-    askQuestions: typeof behavior.askQuestions === 'boolean' ? behavior.askQuestions : defaultPersonality.askQuestions,
-    suggestSolutions: typeof behavior.suggestSolutions === 'boolean' ? behavior.suggestSolutions : defaultPersonality.suggestSolutions,
-    usePersonality: typeof behavior.usePersonality === 'boolean' ? behavior.usePersonality : defaultPersonality.usePersonality
+    greeting: typeof behavior.greeting === 'string' ? behavior.greeting : defaultPersonality.greeting
   };
 };
 

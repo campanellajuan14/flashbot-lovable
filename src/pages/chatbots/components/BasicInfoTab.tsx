@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DocumentUploadCard from "@/components/chatbots/documents/DocumentUploadCard";
 import SampleDocumentDownload from "@/components/chatbots/documents/SampleDocumentDownload";
 import { ChatbotFormData } from "../types";
-import { AlertCircle } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 interface BasicInfoTabProps {
   form: ChatbotFormData;
@@ -88,13 +86,7 @@ const BasicInfoTab = ({
 
         {/* Custom Instructions (Prompt) */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="instructions" className="text-base font-medium">Chatbot Instructions (Prompt)</Label>
-            <div className="flex items-center gap-1 text-amber-600 text-xs">
-              <AlertCircle size={14} />
-              <span>High priority in the system prompt</span>
-            </div>
-          </div>
+          <Label htmlFor="instructions">Prompt (Chatbot Instructions)</Label>
           <Textarea
             id="instructions"
             placeholder="Provide specific instructions for how the chatbot should respond..."
@@ -103,45 +95,26 @@ const BasicInfoTab = ({
             onChange={(e) => handleNestedChange("personality", "instructions", e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            These instructions guide how your chatbot will respond to users and have the highest priority
-          </p>
-        </div>
-
-        {/* Initial Greeting - Separated from Personality & Behavior */}
-        <div className="space-y-2 border-t pt-4">
-          <Label htmlFor="greeting">Initial Greeting</Label>
-          <Textarea
-            id="greeting"
-            placeholder="Hello! How can I help you today?"
-            rows={2}
-            value={form.personality.greeting}
-            onChange={(e) => handleNestedChange("personality", "greeting", e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            The first message users will see when starting a conversation
+            These instructions guide how your chatbot will respond to users
           </p>
         </div>
 
         {/* Personality & Behavior */}
         <Accordion type="single" collapsible className="w-full border rounded-md">
           <AccordionItem value="personality">
-            <AccordionTrigger className="px-4 py-2 text-md font-medium">
-              <div className="flex items-center justify-between w-full pr-4">
-                <span>Personality & Behavior</span>
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-sm font-normal">Apply these traits</span>
-                  <Switch 
-                    id="usePersonality" 
-                    checked={form.personality.usePersonality ?? false} 
-                    onCheckedChange={(checked) => handleNestedChange("personality", "usePersonality", checked)}
-                  />
-                </div>
-              </div>
-            </AccordionTrigger>
+            <AccordionTrigger className="px-4 py-2 text-md font-medium">Personality & Behavior</AccordionTrigger>
             <AccordionContent className="space-y-4 px-4 pt-2 pb-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-2">
-                <p className="text-sm text-amber-800">
-                  When disabled, only your custom instructions and greeting will be used, without the personality traits below.
+              <div className="space-y-2">
+                <Label htmlFor="greeting">Initial Greeting</Label>
+                <Textarea
+                  id="greeting"
+                  placeholder="Hello! I'm a virtual assistant. How can I help you today?"
+                  rows={2}
+                  value={form.personality.greeting}
+                  onChange={(e) => handleNestedChange("personality", "greeting", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The first message users will see when starting a conversation
                 </p>
               </div>
               
@@ -202,37 +175,6 @@ const BasicInfoTab = ({
                     <SelectItem value="japanese">Japanese</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <Separator className="my-2" />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="useEmojis">Use Emojis</Label>
-                  <Switch 
-                    id="useEmojis" 
-                    checked={form.personality.useEmojis} 
-                    onCheckedChange={(checked) => handleNestedChange("personality", "useEmojis", checked)} 
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="askQuestions">Ask Questions</Label>
-                  <Switch 
-                    id="askQuestions" 
-                    checked={form.personality.askQuestions} 
-                    onCheckedChange={(checked) => handleNestedChange("personality", "askQuestions", checked)} 
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="suggestSolutions">Suggest Solutions</Label>
-                  <Switch 
-                    id="suggestSolutions" 
-                    checked={form.personality.suggestSolutions} 
-                    onCheckedChange={(checked) => handleNestedChange("personality", "suggestSolutions", checked)} 
-                  />
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

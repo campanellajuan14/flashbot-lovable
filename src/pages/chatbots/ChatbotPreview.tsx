@@ -10,7 +10,6 @@ import ChatMessageItem from "./preview/ChatMessageItem";
 import ChatInput from "./preview/ChatInput";
 import { useChatbotData } from "./preview/useChatbotData";
 import { useChatMessages } from "./preview/useChatMessages";
-import { ChatbotPersonality } from "./types";
 
 const ChatbotPreview = () => {
   const navigate = useNavigate();
@@ -26,21 +25,6 @@ const ChatbotPreview = () => {
     handleSendMessage,
     toggleSourceDetails
   } = useChatMessages(chatbot);
-
-  // Get language from behavior safely
-  const getChatbotLanguage = (): string => {
-    if (!chatbot || !chatbot.behavior) return "es";
-    
-    // If behavior is a ChatbotPersonality object
-    if (typeof chatbot.behavior === 'object' && 'language' in chatbot.behavior) {
-      const language = chatbot.behavior.language;
-      // Ensure language is a string to fix the TS error
-      return typeof language === 'string' ? language : "es";
-    }
-    
-    // Default to spanish if we can't determine the language
-    return "es";
-  };
 
   // Clear input field after message is sent
   const handleMessageSubmit = (e: React.FormEvent) => {
@@ -115,7 +99,7 @@ const ChatbotPreview = () => {
           handleSendMessage={handleMessageSubmit}
           isTyping={isTyping}
           inputRef={inputRef}
-          language={getChatbotLanguage()}
+          language={chatbot.behavior?.language}
         />
       </div>
     </div>

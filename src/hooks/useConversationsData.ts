@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,8 +50,7 @@ export function useConversationsData(filters?: ConversationsFilters) {
       }
       
       console.log("Found chatbots:", data?.length || 0);
-      // Cast the data to Chatbot[] type
-      return data as unknown as Chatbot[];
+      return data as Chatbot[];
     },
     enabled: !!user,
   });

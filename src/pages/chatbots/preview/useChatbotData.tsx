@@ -26,7 +26,7 @@ export const useChatbotData = () => {
       }
       
       console.log("Fetched chatbot:", data);
-      return data as unknown as Chatbot;
+      return data as Chatbot;
     },
     retry: 1,
   });

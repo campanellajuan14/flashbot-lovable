@@ -1,26 +1,21 @@
 
-// Default values for new chatbots
+import { Personality, Settings } from "./types";
 
-export const defaultPersonality = {
+export const defaultPersonality: Personality = {
   tone: "professional",
   style: "concise",
   language: "english",
-  useEmojis: false,
-  askQuestions: true,
-  suggestSolutions: true,
   instructions: "",
-  greeting: "Hello! How can I help you today?", // Default greeting in English
-  usePersonality: false // Personality traits disabled by default
+  greeting: "¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?"
 };
 
-export const defaultSettings = {
-  model: "claude-3-5-sonnet-20241022",
+export const defaultSettings: Settings = {
+  model: "claude-3-haiku-20240307",
   temperature: 0.7,
-  maxTokens: 500,
+  maxTokens: 1000,
   includeReferences: true
 };
 
-// Add available AI models
 export const availableModels = {
   claude: [
     { id: "claude-3-7-sonnet-20250219", name: "Claude 3.7 Sonnet", description: "🚀 Smartest model available", cost: "$$$" },
@@ -31,23 +26,8 @@ export const availableModels = {
     { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku", description: "🔋 Fast and efficient", cost: "$" }
   ],
   openai: [
-    {
-      id: "gpt-4o",
-      name: "GPT-4o",
-      description: "Most powerful OpenAI model",
-      cost: "Premium"
-    },
-    {
-      id: "gpt-4o-mini",
-      name: "GPT-4o Mini", 
-      description: "Balance of performance and cost",
-      cost: "Standard"
-    },
-    {
-      id: "gpt-3.5-turbo-1106",
-      name: "GPT-3.5 Turbo",
-      description: "Fast and cost-effective",
-      cost: "Basic"
-    }
+    { id: "gpt-4o", name: "GPT-4o", description: "🌟 Most recommended", cost: "$$" },
+    { id: "gpt-4-turbo", name: "GPT-4 Turbo", description: "💪 Powerful and fast", cost: "$$$" },
+    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", description: "🏎️ Fastest option", cost: "$" }
   ]
 };

@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { ChatbotFormData, Settings, ChatbotPersonality } from "../types";
+import { ChatbotFormData } from "../types";
 import { defaultPersonality, defaultSettings } from "../constants";
 
 /**
@@ -16,34 +16,17 @@ export const useFormState = () => {
     ? parseFloat(defaultSettings.temperature) || 0.7
     : defaultSettings.temperature || 0.7;
   
-  // Create strongly typed default settings
-  const initialSettings: Settings = {
-    model: defaultSettings.model,
-    temperature: defaultTemperature,
-    maxTokens: defaultMaxTokens,
-    includeReferences: defaultSettings.includeReferences
-  };
-  
-  // Create strongly typed default personality
-  const initialPersonality: ChatbotPersonality = {
-    tone: defaultPersonality.tone,
-    style: defaultPersonality.style,
-    language: defaultPersonality.language,
-    useEmojis: defaultPersonality.useEmojis,
-    askQuestions: defaultPersonality.askQuestions,
-    suggestSolutions: defaultPersonality.suggestSolutions,
-    instructions: defaultPersonality.instructions || "",
-    greeting: defaultPersonality.greeting,
-    usePersonality: defaultPersonality.usePersonality
-  };
-  
   // Form state
   const [form, setForm] = useState<ChatbotFormData>({
     name: "",
     description: "",
     isActive: true,
-    personality: initialPersonality,
-    settings: initialSettings
+    personality: defaultPersonality,
+    settings: {
+      ...defaultSettings,
+      maxTokens: defaultMaxTokens,
+      temperature: defaultTemperature
+    }
   });
   
   // Template selection

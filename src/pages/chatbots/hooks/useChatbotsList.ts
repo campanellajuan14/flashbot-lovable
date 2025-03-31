@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
@@ -28,7 +29,7 @@ export const useChatbotsList = () => {
       }
       
       console.log("Fetched chatbots:", data);
-      return data as unknown as Chatbot[];
+      return data as Chatbot[];
     },
     enabled: !!user,
   });
@@ -47,8 +48,8 @@ export const useChatbotsList = () => {
           
           return {
             ...chatbot,
-            document_count: count || 0
-          } as ChatbotWithDocuments;
+            documentCount: count || 0
+          };
         })
       );
       

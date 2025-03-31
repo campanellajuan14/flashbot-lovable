@@ -1,6 +1,5 @@
 
 import { Json } from "@/integrations/supabase/types";
-import { ChatbotPersonality } from "../types";
 
 export interface ChatMessage {
   id: string;
@@ -16,10 +15,15 @@ export interface Chatbot {
   description: string;
   user_id: string;
   is_active: boolean;
-  behavior: ChatbotPersonality | Json;  // Allow Json type for API responses
+  behavior: {
+    tone?: string;
+    style?: string;
+    language?: string;
+    useEmojis?: boolean;
+    askQuestions?: boolean;
+    suggestSolutions?: boolean;
+    instructions?: string;
+    greeting?: string;
+  };
   settings?: Record<string, any>;
-  // Include additional fields from DB schema
-  created_at?: string;
-  updated_at?: string;
-  share_settings?: Json;
 }

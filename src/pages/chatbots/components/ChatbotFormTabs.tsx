@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BasicInfoTab from "./BasicInfoTab";
 import AdvancedSettingsTab from "./AdvancedSettingsTab";
 import TemplateSelectionTab from "./TemplateSelectionTab";
-import { ChatbotFormData, Settings } from "../types";
+import { ChatbotFormData } from "../types";
 import { ChatbotTemplate } from "../templates/types";
 
 interface ChatbotFormTabsProps {

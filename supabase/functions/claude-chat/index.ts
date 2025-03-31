@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
 
@@ -205,59 +206,54 @@ serve(async (req) => {
     let systemPrompt = `You are a chatbot named ${effectiveChatbotName}. `;
     
     if (effectiveBehavior) {
-      // Add custom instructions first - highest priority
+      // Add tone instructions
+      if (effectiveBehavior.tone) {
+        systemPrompt += `\nYou should respond in a ${effectiveBehavior.tone} tone. `;
+      }
+      
+      // Add style instructions
+      if (effectiveBehavior.style) {
+        systemPrompt += `\nYour response style should be ${effectiveBehavior.style}. `;
+      }
+      
+      // Add language instructions
+      if (effectiveBehavior.language) {
+        const languageMap: Record<string, string> = {
+          'english': 'English',
+          'spanish': 'Spanish',
+          'french': 'French',
+          'german': 'German',
+          'chinese': 'Chinese',
+          'japanese': 'Japanese'
+        };
+        
+        const languageDisplay = languageMap[effectiveBehavior.language] || effectiveBehavior.language;
+        systemPrompt += `\nYou must communicate in ${languageDisplay}. `;
+      }
+      
+      // Add emoji usage instructions
+      if (effectiveBehavior.useEmojis) {
+        systemPrompt += `\nUse emojis in your responses when appropriate. `;
+      } else {
+        systemPrompt += `\nDon't use emojis in your responses. `;
+      }
+      
+      // Add asking questions instructions
+      if (effectiveBehavior.askQuestions) {
+        systemPrompt += `\nAsk questions to better understand the user's needs. `;
+      }
+      
+      // Add suggesting solutions instructions
+      if (effectiveBehavior.suggestSolutions) {
+        systemPrompt += `\nAlways suggest practical solutions to the user's problems. `;
+      }
+      
+      // Add custom instructions
       if (effectiveBehavior.instructions) {
         systemPrompt += `\nAdditional instructions: ${effectiveBehavior.instructions}`;
       }
       
-      // Only add personality traits if usePersonality is true
-      const usePersonality = effectiveBehavior.usePersonality !== false; // Default to true for backward compatibility
-      
-      if (usePersonality) {
-        // Add tone instructions
-        if (effectiveBehavior.tone) {
-          systemPrompt += `\nYou should respond in a ${effectiveBehavior.tone} tone. `;
-        }
-        
-        // Add style instructions
-        if (effectiveBehavior.style) {
-          systemPrompt += `\nYour response style should be ${effectiveBehavior.style}. `;
-        }
-        
-        // Add language instructions
-        if (effectiveBehavior.language) {
-          const languageMap: Record<string, string> = {
-            'english': 'English',
-            'spanish': 'Spanish',
-            'french': 'French',
-            'german': 'German',
-            'chinese': 'Chinese',
-            'japanese': 'Japanese'
-          };
-          
-          const languageDisplay = languageMap[effectiveBehavior.language] || effectiveBehavior.language;
-          systemPrompt += `\nYou must communicate in ${languageDisplay}. `;
-        }
-        
-        // Add emoji usage instructions
-        if (effectiveBehavior.useEmojis) {
-          systemPrompt += `\nUse emojis in your responses when appropriate. `;
-        } else {
-          systemPrompt += `\nDon't use emojis in your responses. `;
-        }
-        
-        // Add asking questions instructions
-        if (effectiveBehavior.askQuestions) {
-          systemPrompt += `\nAsk questions to better understand the user's needs. `;
-        }
-        
-        // Add suggesting solutions instructions
-        if (effectiveBehavior.suggestSolutions) {
-          systemPrompt += `\nAlways suggest practical solutions to the user's problems. `;
-        }
-      }
-      
-      // Add greeting if available - Always include greeting regardless of usePersonality
+      // Add greeting if available
       if (effectiveBehavior.greeting) {
         systemPrompt += `\nYour initial greeting is: "${effectiveBehavior.greeting}"`;
       }
