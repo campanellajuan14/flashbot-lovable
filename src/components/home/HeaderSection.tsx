@@ -27,7 +27,7 @@ const HeaderSection = ({ isScrolled }: HeaderSectionProps) => {
           </Link>
           <Button size="sm" className="shadow-md hover:shadow-lg transition-all" asChild>
             <Link to="/chatbots/new">
-              Create free bot
+              Build your chatbot
             </Link>
           </Button>
         </div>
