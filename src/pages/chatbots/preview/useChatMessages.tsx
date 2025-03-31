@@ -15,11 +15,26 @@ export const useChatMessages = (chatbot: Chatbot | undefined) => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  
+  // Get greeting safely from chatbot behavior
+  const getChatbotGreeting = (): string => {
+    if (!chatbot || !chatbot.behavior) {
+      return "¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?";
+    }
+    
+    // If behavior is a ChatbotPersonality object
+    if (typeof chatbot.behavior === 'object' && 'greeting' in chatbot.behavior) {
+      return chatbot.behavior.greeting;
+    }
+    
+    // Default greeting if we can't determine it
+    return "¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?";
+  };
 
   useEffect(() => {
     scrollToBottom();
     if (messages.length === 0 && chatbot) {
-      const initialGreeting = chatbot.behavior?.greeting || `¡Hola! Soy un asistente virtual. ¿En qué puedo ayudarte hoy?`;
+      const initialGreeting = getChatbotGreeting();
       handleBotResponse(initialGreeting);
     }
   }, [messages, chatbot]);

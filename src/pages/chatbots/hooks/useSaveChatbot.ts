@@ -28,7 +28,15 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
     
     try {
       // Convert our strongly typed data to Json for Supabase
-      const chatbotData = {
+      const chatbotData: {
+        name: string;
+        description: string;
+        is_active: boolean;
+        behavior: any; // Using any for Json compatibility
+        settings: any;  // Using any for Json compatibility
+        user_id: string;
+        id?: string;   // Make id optional but add it if editing
+      } = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
@@ -37,7 +45,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         user_id: userId
       };
       
-      if (isEditing) {
+      if (isEditing && id) {
         chatbotData.id = id; // Add id for updates
       }
       
@@ -50,7 +58,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
       if (isEditing && id) {
         result = await supabase
           .from('chatbots')
-          .update(chatbotData)
+          .update(chatbotData as any)
           .eq('id', id)
           .eq('user_id', userId);
         newChatbotId = id;
@@ -60,7 +68,7 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
         
         result = await supabase
           .from('chatbots')
-          .insert(chatbotData)
+          .insert(chatbotData as any)
           .select('id');
         
         // Get the new chatbot ID from the insert response
