@@ -6,12 +6,25 @@ import { UserButton } from "@/components/auth/UserButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap } from "lucide-react";
 
-const Header = () => {
-  const { isAuthenticated } = useAuth();
+interface HeaderProps {
+  isScrolled?: boolean;
+  variant?: "default" | "home";
+}
 
+const Header = ({ isScrolled = false, variant = "default" }: HeaderProps) => {
+  const { isAuthenticated } = useAuth();
+  
+  const isHomeVariant = variant === "home";
+  
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+    <header
+      className={`${isHomeVariant ? 'sticky top-0 z-40' : ''} w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200 ${
+        isScrolled || !isHomeVariant 
+          ? "bg-background/95 shadow-sm" 
+          : "bg-transparent border-transparent"
+      }`}
+    >
+      <div className="container mx-auto px-6 lg:px-8 flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
@@ -34,8 +47,13 @@ const Header = () => {
               >
                 Login
               </Link>
-              <Button asChild>
-                <Link to="/chatbots/new">Create free bot</Link>
+              <Button size={isHomeVariant ? "sm" : "default"} 
+                className={isHomeVariant ? "shadow-md hover:shadow-lg transition-all" : ""} 
+                asChild
+              >
+                <Link to="/chatbots/new">
+                  {isHomeVariant ? "Build your chatbot" : "Create free bot"}
+                </Link>
               </Button>
             </div>
           )}
