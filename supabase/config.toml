@@ -43,50 +43,39 @@ refresh_token_reuse_interval = 10
 double_confirm_changes = true
 enable_confirmations = false
 
-[[functions]]
-name = "save-whatsapp-config"
+[functions.save-whatsapp-config]
 verify_jwt = true
 
-[[functions]]
-name = "whatsapp-api-proxy"
+[functions.whatsapp-api-proxy]
 verify_jwt = true
 
-[[functions]]
-name = "whatsapp-webhook"
+[functions.whatsapp-webhook]
 verify_jwt = false
 
-[[functions]]
-name = "claude-chat"
+[functions.claude-chat]
 verify_jwt = false
 
-[[functions]]
-name = "kv-store-document"
+[functions.kv-store-document]
 verify_jwt = false
 
-[[functions]]
-name = "register-conversation"
+[functions.register-conversation]
 verify_jwt = false
 
-[[functions]]
-name = "process-temp-documents"
+[functions.process-temp-documents]
 verify_jwt = true
 
-[[functions]]
-name = "kv-get-documents-by-chatbot"
+[functions.kv-get-documents-by-chatbot]
 verify_jwt = false
 
-[[functions]]
-name = "kv-clear-documents-by-chatbot"
+[functions.kv-clear-documents-by-chatbot]
 verify_jwt = false
 
-[[functions]]
-name = "match-documents"
+[functions.match-documents]
 verify_jwt = false
 
-[[functions]]
-name = "process-documents"
+[functions.process-documents]
 verify_jwt = true
 
-[[functions]]
-name = "widget-config"
+[functions.widget-config]
 verify_jwt = false
+
