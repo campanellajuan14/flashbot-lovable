@@ -22,8 +22,8 @@ export async function generateChatbotResponse(
     const systemMessage = `${chatbot.behavior?.tone || 'You are a professional and friendly assistant.'} ${chatbot.behavior?.instructions || ''}`;
     console.log(`System message: "${systemMessage.substring(0, 100)}..."`);
     
-    // Invoke appropriate function based on model
-    const functionName = 'claude-chat'; // Use the same edge function for both models
+    // Invoke claude-chat function
+    const functionName = 'claude-chat';
     
     // Prepare messages for the chat
     const messages = [
@@ -53,7 +53,7 @@ export async function generateChatbotResponse(
         chatbotId: chatbotId,
         conversationId: conversationId,
         source: 'whatsapp-webhook',
-        settings: chatbot.settings
+        settings: chatbot.settings || {}
       },
     });
     

@@ -1,9 +1,7 @@
-
 // Supabase Edge Function: whatsapp-api-proxy
 // Proxy seguro para llamadas a la API de WhatsApp
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHash } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
 // Configuración de CORS
 const corsHeaders = {
@@ -18,26 +16,7 @@ async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
   console.log(`Attempting to retrieve WhatsApp token for user ${userId}, secret ID: ${secretId}`);
   
   try {
-    // Method 1: Try to get from Vault first (if available)
-    if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
-      try {
-        console.log("Attempting to retrieve token from Vault...");
-        const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
-        
-        if (!error && data) {
-          console.log("Successfully retrieved API token from Vault");
-          return data;
-        } else {
-          console.error("Failed to retrieve token from Vault:", error);
-        }
-      } catch (vaultError) {
-        console.error("Vault access error:", vaultError);
-      }
-    } else {
-      console.log("Vault not available, skipping Vault token retrieval");
-    }
-    
-    // Method 2: Try to get directly from user_whatsapp_tokens table
+    // Method 1: Try to get directly from user_whatsapp_tokens table
     try {
       console.log("Attempting to retrieve token from user_whatsapp_tokens table...");
       const { data: tokenData, error: tokenError } = await supabaseAdmin
@@ -56,7 +35,7 @@ async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
       console.error("Database access error:", dbError);
     }
     
-    // Method 3: Fallback - try direct query from user_whatsapp_config table
+    // Method 2: Fallback - try direct query from user_whatsapp_config table
     try {
       console.log("Attempting to retrieve token from secret_data in user_whatsapp_config...");
       const { data: configData, error: configError } = await supabaseAdmin
@@ -73,6 +52,25 @@ async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
       }
     } catch (backupError) {
       console.error("Backup token retrieval error:", backupError);
+    }
+    
+    // Method 3: Try Vault as last resort if available
+    if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
+      try {
+        console.log("Attempting to retrieve token from Vault...");
+        const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
+        
+        if (!error && data) {
+          console.log("Successfully retrieved API token from Vault");
+          return data;
+        } else {
+          console.error("Failed to retrieve token from Vault:", error);
+        }
+      } catch (vaultError) {
+        console.error("Vault access error:", vaultError);
+      }
+    } else {
+      console.log("Vault not available, skipping Vault token retrieval");
     }
     
     // All methods failed

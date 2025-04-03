@@ -4,29 +4,9 @@
  */
 export async function getWhatsAppToken(supabase: any, secretId: string): Promise<string | null> {
   console.log(`Attempting to retrieve WhatsApp token for secret ID: ${secretId}`);
-  let token = null;
-
+  
   try {
-    // Method 1: Try to get from Vault first (if available)
-    if (supabase.vault && typeof supabase.vault.decrypt === 'function') {
-      try {
-        console.log("Attempting to retrieve token from Vault...");
-        const { data, error } = await supabase.vault.decrypt(secretId);
-        
-        if (!error && data) {
-          console.log("Successfully retrieved API token from Vault");
-          return data;
-        } else {
-          console.error("Failed to retrieve token from Vault:", error);
-        }
-      } catch (vaultError) {
-        console.error("Vault access error:", vaultError);
-      }
-    } else {
-      console.log("Vault not available, skipping Vault token retrieval");
-    }
-    
-    // Method 2: Try to get directly from user_whatsapp_tokens table
+    // Method 1: Try to get directly from user_whatsapp_tokens table
     try {
       console.log("Attempting to retrieve token from user_whatsapp_tokens table...");
       const { data: tokenData, error: tokenError } = await supabase
@@ -45,7 +25,7 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.error("Database access error:", dbError);
     }
     
-    // Method 3: Fallback - try direct query from user_whatsapp_config table
+    // Method 2: Fallback - try direct query from user_whatsapp_config table
     try {
       console.log("Attempting to retrieve token from secret_data in user_whatsapp_config...");
       const { data: configData, error: configError } = await supabase
@@ -62,6 +42,25 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       }
     } catch (backupError) {
       console.error("Backup token retrieval error:", backupError);
+    }
+    
+    // Method 3: Try Vault as last resort if available (but don't rely on it)
+    if (supabase.vault && typeof supabase.vault.decrypt === 'function') {
+      try {
+        console.log("Attempting to retrieve token from Vault as last resort...");
+        const { data, error } = await supabase.vault.decrypt(secretId);
+        
+        if (!error && data) {
+          console.log("Successfully retrieved API token from Vault");
+          return data;
+        } else {
+          console.error("Failed to retrieve token from Vault:", error);
+        }
+      } catch (vaultError) {
+        console.error("Vault access error:", vaultError);
+      }
+    } else {
+      console.log("Vault not available, skipping Vault token retrieval");
     }
     
     // All methods failed

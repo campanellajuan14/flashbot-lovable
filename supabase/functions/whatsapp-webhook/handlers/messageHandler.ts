@@ -219,6 +219,7 @@ async function sendWhatsAppResponse(
     
     console.log("Sending text payload:", JSON.stringify(textPayload));
     
+    // Sending directly to the WhatsApp API instead of using the proxy
     const textResponse = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
       {
@@ -345,6 +346,7 @@ async function sendTemplateMessage(
     
     console.log("Sending template payload:", JSON.stringify(templatePayload));
     
+    // Direct call to WhatsApp API instead of using proxy
     const templateResponse = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
       {
