@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
 
 interface ChatbotWhatsAppSettingsProps {
   chatbotId: string;
@@ -36,22 +37,21 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
         
         // Obtener la configuración de WhatsApp del usuario
         const { data: whatsAppConfig, error: whatsAppError } = await supabase
-          .from('user_whatsapp_config')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+          .rpc('get_user_whatsapp_config');
         
         if (whatsAppError) {
-          if (whatsAppError.code !== 'PGRST116') { // No rows returned
-            console.error("Error al obtener configuración de WhatsApp:", whatsAppError);
-          }
+          console.error("Error al obtener configuración de WhatsApp:", whatsAppError);
           setHasWhatsAppConfig(false);
           return;
         }
         
-        setHasWhatsAppConfig(true);
-        setIsActive(whatsAppConfig.is_active);
-        setIsActiveChatbot(whatsAppConfig.active_chatbot_id === chatbotId);
+        if (whatsAppConfig) {
+          setHasWhatsAppConfig(true);
+          setIsActive(whatsAppConfig.is_active || false);
+          setIsActiveChatbot(whatsAppConfig.active_chatbot_id === chatbotId);
+        } else {
+          setHasWhatsAppConfig(false);
+        }
         
       } catch (error) {
         console.error("Error al cargar configuración:", error);
@@ -71,11 +71,9 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
     try {
       // Actualizar la configuración de WhatsApp
       const { error } = await supabase
-        .from('user_whatsapp_config')
-        .update({
-          is_active: checked
-        })
-        .eq('user_id', user.id);
+        .rpc('update_whatsapp_config_status', {
+          is_active_value: checked
+        });
       
       if (error) {
         throw new Error(error.message);
@@ -112,11 +110,9 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
     try {
       // Actualizar el chatbot activo
       const { error } = await supabase
-        .from('user_whatsapp_config')
-        .update({
-          active_chatbot_id: checked ? chatbotId : null
-        })
-        .eq('user_id', user.id);
+        .rpc('update_whatsapp_active_chatbot', {
+          chatbot_id_value: checked ? chatbotId : null
+        });
       
       if (error) {
         throw new Error(error.message);

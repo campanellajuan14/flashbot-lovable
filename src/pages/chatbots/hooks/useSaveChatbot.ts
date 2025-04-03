@@ -27,13 +27,14 @@ export const useSaveChatbot = (userId: string | undefined, id?: string) => {
     setIsSubmitting(true);
     
     try {
-      const chatbotData: ChatbotData = {
+      const chatbotData: ChatbotData & { user_id_text: string } = {
         name: form.name,
         description: form.description,
         is_active: form.isActive,
         behavior: form.personality as any,
         settings: form.settings as any,
-        user_id: userId
+        user_id: userId,
+        user_id_text: `user_${userId}` // Agregar el campo user_id_text necesario
       };
       
       console.log("Saving chatbot with data:", chatbotData);

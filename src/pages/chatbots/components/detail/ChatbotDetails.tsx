@@ -20,11 +20,17 @@ const ChatbotDetails = ({ chatbot }: ChatbotDetailsProps) => {
       </TabsList>
 
       <TabsContent value="info" className="space-y-4">
-        <ChatbotInformation chatbot={chatbot} />
+        <ChatbotInformation 
+          chatbot={chatbot} 
+          onDelete={() => {}} // Agregamos esta prop que faltaba
+        />
       </TabsContent>
 
       <TabsContent value="config" className="space-y-4">
-        <ChatbotConfiguration chatbot={chatbot} />
+        <ChatbotConfiguration 
+          chatbot={chatbot}
+          chatbotId={chatbot.id} // Agregamos esta prop que faltaba
+        />
       </TabsContent>
       
       <TabsContent value="whatsapp" className="space-y-4">

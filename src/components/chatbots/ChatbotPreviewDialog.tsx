@@ -6,6 +6,7 @@ import { Eye, Phone } from "lucide-react";
 import { ShareSettings } from "./share/types";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { WhatsAppConfig } from "@/integrations/supabase/whatsappTypes";
 
 interface ChatbotPreviewDialogProps {
   chatbotId: string;
@@ -23,10 +24,9 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogP
 
   const checkWhatsAppConfig = async () => {
     try {
+      // Usando la función rpc para evitar errores de tipo
       const { data, error } = await supabase
-        .from('user_whatsapp_config')
-        .select('is_active, active_chatbot_id')
-        .single();
+        .rpc('get_user_whatsapp_config');
       
       if (error) {
         console.error("Error verificando configuración WhatsApp:", error);
@@ -34,9 +34,13 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogP
         return;
       }
       
-      setIsWhatsAppConfigured(true);
-      setIsWhatsAppActive(data.is_active);
-      setIsThisChatbotActive(data.active_chatbot_id === chatbotId);
+      if (data) {
+        setIsWhatsAppConfigured(true);
+        setIsWhatsAppActive(data.is_active || false);
+        setIsThisChatbotActive(data.active_chatbot_id === chatbotId);
+      } else {
+        setIsWhatsAppConfigured(false);
+      }
     } catch (error) {
       console.error("Error al verificar WhatsApp:", error);
       setIsWhatsAppConfigured(false);

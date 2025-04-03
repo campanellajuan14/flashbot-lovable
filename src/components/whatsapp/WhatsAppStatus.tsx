@@ -21,40 +21,31 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client";
 import { useToast } from '@/components/ui/use-toast';
-
-type WhatsAppConfig = {
-  id: string;
-  phone_number_id: string;
-  waba_id: string;
-  is_active: boolean;
-  webhook_verified: boolean;
-  webhook_verify_token: string;
-  active_chatbot_id: string | null;
-}
+import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
 
 export const WhatsAppStatus = () => {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const webhookUrl = `https://${supabase.supabaseUrl.split('//')[1].split('.')[0]}.supabase.co/functions/v1/whatsapp-webhook`;
+  // Usar un valor fijo o extraerlo de una forma pública
+  const projectRef = "obiiomoqhpbgaymfphdz"; 
+  const webhookUrl = `https://${projectRef}.supabase.co/functions/v1/whatsapp-webhook`;
 
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         const { data, error } = await supabase
-          .from('user_whatsapp_config')
-          .select('*')
-          .single();
+          .rpc('get_user_whatsapp_config');
 
         if (error) {
-          if (error.code !== 'PGRST116') { // No rows returned
-            console.error('Error al cargar configuración:', error);
-          }
+          console.error('Error al cargar configuración:', error);
           setConfig(null);
+        } else if (data) {
+          setConfig(data as WhatsAppConfig);
         } else {
-          setConfig(data);
+          setConfig(null);
         }
       } catch (err) {
         console.error('Error al cargar configuración:', err);

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Card, 
@@ -24,6 +24,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
 
 interface WhatsAppFormValues {
   phoneNumberId: string;
@@ -33,6 +34,7 @@ interface WhatsAppFormValues {
 
 export const WhatsAppConfigForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingConfig, setExistingConfig] = useState<WhatsAppConfig | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -43,6 +45,34 @@ export const WhatsAppConfigForm = () => {
       apiToken: '',
     }
   });
+
+  // Cargar configuración existente
+  useEffect(() => {
+    const loadConfig = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .rpc('get_user_whatsapp_config');
+        
+        if (error) {
+          console.error("Error al cargar configuración:", error);
+          return;
+        }
+        
+        if (data) {
+          setExistingConfig(data as WhatsAppConfig);
+          form.setValue('phoneNumberId', data.phone_number_id || '');
+          form.setValue('wabaId', data.waba_id || '');
+          // No cargamos el token por seguridad
+        }
+      } catch (error) {
+        console.error("Error al cargar la configuración:", error);
+      }
+    };
+    
+    loadConfig();
+  }, [user?.id, form]);
 
   const onSubmit = async (values: WhatsAppFormValues) => {
     if (!user) {
@@ -76,6 +106,11 @@ export const WhatsAppConfigForm = () => {
 
       // Limpiar el campo del token después de guardarlo exitosamente
       form.setValue('apiToken', '');
+      
+      // Actualizar el estado de la configuración existente
+      if (data?.config) {
+        setExistingConfig(data.config);
+      }
 
     } catch (error: any) {
       console.error("Error guardando la configuración de WhatsApp:", error);
@@ -94,7 +129,9 @@ export const WhatsAppConfigForm = () => {
       <CardHeader>
         <CardTitle>Configuración de WhatsApp Business</CardTitle>
         <CardDescription>
-          Conecta tu cuenta de WhatsApp Business API para recibir y responder mensajes automáticamente
+          {existingConfig 
+            ? "Actualiza tu configuración de WhatsApp Business API" 
+            : "Conecta tu cuenta de WhatsApp Business API para recibir y responder mensajes automáticamente"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -145,14 +182,14 @@ export const WhatsAppConfigForm = () => {
             <FormField
               control={form.control}
               name="apiToken"
-              rules={{ required: "El token de API es obligatorio" }}
+              rules={{ required: existingConfig ? false : "El token de API es obligatorio" }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Token de API</FormLabel>
+                  <FormLabel>{existingConfig ? "Actualizar Token de API (opcional)" : "Token de API"}</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="Tu token de API de WhatsApp"
+                      placeholder={existingConfig ? "Dejar en blanco para mantener el token actual" : "Tu token de API de WhatsApp"}
                       {...field}
                     />
                   </FormControl>
@@ -177,7 +214,7 @@ export const WhatsAppConfigForm = () => {
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Guardar Configuración
+                  {existingConfig ? "Actualizar Configuración" : "Guardar Configuración"}
                 </>
               )}
             </Button>

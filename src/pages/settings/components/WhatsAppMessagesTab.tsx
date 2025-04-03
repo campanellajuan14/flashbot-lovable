@@ -29,17 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious
 } from '@/components/ui/pagination';
-
-interface WhatsAppMessage {
-  id: string;
-  from_number: string;
-  to_number: string;
-  message_content: string;
-  direction: 'inbound' | 'outbound';
-  status: string | null;
-  timestamp: string;
-  message_type: string;
-}
+import { WhatsAppMessage } from '@/integrations/supabase/whatsappTypes';
 
 export const WhatsAppMessagesTab = () => {
   const [page, setPage] = useState(1);
@@ -52,10 +42,7 @@ export const WhatsAppMessagesTab = () => {
       const to = from + pageSize - 1;
 
       const { data, error, count } = await supabase
-        .from('whatsapp_messages')
-        .select('*', { count: 'exact' })
-        .order('timestamp', { ascending: false })
-        .range(from, to);
+        .rpc('get_whatsapp_messages', { page_size: pageSize, page_number: page });
 
       if (error) throw error;
 
@@ -220,7 +207,7 @@ const formatDate = (timestamp: string) => {
   }
 };
 
-const renderStatus = (status: string | null) => {
+const renderStatus = (status: string | null | undefined) => {
   if (!status) return '-';
   
   switch (status) {

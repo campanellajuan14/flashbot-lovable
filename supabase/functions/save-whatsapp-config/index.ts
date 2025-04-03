@@ -1,155 +1,196 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+// Supabase Edge Function: save-whatsapp-config
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-type WhatsAppConfig = {
-  phone_number_id: string
-  waba_id: string
-  api_token: string
-  active_chatbot_id?: string
-}
-
-serve(async (req: Request) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+// Función para verificar el token de API con WhatsApp
+async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promise<boolean> {
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${phoneNumberId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    // Crear cliente de Supabase con token de autenticación del usuario
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: req.headers.get('Authorization')! } },
-    })
-
-    // Crear cliente con rol de servicio para almacenar el token en vault
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-
-    // Verificar autenticación del usuario
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      console.error("Error de autenticación:", authError)
-      return new Response(
-        JSON.stringify({ error: "No autorizado. Debe iniciar sesión para configurar WhatsApp." }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Error verificando token de WhatsApp:", error);
+      return false;
     }
 
-    // Obtener datos del cuerpo de la petición
-    const { phone_number_id, waba_id, api_token, active_chatbot_id } = await req.json() as WhatsAppConfig
+    return true;
+  } catch (error) {
+    console.error("Error en verificación de token:", error);
+    return false;
+  }
+}
 
-    // Validar datos de entrada
+serve(async (req) => {
+  // Manejar preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders, status: 200 });
+  }
+  
+  try {
+    // Crear cliente de Supabase con rol de servicio para acceder a Vault
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+    
+    // Verificar la autenticación del usuario
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No autorizado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Crear cliente de Supabase con el token JWT del usuario
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+    
+    // Obtener el usuario actual desde el token JWT
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'No autorizado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Extraer datos del cuerpo de la solicitud
+    const { phone_number_id, waba_id, api_token } = await req.json();
+    
+    // Validar datos obligatorios
     if (!phone_number_id || !waba_id || !api_token) {
       return new Response(
-        JSON.stringify({ error: "Faltan datos requeridos: phone_number_id, waba_id y api_token son obligatorios" }),
+        JSON.stringify({ error: 'Faltan datos obligatorios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
-
-    // Verificar formato de phone_number_id y waba_id (deben ser valores numéricos)
-    if (!/^\d+$/.test(phone_number_id) || !/^\d+$/.test(waba_id)) {
-      return new Response(
-        JSON.stringify({ error: "phone_number_id y waba_id deben ser valores numéricos" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
+    
     // Verificar el token con la API de WhatsApp
-    try {
-      const response = await fetch(`https://graph.facebook.com/v18.0/${phone_number_id}`, {
-        headers: {
-          'Authorization': `Bearer ${api_token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error("Error verificando token con API de WhatsApp:", errorData)
-        return new Response(
-          JSON.stringify({ 
-            error: "El token de API proporcionado no es válido o no tiene permisos para acceder a este Phone Number ID",
-            details: errorData
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Extraer información útil de la respuesta
-      const phoneInfo = await response.json()
-      console.log("Verificación exitosa con WhatsApp API:", phoneInfo)
-    } catch (error) {
-      console.error("Error al comunicarse con la API de WhatsApp:", error)
+    const isTokenValid = await verifyWhatsAppToken(phone_number_id, api_token);
+    if (!isTokenValid) {
       return new Response(
-        JSON.stringify({ error: "Error al comunicarse con la API de WhatsApp", details: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+        JSON.stringify({ error: 'Token de API de WhatsApp inválido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    // Guardar token en Vault usando el cliente admin
-    const secretName = `whatsapp_token_${user.id}`
-    const { data: secretData, error: secretError } = await supabaseAdmin.vault.encrypt({
-      name: secretName,
-      secret: api_token,
-      key_id: 'default'  // Usar la clave por defecto del vault
-    })
-
+    
+    // Almacenar token en Vault
+    const { data: secretData, error: secretError } = await supabaseAdmin.vault.encrypt(api_token);
+    
     if (secretError) {
-      console.error("Error al guardar token en Vault:", secretError)
+      console.error("Error guardando token en Vault:", secretError);
       return new Response(
-        JSON.stringify({ error: "Error al guardar credenciales de forma segura", details: secretError.message }),
+        JSON.stringify({ error: 'Error al guardar el token seguro' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
-
-    // Crear o actualizar registro en la tabla user_whatsapp_config
-    const { data: configData, error: configError } = await supabase
+    
+    // Verificar si ya existe una configuración para este usuario
+    const { data: existingConfig, error: configError } = await supabaseClient
       .from('user_whatsapp_config')
-      .upsert({
-        user_id: user.id,
-        phone_number_id,
-        waba_id,
-        secret_id: secretData.id,
-        active_chatbot_id: active_chatbot_id || null
-      }, {
-        onConflict: 'user_id'
-      })
-      .select()
-
-    if (configError) {
-      console.error("Error al guardar configuración:", configError)
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+      
+    if (configError && configError.code !== 'PGRST116') { // PGRST116 es "no rows returned"
+      console.error("Error al verificar configuración existente:", configError);
       return new Response(
-        JSON.stringify({ error: "Error al guardar configuración de WhatsApp", details: configError.message }),
+        JSON.stringify({ error: 'Error al verificar configuración existente' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
-
+    
+    // Datos de configuración a guardar
+    const configData = {
+      user_id: user.id,
+      phone_number_id,
+      waba_id,
+      secret_id: secretData.id,
+      // No modificamos estos campos si ya existían
+      is_active: existingConfig?.is_active ?? false,
+      webhook_verified: existingConfig?.webhook_verified ?? false,
+      webhook_verify_token: existingConfig?.webhook_verify_token || undefined,
+      active_chatbot_id: existingConfig?.active_chatbot_id || null
+    };
+    
+    let result;
+    
+    if (existingConfig) {
+      // Actualizar configuración existente
+      result = await supabaseClient
+        .from('user_whatsapp_config')
+        .update(configData)
+        .eq('user_id', user.id)
+        .select('*')
+        .maybeSingle();
+    } else {
+      // Crear nueva configuración
+      result = await supabaseClient
+        .from('user_whatsapp_config')
+        .insert(configData)
+        .select('*')
+        .maybeSingle();
+    }
+    
+    if (result.error) {
+      console.error("Error al guardar configuración:", result.error);
+      return new Response(
+        JSON.stringify({ error: 'Error al guardar configuración' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Devolver respuesta exitosa
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Configuración de WhatsApp guardada con éxito",
-        data: {
-          phone_number_id,
-          waba_id,
-          webhook_verify_token: configData[0].webhook_verify_token
-        }
+        message: existingConfig ? 'Configuración actualizada' : 'Configuración guardada',
+        config: result.data
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
+    
   } catch (error) {
-    console.error("Error inesperado:", error)
+    console.error("Error inesperado:", error);
     return new Response(
-      JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+      JSON.stringify({ error: 'Error interno del servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
