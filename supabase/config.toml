@@ -1,4 +1,3 @@
-
 # This file sets up authentication, storage, and functions configuration
 
 project_id = "obiiomoqhpbgaymfphdz"
@@ -39,11 +38,11 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 
 [auth.email]
-enable_signups = true
 double_confirm_changes = true
 enable_confirmations = false
 
 [functions]
+[functions.serve]
 enabled = true
 port = 54327
 
