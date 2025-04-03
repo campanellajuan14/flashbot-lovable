@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Table, 
@@ -41,8 +40,8 @@ export const WhatsAppMessagesTab = () => {
     const fetchMessages = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .rpc<WhatsAppMessagesResponse>('get_whatsapp_messages', {
+        const { data: responseData, error } = await supabase
+          .rpc('get_whatsapp_messages', {
             page_number: page + 1, // Add 1 because our RPC expects 1-indexed pages
             page_size: messagesPerPage
           });
@@ -58,10 +57,18 @@ export const WhatsAppMessagesTab = () => {
         }
         
         // Make sure we have proper typing for messages
-        if (data && typeof data === 'object') {
-          const messagesResponse = data as unknown as WhatsAppMessagesResponse;
-          setMessages(messagesResponse.data || []);
-          setHasMore((messagesResponse.data || []).length === messagesPerPage);
+        if (responseData) {
+          // Parse the response properly as WhatsAppMessagesResponse
+          const messagesResponse = responseData as unknown as WhatsAppMessagesResponse;
+          
+          if (Array.isArray(messagesResponse.data)) {
+            setMessages(messagesResponse.data);
+            setHasMore(messagesResponse.data.length === messagesPerPage);
+          } else {
+            setMessages([]);
+            setHasMore(false);
+            console.error("Formato de respuesta inesperado:", messagesResponse);
+          }
         } else {
           setMessages([]);
           setHasMore(false);

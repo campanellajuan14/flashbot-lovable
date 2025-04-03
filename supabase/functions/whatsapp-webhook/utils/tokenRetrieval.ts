@@ -11,16 +11,18 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.log("🔍 Intentando recuperar token desde user_whatsapp_tokens...");
       const { data: tokenData, error: tokenError } = await supabase
         .from('user_whatsapp_tokens')
-        .select('encrypted_token, updated_at')
+        .select('encrypted_token, updated_at, created_at')
         .eq('id', secretId)
         .single();
         
       if (!tokenError && tokenData && tokenData.encrypted_token) {
-        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_tokens (actualizado: ${tokenData.updated_at || 'desconocido'})`);
+        // Usar updated_at si existe, sino usar created_at como respaldo
+        const lastUpdated = tokenData.updated_at || tokenData.created_at || 'desconocido';
+        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_tokens (actualizado: ${lastUpdated})`);
         
         // Verificar la antigüedad del token (más de 60 días = advertencia)
-        if (tokenData.updated_at) {
-          const tokenDate = new Date(tokenData.updated_at);
+        if (lastUpdated !== 'desconocido') {
+          const tokenDate = new Date(lastUpdated);
           const daysDiff = Math.floor((Date.now() - tokenDate.getTime()) / (1000 * 3600 * 24));
           
           if (daysDiff > 60) {
@@ -76,18 +78,24 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
           phone_number_id,
           user_whatsapp_tokens!inner(
             encrypted_token,
-            updated_at
+            updated_at,
+            created_at
           )
         `)
         .eq('secret_id', secretId)
         .single();
       
       if (!configTokenError && configWithToken?.user_whatsapp_tokens?.encrypted_token) {
-        console.log(`✅ Token recuperado exitosamente mediante join (actualizado: ${configWithToken.user_whatsapp_tokens.updated_at || 'desconocido'})`);
+        // Usar updated_at si existe, sino usar created_at como respaldo
+        const lastUpdated = configWithToken.user_whatsapp_tokens.updated_at || 
+                           configWithToken.user_whatsapp_tokens.created_at || 
+                           'desconocido';
+        
+        console.log(`✅ Token recuperado exitosamente mediante join (actualizado: ${lastUpdated})`);
         
         // Verificar la antigüedad del token si hay fecha
-        if (configWithToken.user_whatsapp_tokens.updated_at) {
-          const tokenDate = new Date(configWithToken.user_whatsapp_tokens.updated_at);
+        if (lastUpdated !== 'desconocido') {
+          const tokenDate = new Date(lastUpdated);
           const daysDiff = Math.floor((Date.now() - tokenDate.getTime()) / (1000 * 3600 * 24));
           
           if (daysDiff > 60) {

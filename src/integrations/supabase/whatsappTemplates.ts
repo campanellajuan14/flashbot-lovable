@@ -22,7 +22,7 @@ export interface WhatsAppTemplate {
 export async function getWhatsAppTemplates(): Promise<WhatsAppTemplate[]> {
   try {
     // Obtenemos la configuración de WhatsApp actual
-    const { data: configData, error: configError } = await supabase.rpc('get_user_whatsapp_config');
+    const { data: configData, error: configError } = await supabase.rpc<WhatsAppConfig>('get_user_whatsapp_config');
     
     if (configError || !configData) {
       throw new Error('No hay configuración de WhatsApp disponible');
@@ -89,7 +89,7 @@ export async function sendWhatsAppTemplate(
 ): Promise<{id: string}> {
   try {
     // Obtenemos la configuración de WhatsApp actual
-    const { data: configData, error: configError } = await supabase.rpc('get_user_whatsapp_config');
+    const { data: configData, error: configError } = await supabase.rpc<WhatsAppConfig>('get_user_whatsapp_config');
     
     if (configError || !configData) {
       throw new Error('No hay configuración de WhatsApp disponible');
