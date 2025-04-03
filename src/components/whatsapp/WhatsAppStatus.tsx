@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,10 +5,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Copy, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, MessageSquare, CheckCircle, AlertCircle, SendIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
+import { Input } from '@/components/ui/input';
 
 const WhatsAppStatus = () => {
   const { toast } = useToast();
@@ -20,6 +20,12 @@ const WhatsAppStatus = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedChatbot, setSelectedChatbot] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
+  
+  // Nuevos estados para prueba de mensajes
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [testMessage, setTestMessage] = useState('Mensaje de prueba');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testResult, setTestResult] = useState<{ success?: boolean; error?: string; details?: any } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -122,6 +128,71 @@ const WhatsAppStatus = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+  
+  // Nueva función para enviar mensaje de prueba
+  const handleSendTestMessage = async () => {
+    if (!testPhoneNumber || !config) return;
+    
+    setIsSendingTest(true);
+    setTestResult(null);
+    
+    try {
+      // Limpiar el número de teléfono (solo dígitos)
+      const cleanedNumber = testPhoneNumber.replace(/\D/g, '');
+      
+      // Asegurarse de que tiene el formato adecuado 
+      const formattedNumber = cleanedNumber.startsWith('34') ? cleanedNumber : `34${cleanedNumber}`;
+      
+      // Construir payload para mensaje de texto simple
+      const messagePayload = {
+        action: 'messages',
+        params: {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: formattedNumber,
+          type: "text",
+          text: {
+            body: testMessage
+          }
+        }
+      };
+      
+      // Llamar a la función edge
+      const { data, error } = await supabase.functions.invoke('whatsapp-api-proxy', {
+        body: JSON.stringify(messagePayload)
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      console.log("Resultado del envío:", data);
+      setTestResult({ 
+        success: true, 
+        details: data 
+      });
+      
+      toast({
+        title: "Mensaje enviado",
+        description: `Se ha enviado correctamente un mensaje a ${formattedNumber}`,
+      });
+    } catch (error: any) {
+      console.error("Error al enviar mensaje de prueba:", error);
+      setTestResult({ 
+        success: false, 
+        error: error.message || "Error desconocido", 
+        details: error 
+      });
+      
+      toast({
+        variant: "destructive",
+        title: "Error al enviar mensaje",
+        description: error.message || "No se pudo enviar el mensaje de prueba",
+      });
+    } finally {
+      setIsSendingTest(false);
     }
   };
   
@@ -235,12 +306,11 @@ const WhatsAppStatus = () => {
                   className="flex-1 p-2 border rounded-l-md bg-muted"
                 />
                 <Button 
-                  variant="secondary"
-                  className="rounded-l-none"
                   onClick={() => copyToClipboard(
                     `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/whatsapp-webhook?phone_number_id=${config.phone_number_id}`, 
                     "URL del webhook copiada al portapapeles"
                   )}
+                  className="rounded-l-none"
                 >
                   <Copy size={16} />
                 </Button>
@@ -339,6 +409,78 @@ const WhatsAppStatus = () => {
               </p>
             </div>
           )}
+        </div>
+        
+        <div className="space-y-4 border-t pt-4 mt-4">
+          <h3 className="text-lg font-medium">Prueba de envío de mensajes</h3>
+          <p className="text-sm text-muted-foreground">
+            Envía un mensaje de prueba para comprobar la conexión con WhatsApp
+          </p>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-phone">Número de teléfono (con o sin prefijo)</Label>
+              <Input
+                id="test-phone"
+                placeholder="Ej: 666777888 o 34666777888"
+                value={testPhoneNumber}
+                onChange={(e) => setTestPhoneNumber(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Se añadirá el prefijo 34 (España) si no lo incluyes
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="test-message">Mensaje de prueba</Label>
+              <Input
+                id="test-message"
+                placeholder="Mensaje de prueba"
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+              />
+            </div>
+            
+            <Button 
+              onClick={handleSendTestMessage}
+              disabled={isSendingTest || !testPhoneNumber}
+              className="w-full"
+            >
+              {isSendingTest ? (
+                <>
+                  <span className="animate-spin mr-2">⟳</span>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <SendIcon className="h-4 w-4 mr-2" />
+                  Enviar mensaje de prueba
+                </>
+              )}
+            </Button>
+            
+            {testResult && (
+              <div className={`mt-4 p-4 rounded-md border text-sm ${
+                testResult.success ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
+              }`}>
+                <h4 className="font-medium mb-2">
+                  {testResult.success ? '✅ Mensaje enviado correctamente' : '❌ Error al enviar mensaje'}
+                </h4>
+                
+                {testResult.error && (
+                  <div className="mb-2">
+                    <strong>Error:</strong> {testResult.error}
+                  </div>
+                )}
+                
+                <div className="overflow-auto max-h-32 bg-white/50 p-2 rounded-sm">
+                  <pre className="text-xs">
+                    {JSON.stringify(testResult.details, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
