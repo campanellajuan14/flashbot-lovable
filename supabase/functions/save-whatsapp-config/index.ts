@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Configuración CORS mejorada
+// Improved CORS configuration
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// Función para verificar el token de API con WhatsApp
+// Function to verify WhatsApp API token
 async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promise<boolean> {
   try {
     const response = await fetch(
@@ -26,19 +26,19 @@ async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promis
 
     if (!response.ok) {
       const error = await response.json();
-      console.error("Error verificando token de WhatsApp:", error);
+      console.error("Error verifying WhatsApp token:", error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Error en verificación de token:", error);
+    console.error("Error in token verification:", error);
     return false;
   }
 }
 
 serve(async (req) => {
-  // Manejar preflight CORS de manera más robusta
+  // Handle preflight CORS requests
   if (req.method === "OPTIONS") {
     return new Response(null, { 
       status: 204, 
@@ -46,17 +46,17 @@ serve(async (req) => {
     });
   }
   
-  console.log("Inicio de función save-whatsapp-config");
+  console.log("Starting save-whatsapp-config function");
   
   try {
-    // Crear cliente de Supabase con rol de servicio para acceder a Vault
+    // Create Supabase client with service role for Vault access
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Variables de entorno de Supabase no encontradas");
+      console.error("Missing Supabase environment variables");
       return new Response(
-        JSON.stringify({ error: 'Error de configuración del servidor' }),
+        JSON.stringify({ error: 'Server configuration error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -68,19 +68,19 @@ serve(async (req) => {
       },
     });
     
-    console.log("Cliente de Supabase Admin creado");
+    console.log("Created Supabase Admin client");
     
-    // Verificar la autenticación del usuario
+    // Verify user authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error("No se encontró el encabezado Authorization");
+      console.error("Missing Authorization header");
       return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Crear cliente de Supabase con el token JWT del usuario
+    // Create Supabase client with user's JWT token
     const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
       auth: {
         autoRefreshToken: false,
@@ -94,98 +94,98 @@ serve(async (req) => {
       },
     });
     
-    console.log("Cliente de Supabase User creado");
+    console.log("Created Supabase User client");
     
-    // Obtener el usuario actual desde el token JWT
+    // Get authenticated user from JWT token
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
-      console.error("Error obteniendo usuario:", userError);
+      console.error("Error getting user:", userError);
       return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log("Usuario autenticado:", user.id);
+    console.log("Authenticated user:", user.id);
     
-    // Extraer datos del cuerpo de la solicitud
+    // Parse request data
     let requestData;
     try {
       requestData = await req.json();
-      console.log("Datos recibidos:", JSON.stringify({
+      console.log("Received data:", JSON.stringify({
         phone_number_id: requestData.phone_number_id,
         waba_id: requestData.waba_id,
         api_token_length: requestData.api_token ? requestData.api_token.length : 0
       }));
     } catch (e) {
-      console.error("Error al parsear JSON:", e);
+      console.error("JSON parse error:", e);
       return new Response(
-        JSON.stringify({ error: 'Formato de solicitud inválido' }),
+        JSON.stringify({ error: 'Invalid request format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
     const { phone_number_id, waba_id, api_token } = requestData;
     
-    // Validar datos obligatorios
+    // Validate required data
     if (!phone_number_id || !waba_id) {
       return new Response(
-        JSON.stringify({ error: 'Faltan datos obligatorios: phone_number_id o waba_id' }),
+        JSON.stringify({ error: 'Missing required fields: phone_number_id or waba_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Verificar si ya existe una configuración para este usuario
+    // Check for existing configuration
     const { data: existingConfig, error: configError } = await supabaseClient
       .from('user_whatsapp_config')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
       
-    if (configError && configError.code !== 'PGRST116') { // PGRST116 es "no rows returned"
-      console.error("Error al verificar configuración existente:", configError);
+    if (configError && configError.code !== 'PGRST116') { // PGRST116 = "no rows returned"
+      console.error("Error checking existing configuration:", configError);
       return new Response(
-        JSON.stringify({ error: 'Error al verificar configuración existente' }),
+        JSON.stringify({ error: 'Error checking existing configuration' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     let secretId = existingConfig?.secret_id;
     
-    // Si se proporcionó un nuevo token, validarlo y almacenarlo
+    // Handle API token validation and storage
     if (api_token) {
-      console.log("Verificando token de API...");
+      console.log("Verifying API token...");
       const isTokenValid = await verifyWhatsAppToken(phone_number_id, api_token);
       if (!isTokenValid) {
         return new Response(
-          JSON.stringify({ error: 'Token de API de WhatsApp inválido' }),
+          JSON.stringify({ error: 'Invalid WhatsApp API token' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      console.log("Guardando token en Vault...");
-      // Almacenar token en Vault
+      console.log("Storing token in Vault...");
+      // Store token in Vault
       const { data: secretData, error: secretError } = await supabaseAdmin.vault.encrypt(api_token);
       
       if (secretError) {
-        console.error("Error guardando token en Vault:", secretError);
+        console.error("Error storing token in Vault:", secretError);
         return new Response(
-          JSON.stringify({ error: 'Error al guardar el token seguro' }),
+          JSON.stringify({ error: 'Error storing secure token' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       secretId = secretData.id;
     } else if (!existingConfig?.secret_id) {
-      // Si no hay token y no había uno guardado previamente
+      // Require token if none exists
       return new Response(
-        JSON.stringify({ error: 'Se requiere un token de API' }),
+        JSON.stringify({ error: 'API token is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Datos de configuración a guardar
+    // Prepare configuration data
     const configData = {
       user_id: user.id,
       phone_number_id,
@@ -200,10 +200,10 @@ serve(async (req) => {
     
     let result;
     
-    console.log("Guardando configuración en la base de datos...");
+    console.log("Saving configuration to database...");
     
     if (existingConfig) {
-      // Actualizar configuración existente
+      // Update existing configuration
       result = await supabaseClient
         .from('user_whatsapp_config')
         .update(configData)
@@ -211,7 +211,7 @@ serve(async (req) => {
         .select('*')
         .maybeSingle();
     } else {
-      // Crear nueva configuración
+      // Create new configuration
       result = await supabaseClient
         .from('user_whatsapp_config')
         .insert(configData)
@@ -220,29 +220,29 @@ serve(async (req) => {
     }
     
     if (result.error) {
-      console.error("Error al guardar configuración:", result.error);
+      console.error("Error saving configuration:", result.error);
       return new Response(
-        JSON.stringify({ error: 'Error al guardar configuración en la base de datos' }),
+        JSON.stringify({ error: 'Error saving configuration to database' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log("Configuración guardada con éxito");
+    console.log("Configuration saved successfully");
     
-    // Devolver respuesta exitosa
+    // Return successful response
     return new Response(
       JSON.stringify({
         success: true,
-        message: existingConfig ? 'Configuración actualizada' : 'Configuración guardada',
+        message: existingConfig ? 'Configuration updated' : 'Configuration saved',
         config: result.data
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
-    console.error("Error inesperado:", error);
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: 'Error interno del servidor' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

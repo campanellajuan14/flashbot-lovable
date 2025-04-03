@@ -6,7 +6,8 @@ import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+};
 
 interface WebhookMessage {
   object: string;
@@ -48,123 +49,125 @@ interface WebhookMessage {
 }
 
 serve(async (req: Request) => {
-  // Configuración de variables de entorno
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-  const metaAppSecret = Deno.env.get('META_APP_SECRET') || ''
+  // Get environment variables
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const metaAppSecret = Deno.env.get('META_APP_SECRET') || '';
   
-  // Cliente de Supabase con rol de servicio
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Create Supabase client with service role
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  console.log("Starting whatsapp-webhook function");
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
-  // Manejar solicitud de verificación del webhook (GET)
+  // Handle webhook verification (GET request)
   if (req.method === 'GET') {
-    const url = new URL(req.url)
-    const mode = url.searchParams.get('hub.mode')
-    const challenge = url.searchParams.get('hub.challenge')
-    const verifyToken = url.searchParams.get('hub.verify_token')
-    const phoneNumberId = url.searchParams.get('phone_number_id')
+    const url = new URL(req.url);
+    const mode = url.searchParams.get('hub.mode');
+    const challenge = url.searchParams.get('hub.challenge');
+    const verifyToken = url.searchParams.get('hub.verify_token');
+    const phoneNumberId = url.searchParams.get('phone_number_id');
 
-    console.log(`Solicitud de verificación recibida: mode=${mode}, token=${verifyToken}, phone=${phoneNumberId}`)
+    console.log(`Verification request received: mode=${mode}, token=${verifyToken}, phone=${phoneNumberId}`);
 
     if (!phoneNumberId) {
       return new Response(
-        JSON.stringify({ error: "Se requiere phone_number_id como parámetro" }),
+        JSON.stringify({ error: "phone_number_id parameter is required" }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+      );
     }
 
-    // Buscar configuración de WhatsApp por phone_number_id
+    // Find WhatsApp configuration by phone_number_id
     const { data: configData, error: configError } = await supabase
       .from('user_whatsapp_config')
       .select('id, user_id, webhook_verify_token')
       .eq('phone_number_id', phoneNumberId)
-      .single()
+      .single();
 
     if (configError || !configData) {
-      console.error(`Error al buscar configuración para ${phoneNumberId}:`, configError)
+      console.error(`Error finding configuration for ${phoneNumberId}:`, configError);
       return new Response(
-        JSON.stringify({ error: "No se encontró configuración para este phone_number_id" }),
+        JSON.stringify({ error: "No configuration found for this phone_number_id" }),
         { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+      );
     }
 
-    // Verificar el token
+    // Verify token
     if (mode === 'subscribe' && verifyToken === configData.webhook_verify_token) {
-      console.log(`Verificación exitosa para phone_number_id ${phoneNumberId}`)
+      console.log(`Verification successful for phone_number_id ${phoneNumberId}`);
       
-      // Actualizar estado de verificación
+      // Update verification status
       await supabase
         .from('user_whatsapp_config')
         .update({ webhook_verified: true })
-        .eq('id', configData.id)
+        .eq('id', configData.id);
 
-      // Responder con el challenge para completar la verificación
+      // Respond with challenge to complete verification
       return new Response(challenge || '', 
         { status: 200, headers: { 'Content-Type': 'text/plain', ...corsHeaders } }
-      )
+      );
     } else {
-      console.error(`Verificación fallida: token incorrecto para ${phoneNumberId}`)
+      console.error(`Verification failed: incorrect token for ${phoneNumberId}`);
       return new Response(
-        JSON.stringify({ error: "Verificación fallida: token incorrecto" }),
+        JSON.stringify({ error: "Verification failed: incorrect token" }),
         { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+      );
     }
   }
   
-  // Manejar notificaciones de eventos (POST)
+  // Handle event notifications (POST request)
   else if (req.method === 'POST') {
-    // Clonar el request para poder leer el body varias veces
-    const reqClone = req.clone()
-    const rawBody = await req.text()
+    // Clone request to read body multiple times
+    const reqClone = req.clone();
+    const rawBody = await req.text();
     
-    // Verificar firma de Meta si se configuró el APP_SECRET
+    // Verify Meta signature if APP_SECRET is configured
     if (metaAppSecret) {
-      const signature = req.headers.get('x-hub-signature-256') || ''
+      const signature = req.headers.get('x-hub-signature-256') || '';
       
       if (!signature) {
-        console.warn("Solicitud sin firma (x-hub-signature-256)")
+        console.warn("Request without signature (x-hub-signature-256)");
         return new Response(
-          JSON.stringify({ error: "Se requiere firma de Meta" }),
+          JSON.stringify({ error: "Meta signature required" }),
           { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
+        );
       }
       
-      // Verificar la firma
-      const isValid = await verifySignature(rawBody, signature, metaAppSecret)
+      // Verify signature
+      const isValid = await verifySignature(rawBody, signature, metaAppSecret);
       
       if (!isValid) {
-        console.error("Firma inválida. Posible solicitud no autorizada.")
+        console.error("Invalid signature. Possible unauthorized request.");
         return new Response(
-          JSON.stringify({ error: "Firma inválida" }),
+          JSON.stringify({ error: "Invalid signature" }),
           { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
+        );
       }
     }
 
     try {
-      const data = JSON.parse(rawBody) as WebhookMessage
+      const data = JSON.parse(rawBody) as WebhookMessage;
+      console.log("Webhook payload received:", JSON.stringify(data));
       
-      // Verificar que es una notificación de WhatsApp
+      // Verify it's a WhatsApp notification
       if (data.object !== 'whatsapp_business_account') {
         return new Response(
-          JSON.stringify({ error: "Tipo de evento no soportado" }),
+          JSON.stringify({ error: "Unsupported event type" }),
           { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
+        );
       }
 
-      // Procesar cada entrada
+      // Process each entry
       for (const entry of data.entry) {
         for (const change of entry.changes) {
           if (change.field === 'messages') {
-            const value = change.value
-            const phoneNumberId = value.metadata.phone_number_id
+            const value = change.value;
+            const phoneNumberId = value.metadata.phone_number_id;
             
-            // Procesar mensajes entrantes
+            // Process incoming messages
             if (value.messages && value.messages.length > 0) {
               for (const message of value.messages) {
                 await processIncomingMessage(
@@ -172,39 +175,39 @@ serve(async (req: Request) => {
                   phoneNumberId,
                   message,
                   value.contacts?.find(c => c.wa_id === message.from)?.profile.name || 'Unknown'
-                )
+                );
               }
             }
             
-            // Procesar actualizaciones de estado de mensajes
+            // Process message status updates
             if (value.statuses && value.statuses.length > 0) {
               for (const status of value.statuses) {
-                await processMessageStatus(supabase, phoneNumberId, status)
+                await processMessageStatus(supabase, phoneNumberId, status);
               }
             }
           }
         }
       }
 
-      // Responder rápidamente para evitar reintentos
+      // Respond quickly to avoid retries
       return new Response(
         JSON.stringify({ success: true }),
         { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+      );
     } catch (error) {
-      console.error("Error procesando webhook:", error)
+      console.error("Error processing webhook:", error);
       return new Response(
-        JSON.stringify({ error: "Error procesando payload", details: error.message }),
+        JSON.stringify({ error: "Error processing payload", details: error.message }),
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+      );
     }
   } else {
     return new Response(
-      JSON.stringify({ error: "Método no permitido" }),
+      JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
+    );
   }
-})
+});
 
 async function processIncomingMessage(
   supabase: any,
@@ -212,53 +215,53 @@ async function processIncomingMessage(
   message: any,
   senderName: string
 ) {
-  console.log(`Procesando mensaje entrante de ${message.from} para ${phoneNumberId}`)
+  console.log(`Processing incoming message from ${message.from} for ${phoneNumberId}`);
   
   try {
-    // Encontrar configuración del usuario para este phone_number_id
+    // Find user configuration for this phone_number_id
     const { data: configData, error: configError } = await supabase
       .from('user_whatsapp_config')
       .select('user_id, active_chatbot_id, is_active')
       .eq('phone_number_id', phoneNumberId)
-      .single()
+      .single();
       
     if (configError || !configData) {
-      console.error(`No se encontró configuración para ${phoneNumberId}:`, configError)
-      return
+      console.error(`No configuration found for ${phoneNumberId}:`, configError);
+      return;
     }
     
-    // Verificar si WhatsApp está activo para este usuario
+    // Check if WhatsApp is active for this user
     if (!configData.is_active) {
-      console.log(`WhatsApp desactivado para phone_number_id ${phoneNumberId}`)
-      return
+      console.log(`WhatsApp disabled for phone_number_id ${phoneNumberId}`);
+      return;
     }
     
-    // Verificar si hay un chatbot activo configurado
+    // Check if an active chatbot is configured
     if (!configData.active_chatbot_id) {
-      console.log(`No hay chatbot activo para phone_number_id ${phoneNumberId}`)
-      return
+      console.log(`No active chatbot for phone_number_id ${phoneNumberId}`);
+      return;
     }
     
-    // Extraer el contenido del mensaje
-    let messageContent = ''
-    let messageType = message.type
+    // Extract message content
+    let messageContent = '';
+    let messageType = message.type;
     
     if (message.text) {
-      messageContent = message.text.body
+      messageContent = message.text.body;
     } else if (message.image) {
-      messageContent = '[Imagen]'
+      messageContent = '[Image]';
     } else if (message.audio) {
-      messageContent = '[Audio]'
+      messageContent = '[Audio]';
     } else if (message.video) {
-      messageContent = '[Video]'
+      messageContent = '[Video]';
     } else if (message.document) {
-      messageContent = '[Documento]'
+      messageContent = '[Document]';
     } else {
-      messageContent = '[Mensaje no soportado]'
-      messageType = 'unsupported'
+      messageContent = '[Unsupported message]';
+      messageType = 'unsupported';
     }
     
-    // Registrar el mensaje recibido en la tabla de mensajes
+    // Log received message
     const { data: savedMessage, error: saveError } = await supabase
       .from('whatsapp_messages')
       .insert({
@@ -277,31 +280,31 @@ async function processIncomingMessage(
           raw_message: message
         }
       })
-      .select()
+      .select();
     
     if (saveError) {
-      console.error("Error al guardar mensaje entrante:", saveError)
-      return
+      console.error("Error saving incoming message:", saveError);
+      return;
     }
     
-    // Solo procesar mensajes de texto
+    // Only process text messages
     if (message.type === 'text') {
-      // Buscar o crear una conversación para este remitente
+      // Find or create conversation for this sender
       const { data: convData, error: convError } = await findOrCreateConversation(
         supabase,
         configData.active_chatbot_id,
         message.from,
         senderName
-      )
+      );
       
       if (convError) {
-        console.error("Error creando/buscando conversación:", convError)
-        return
+        console.error("Error creating/finding conversation:", convError);
+        return;
       }
       
-      const conversationId = convData.id
+      const conversationId = convData.id;
       
-      // Registrar mensaje del usuario en la tabla de mensajes de conversación
+      // Log user message in conversations table
       await supabase
         .from('messages')
         .insert({
@@ -313,41 +316,41 @@ async function processIncomingMessage(
             phone: message.from,
             name: senderName
           }
-        })
+        });
       
-      // Actualizar el registro de WhatsApp con la conversación asociada
+      // Update WhatsApp message with associated conversation
       await supabase
         .from('whatsapp_messages')
         .update({ conversation_id: conversationId })
-        .eq('id', savedMessage[0].id)
+        .eq('id', savedMessage[0].id);
       
-      // Obtener datos del chatbot
+      // Get chatbot data
       const { data: chatbot, error: chatbotError } = await supabase
         .from('chatbots')
         .select('behavior, settings')
         .eq('id', configData.active_chatbot_id)
-        .single()
+        .single();
       
       if (chatbotError) {
-        console.error("Error obteniendo datos del chatbot:", chatbotError)
-        return
+        console.error("Error getting chatbot data:", chatbotError);
+        return;
       }
       
-      // Generar respuesta del chatbot usando Claude o GPT
+      // Generate chatbot response using Claude or GPT
       const response = await generateChatbotResponse(
         supabase,
         configData.active_chatbot_id,
         conversationId,
         messageContent,
         chatbot
-      )
+      );
       
       if (!response) {
-        console.error("No se pudo generar respuesta")
-        return
+        console.error("Could not generate response");
+        return;
       }
       
-      // Registrar respuesta en la tabla de mensajes de conversación
+      // Log assistant response in conversations table
       await supabase
         .from('messages')
         .insert({
@@ -357,19 +360,19 @@ async function processIncomingMessage(
           metadata: {
             source: 'whatsapp'
           }
-        })
+        });
       
-      // Enviar la respuesta a WhatsApp
+      // Send response to WhatsApp
       await sendWhatsAppResponse(
         supabase,
         phoneNumberId,
         configData.user_id, 
         message.from,
         response
-      )
+      );
     }
   } catch (error) {
-    console.error("Error procesando mensaje:", error)
+    console.error("Error processing message:", error);
   }
 }
 
@@ -379,21 +382,21 @@ async function findOrCreateConversation(
   userIdentifier: string,
   userName: string
 ) {
-  // Intentar encontrar una conversación existente para este número y chatbot
+  // Try to find existing conversation for this number and chatbot
   const { data, error } = await supabase
     .from('conversations')
     .select()
     .eq('chatbot_id', chatbotId)
     .eq('user_identifier', userIdentifier)
     .order('created_at', { ascending: false })
-    .limit(1)
+    .limit(1);
   
-  // Si existe, devolver la conversación
+  // If found, return the conversation
   if (!error && data && data.length > 0) {
-    return { data: data[0], error: null }
+    return { data: data[0], error: null };
   }
   
-  // Si no existe o hubo un error, crear una nueva conversación
+  // If not found or error, create new conversation
   return await supabase
     .from('conversations')
     .insert({
@@ -405,7 +408,7 @@ async function findOrCreateConversation(
       }
     })
     .select()
-    .single()
+    .single();
 }
 
 async function generateChatbotResponse(
@@ -416,57 +419,56 @@ async function generateChatbotResponse(
   chatbot: any
 ) {
   try {
-    // Determinar qué modelo usar según la configuración del chatbot
-    const model = chatbot?.settings?.model || 'gpt-4o'
-    const isAnthropic = model.includes('claude')
+    // Determine which model to use based on chatbot configuration
+    const model = chatbot?.settings?.model || 'gpt-4o';
+    const isAnthropic = model.includes('claude');
     
-    // Invocar función adecuada según el modelo
+    // Invoke appropriate function based on model
     if (isAnthropic) {
       const { data, error } = await supabase.functions.invoke('claude-chat', {
         body: {
           messages: [
-            // Sistema
+            // System
             {
               role: 'system',
-              content: `${chatbot.behavior.tone || 'Eres un asistente profesional y amable.'} ${chatbot.behavior.instructions || ''}`
+              content: `${chatbot.behavior.tone || 'You are a professional and friendly assistant.'} ${chatbot.behavior.instructions || ''}`
             },
-            // Usuario
+            // User
             { role: 'user', content: userMessage }
           ],
           model: model,
           chatbotId: chatbotId,
           conversationId: conversationId
         },
-      })
+      });
       
-      if (error) throw error
-      return data.response
+      if (error) throw error;
+      return data.response;
     } else {
-      // Implementar llamada a OpenAI (similar a Claude pero con estructura adecuada para OpenAI)
-      // Por simplicidad, reutilizamos Claude para ambos casos
+      // Call to OpenAI (similar structure to Claude for simplicity)
       const { data, error } = await supabase.functions.invoke('claude-chat', {
         body: {
           messages: [
-            // Sistema
+            // System
             {
               role: 'system',
-              content: `${chatbot.behavior.tone || 'Eres un asistente profesional y amable.'} ${chatbot.behavior.instructions || ''}`
+              content: `${chatbot.behavior.tone || 'You are a professional and friendly assistant.'} ${chatbot.behavior.instructions || ''}`
             },
-            // Usuario
+            // User
             { role: 'user', content: userMessage }
           ],
           model: 'gpt-4o',
           chatbotId: chatbotId,
           conversationId: conversationId
         },
-      })
+      });
       
-      if (error) throw error
-      return data.response
+      if (error) throw error;
+      return data.response;
     }
   } catch (error) {
-    console.error("Error generando respuesta:", error)
-    return null
+    console.error("Error generating response:", error);
+    return null;
   }
 }
 
@@ -478,29 +480,29 @@ async function sendWhatsAppResponse(
   message: string
 ) {
   try {
-    // Obtener la configuración de WhatsApp
+    // Get WhatsApp configuration
     const { data: configData, error: configError } = await supabase
       .from('user_whatsapp_config')
       .select('secret_id')
       .eq('phone_number_id', phoneNumberId)
-      .single()
+      .single();
     
     if (configError) {
-      console.error("Error obteniendo configuración:", configError)
-      return null
+      console.error("Error getting configuration:", configError);
+      return null;
     }
     
-    // Obtener el token de API desde el vault
-    const { data: secretData, error: secretError } = await supabase.vault.decrypt(configData.secret_id)
+    // Get API token from vault
+    const { data: secretData, error: secretError } = await supabase.vault.decrypt(configData.secret_id);
     
     if (secretError) {
-      console.error("Error obteniendo secreto:", secretError)
-      return null
+      console.error("Error getting secret:", secretError);
+      return null;
     }
     
-    const apiToken = secretData.secret
+    const apiToken = secretData.secret;
     
-    // Enviar el mensaje a WhatsApp
+    // Send message to WhatsApp
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
       {
@@ -520,16 +522,16 @@ async function sendWhatsAppResponse(
           }
         })
       }
-    )
+    );
     
-    const responseData = await response.json()
+    const responseData = await response.json();
     
     if (!response.ok) {
-      console.error("Error enviando mensaje:", responseData)
-      return null
+      console.error("Error sending message:", responseData);
+      return null;
     }
     
-    // Registrar mensaje enviado
+    // Log sent message
     await supabase
       .from('whatsapp_messages')
       .insert({
@@ -543,18 +545,18 @@ async function sendWhatsAppResponse(
         direction: 'outbound',
         status: 'sent',
         metadata: responseData
-      })
+      });
     
-    return responseData
+    return responseData;
   } catch (error) {
-    console.error("Error enviando respuesta:", error)
-    return null
+    console.error("Error sending response:", error);
+    return null;
   }
 }
 
 async function processMessageStatus(supabase: any, phoneNumberId: string, status: any) {
   try {
-    // Actualizar estado del mensaje en la base de datos
+    // Update message status in database
     await supabase
       .from('whatsapp_messages')
       .update({
@@ -562,45 +564,45 @@ async function processMessageStatus(supabase: any, phoneNumberId: string, status
         timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString()
       })
       .eq('wa_message_id', status.id)
-      .eq('phone_number_id', phoneNumberId)
+      .eq('phone_number_id', phoneNumberId);
     
   } catch (error) {
-    console.error("Error actualizando estado del mensaje:", error)
+    console.error("Error updating message status:", error);
   }
 }
 
 async function verifySignature(payload: string, signature: string, appSecret: string): Promise<boolean> {
   try {
-    const signatureParts = signature.split('=')
-    if (signatureParts.length !== 2) return false
+    const signatureParts = signature.split('=');
+    if (signatureParts.length !== 2) return false;
     
-    const algorithm = signatureParts[0]
-    const expectedSignature = signatureParts[1]
+    const algorithm = signatureParts[0];
+    const expectedSignature = signatureParts[1];
     
-    if (algorithm !== 'sha256') return false
+    if (algorithm !== 'sha256') return false;
     
-    const encoder = new TextEncoder()
+    const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(appSecret),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign', 'verify']
-    )
+    );
     
     const actualSignature = await crypto.subtle.sign(
       'HMAC',
       key,
       encoder.encode(payload)
-    )
+    );
     
-    // Convertir el ArrayBuffer a un string hexadecimal
-    const hashArray = Array.from(new Uint8Array(actualSignature))
-    const actualHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    // Convert ArrayBuffer to hex string
+    const hashArray = Array.from(new Uint8Array(actualSignature));
+    const actualHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
-    return actualHex === expectedSignature
+    return actualHex === expectedSignature;
   } catch (error) {
-    console.error("Error verificando firma:", error)
-    return false
+    console.error("Error verifying signature:", error);
+    return false;
   }
 }

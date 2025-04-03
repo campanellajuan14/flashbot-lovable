@@ -39,16 +39,15 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 
 [auth.email]
-# Corregir: cambiar enable_signups a enable_confirmations
+# Changed from enable_signups to enable_confirmations
 double_confirm_changes = true
 enable_confirmations = false
 
 [functions]
-# Corregir: formato correcto para la sección de funciones
 enabled = true
 port = 54327
 
-# Configuración individual de funciones
+# Individual function configurations
 [functions.save-whatsapp-config]
 verify_jwt = true
 

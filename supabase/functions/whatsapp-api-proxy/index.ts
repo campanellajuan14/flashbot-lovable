@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 interface WhatsAppMessage {
@@ -38,73 +39,76 @@ serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  try {
-    // Configurar clientes de Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+  console.log("Starting whatsapp-api-proxy function");
 
-    // Cliente con autenticación de usuario
+  try {
+    // Set up Supabase clients
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+    // User authenticated client
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: req.headers.get('Authorization')! } },
-    })
+    });
 
-    // Cliente con rol de servicio para acceder al vault
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
+    // Admin client for vault access
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verificar autenticación del usuario
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      console.error("Error de autenticación:", authError)
+      console.error("Authentication error:", authError);
       return new Response(
-        JSON.stringify({ error: "No autorizado. Debe iniciar sesión." }),
+        JSON.stringify({ error: "Unauthorized. Please sign in." }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    // Obtener datos del cuerpo de la petición
-    const requestData = await req.json() as ProxyRequest
+    // Get request data
+    const requestData = await req.json() as ProxyRequest;
+    console.log("Request data received:", JSON.stringify(requestData));
 
-    // Validar acción solicitada
+    // Validate requested action
     if (!requestData.action) {
       return new Response(
-        JSON.stringify({ error: "Se debe especificar una acción" }),
+        JSON.stringify({ error: "An action must be specified" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    // Obtener configuración de WhatsApp del usuario
+    // Get user's WhatsApp configuration
     const { data: configData, error: configError } = await supabase
       .from('user_whatsapp_config')
       .select('phone_number_id, secret_id')
       .eq('user_id', user.id)
-      .single()
+      .single();
 
     if (configError || !configData) {
-      console.error("Error al obtener configuración:", configError)
+      console.error("Error getting configuration:", configError);
       return new Response(
-        JSON.stringify({ error: "No se encontró configuración de WhatsApp para este usuario" }),
+        JSON.stringify({ error: "No WhatsApp configuration found for this user" }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    // Obtener el token de API desde Vault
-    const { data: secretData, error: secretError } = await supabaseAdmin.vault.decrypt(configData.secret_id)
+    // Get API token from Vault
+    const { data: secretData, error: secretError } = await supabaseAdmin.vault.decrypt(configData.secret_id);
     
     if (secretError) {
-      console.error("Error al obtener token desde Vault:", secretError)
+      console.error("Error getting token from Vault:", secretError);
       return new Response(
-        JSON.stringify({ error: "Error al obtener credenciales seguras", details: secretError.message }),
+        JSON.stringify({ error: "Error retrieving secure credentials", details: secretError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    // Usar phone_number_id específico o el predeterminado del usuario
-    const phoneNumberId = requestData.phone_number_id || configData.phone_number_id
-    const apiToken = secretData.secret
+    // Use specific phone_number_id or default from user config
+    const phoneNumberId = requestData.phone_number_id || configData.phone_number_id;
+    const apiToken = secretData.secret;
 
-    // Procesar diferentes acciones
+    // Process different actions
     switch (requestData.action) {
       case 'send_message':
         return await handleSendMessage(
@@ -114,28 +118,28 @@ serve(async (req: Request) => {
           user.id,
           corsHeaders,
           supabaseAdmin
-        )
+        );
       
       case 'get_business_profile':
-        return await handleGetProfile(phoneNumberId, apiToken, corsHeaders)
+        return await handleGetProfile(phoneNumberId, apiToken, corsHeaders);
       
       case 'get_phone_numbers':
-        return await handleGetPhoneNumbers(apiToken, corsHeaders)
+        return await handleGetPhoneNumbers(apiToken, corsHeaders);
       
       default:
         return new Response(
-          JSON.stringify({ error: `Acción no soportada: ${requestData.action}` }),
+          JSON.stringify({ error: `Unsupported action: ${requestData.action}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        );
     }
   } catch (error) {
-    console.error("Error inesperado:", error)
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+      JSON.stringify({ error: "Internal server error", details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
 
 async function handleSendMessage(
   phoneNumberId: string, 
@@ -145,39 +149,40 @@ async function handleSendMessage(
   corsHeaders: Record<string, string>,
   supabaseAdmin: any
 ) {
-  // Validar parámetros necesarios
+  // Validate required parameters
   if (!requestData.recipient_phone || !requestData.message_content) {
     return new Response(
-      JSON.stringify({ error: "Se requieren recipient_phone y message_content para enviar mensaje" }),
+      JSON.stringify({ error: "recipient_phone and message_content are required to send a message" }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
 
-  // Formatear número de teléfono (asegurarse que comienza con código de país)
-  const recipientPhone = formatPhoneNumber(requestData.recipient_phone)
+  // Format phone number (ensure it starts with country code)
+  const recipientPhone = formatPhoneNumber(requestData.recipient_phone);
 
-  // Construir mensaje según tipo
+  // Build message according to type
   let messageBody: WhatsAppMessage = {
     recipient_type: "individual",
     to: recipientPhone,
     type: requestData.message_type || "text"
-  }
+  };
 
   if (messageBody.type === "text") {
     messageBody.text = {
       body: requestData.message_content
-    }
+    };
   } else if (messageBody.type === "template") {
     messageBody.template = {
       name: requestData.template_name || "hello_world",
       language: {
         code: requestData.template_lang || "es"
       }
-    }
+    };
   }
 
   try {
-    // Llamar a la API de WhatsApp para enviar el mensaje
+    // Call WhatsApp API to send message
+    console.log(`Sending message to ${recipientPhone} via WhatsApp API`);
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
       {
@@ -188,11 +193,12 @@ async function handleSendMessage(
         },
         body: JSON.stringify(messageBody)
       }
-    )
+    );
 
-    const responseData = await response.json()
+    const responseData = await response.json();
+    console.log("WhatsApp API response:", JSON.stringify(responseData));
 
-    // Registrar el mensaje enviado
+    // Log sent message
     if (response.ok) {
       try {
         await supabaseAdmin
@@ -208,31 +214,32 @@ async function handleSendMessage(
             direction: 'outbound',
             status: 'sent',
             metadata: responseData
-          })
+          });
+        console.log("Message logged successfully");
       } catch (logError) {
-        console.error("Error al registrar mensaje enviado:", logError)
-        // Continuar a pesar del error de registro
+        console.error("Error logging sent message:", logError);
+        // Continue despite logging error
       }
     }
 
     if (!response.ok) {
-      console.error("Error al enviar mensaje de WhatsApp:", responseData)
+      console.error("Error sending WhatsApp message:", responseData);
       return new Response(
-        JSON.stringify({ error: "Error al enviar mensaje", details: responseData }),
+        JSON.stringify({ error: "Error sending message", details: responseData }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     return new Response(
       JSON.stringify({ success: true, data: responseData }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
-    console.error("Error al enviar mensaje:", error)
+    console.error("Error sending message:", error);
     return new Response(
-      JSON.stringify({ error: "Error al comunicarse con la API de WhatsApp", details: error.message }),
+      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
 }
 
@@ -250,26 +257,26 @@ async function handleGetProfile(
           "Content-Type": "application/json"
         }
       }
-    )
+    );
 
-    const responseData = await response.json()
+    const responseData = await response.json();
 
     if (!response.ok) {
       return new Response(
-        JSON.stringify({ error: "Error al obtener perfil de negocio", details: responseData }),
+        JSON.stringify({ error: "Error getting business profile", details: responseData }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     return new Response(
       JSON.stringify({ success: true, data: responseData }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Error al comunicarse con la API de WhatsApp", details: error.message }),
+      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
 }
 
@@ -286,43 +293,43 @@ async function handleGetPhoneNumbers(
           "Content-Type": "application/json"
         }
       }
-    )
+    );
 
-    const responseData = await response.json()
+    const responseData = await response.json();
 
     if (!response.ok) {
       return new Response(
-        JSON.stringify({ error: "Error al obtener números de teléfono", details: responseData }),
+        JSON.stringify({ error: "Error getting phone numbers", details: responseData }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     return new Response(
       JSON.stringify({ success: true, data: responseData }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Error al comunicarse con la API de WhatsApp", details: error.message }),
+      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
 }
 
 function formatPhoneNumber(phone: string): string {
-  // Eliminar espacios, guiones y paréntesis
-  let cleaned = phone.replace(/[\s\-()]/g, '')
+  // Remove spaces, hyphens, and parentheses
+  let cleaned = phone.replace(/[\s\-()]/g, '');
   
-  // Asegurarse que comience con +
+  // Ensure it starts with +
   if (!cleaned.startsWith('+')) {
-    // Si comienza con 521 (México celular) o 52 (México fijo), agregar +
+    // If starts with 521 (Mexico mobile) or 52 (Mexico fixed), add +
     if (cleaned.startsWith('521') || cleaned.startsWith('52')) {
-      cleaned = '+' + cleaned
+      cleaned = '+' + cleaned;
     } else {
-      // Asumir México como predeterminado si no tiene código de país
-      cleaned = '+52' + cleaned
+      // Default to Mexico if no country code
+      cleaned = '+52' + cleaned;
     }
   }
   
-  return cleaned
+  return cleaned;
 }
