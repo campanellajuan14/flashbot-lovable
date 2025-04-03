@@ -21,18 +21,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-
-interface WhatsAppMessage {
-  id: string;
-  wa_message_id?: string;
-  from_number: string;
-  to_number: string;
-  message_content: string;
-  message_type: string;
-  direction: 'inbound' | 'outbound';
-  status?: string;
-  timestamp: string;
-}
+import { WhatsAppMessage } from '@/integrations/supabase/whatsappTypes';
 
 export const WhatsAppMessagesTab = () => {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
@@ -63,8 +52,14 @@ export const WhatsAppMessagesTab = () => {
           return;
         }
         
-        setMessages(data || []);
-        setHasMore((data || []).length === messagesPerPage);
+        // Make sure we have proper typing for messages
+        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+          setMessages(data.data as WhatsAppMessage[]);
+          setHasMore((data.data as WhatsAppMessage[]).length === messagesPerPage);
+        } else {
+          setMessages([]);
+          setHasMore(false);
+        }
       } catch (error) {
         console.error("Error loading messages:", error);
         toast({
@@ -211,8 +206,7 @@ export const WhatsAppMessagesTab = () => {
           variant="outline" 
           size="sm"
           onClick={() => setPage(Math.max(0, page - 1))}
-          disabled={page === 0 || isLoading}
-          className="disabled:opacity-50"
+          className={page === 0 ? "opacity-50 cursor-not-allowed" : ""}
         >
           <ChevronLeft className="h-4 w-4 mr-2" /> 
           Anterior
@@ -224,8 +218,7 @@ export const WhatsAppMessagesTab = () => {
           variant="outline" 
           size="sm"
           onClick={() => setPage(page + 1)}
-          disabled={!hasMore || isLoading}
-          className="disabled:opacity-50"
+          className={!hasMore ? "opacity-50 cursor-not-allowed" : ""}
         >
           Siguiente <ChevronRight className="h-4 w-4 ml-2" />
         </Button>

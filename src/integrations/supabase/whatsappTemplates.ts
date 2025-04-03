@@ -17,10 +17,16 @@ export interface WhatsAppTemplate {
 export async function getWhatsAppTemplates(): Promise<WhatsAppTemplate[]> {
   try {
     // Obtenemos la configuración de WhatsApp actual
-    const { data: config } = await supabase.rpc('get_user_whatsapp_config');
+    const { data: configData, error: configError } = await supabase.rpc('get_user_whatsapp_config');
+    
+    if (configError || !configData) {
+      throw new Error('No hay configuración de WhatsApp disponible');
+    }
+    
+    const config = configData as { phone_number_id?: string };
     
     if (!config || !config.phone_number_id) {
-      throw new Error('No hay configuración de WhatsApp disponible');
+      throw new Error('No hay phone_number_id en la configuración de WhatsApp');
     }
     
     // Obtenemos la sesión actual para la autorización
@@ -78,10 +84,16 @@ export async function sendWhatsAppTemplate(
 ): Promise<{id: string}> {
   try {
     // Obtenemos la configuración de WhatsApp actual
-    const { data: config } = await supabase.rpc('get_user_whatsapp_config');
+    const { data: configData, error: configError } = await supabase.rpc('get_user_whatsapp_config');
+    
+    if (configError || !configData) {
+      throw new Error('No hay configuración de WhatsApp disponible');
+    }
+    
+    const config = configData as { phone_number_id?: string };
     
     if (!config || !config.phone_number_id) {
-      throw new Error('No hay configuración de WhatsApp disponible');
+      throw new Error('No hay phone_number_id en la configuración de WhatsApp');
     }
     
     // Obtenemos la sesión actual para la autorización

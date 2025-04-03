@@ -13,6 +13,11 @@ interface ChatbotDetailsProps {
 }
 
 const ChatbotDetails: React.FC<ChatbotDetailsProps> = ({ chatbot }) => {
+  // Provide dummy onDelete handler since it's required
+  const handleDelete = () => {
+    console.log("Delete functionality not implemented in this view");
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="information" className="w-full">
@@ -27,7 +32,7 @@ const ChatbotDetails: React.FC<ChatbotDetailsProps> = ({ chatbot }) => {
         <Separator className="mb-6" />
         
         <TabsContent value="information">
-          <ChatbotInformation chatbot={chatbot} />
+          <ChatbotInformation chatbot={chatbot} onDelete={handleDelete} />
         </TabsContent>
         
         <TabsContent value="behavior">
