@@ -9,28 +9,37 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Creamos un cliente base
+// Create the base Supabase client
 const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Corregir: extendemos correctamente las definiciones de tipos para las funciones RPC
+// Define custom RPC functions
 type CustomRPCFunctions = 
   | 'get_user_whatsapp_config'
   | 'update_whatsapp_config_status'
   | 'update_whatsapp_active_chatbot'
   | 'get_whatsapp_messages';
 
-// Extendemos el tipo supabase para exponer la propiedad anon key que necesitamos
-const supabase = {
-  ...baseClient,
-  // Función RPC sobrecargada para aceptar nuestras funciones personalizadas
-  rpc: <T = any>(
-    fn: keyof Database['public']['Functions'] | CustomRPCFunctions,
-    params?: object
-  ): Promise<{ data: T; error: any }> => {
-    return baseClient.rpc(fn as string, params);
-  },
-  // Exponemos la clave anon de forma segura para usar en ciertas solicitudes
-  supabaseKey: SUPABASE_PUBLISHABLE_KEY
+// Create the extended client
+const supabase = baseClient as unknown as SupabaseClient<Database> & {
+  rpc<T = any>(fn: keyof Database['public']['Functions'] | CustomRPCFunctions, params?: object): Promise<{ data: T; error: any }>;
+  supabaseKey: string;
+  functions: {
+    invoke: (name: string, options?: { body?: object }) => Promise<{ data: any; error: any }>;
+  };
 };
+
+// Add the publishable key for external API calls
+supabase.supabaseKey = SUPABASE_PUBLISHABLE_KEY;
+
+// Add the functions property if it doesn't exist
+if (!('functions' in supabase)) {
+  Object.defineProperty(supabase, 'functions', {
+    value: {
+      invoke: (name: string, options?: { body?: object }) => 
+        baseClient.functions.invoke(name, options)
+    },
+    writable: false
+  });
+}
 
 export { supabase };

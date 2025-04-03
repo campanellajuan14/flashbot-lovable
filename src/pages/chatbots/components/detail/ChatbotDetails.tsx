@@ -1,42 +1,55 @@
 
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import ChatbotInformation from "./ChatbotInformation";
-import ChatbotConfiguration from "./ChatbotConfiguration";
-import ChatbotWhatsAppSettings from "@/components/whatsapp/ChatbotWhatsAppSettings";
-import { Chatbot } from "../../types";
+import ChatbotSettings from "./ChatbotSettings";
+import ChatbotBehavior from "./ChatbotBehavior";
+import ChatbotIntegrations from "./ChatbotIntegrations";
+import ChatbotShare from "./ChatbotShare";
 
 interface ChatbotDetailsProps {
-  chatbot: Chatbot;
+  chatbot: any;
 }
 
-const ChatbotDetails = ({ chatbot }: ChatbotDetailsProps) => {
+const ChatbotDetails: React.FC<ChatbotDetailsProps> = ({ chatbot }) => {
   return (
-    <Tabs defaultValue="info" className="w-full">
-      <TabsList className="grid grid-cols-3 mb-4">
-        <TabsTrigger value="info">Información</TabsTrigger>
-        <TabsTrigger value="config">Configuración</TabsTrigger>
-        <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="info" className="space-y-4">
-        <ChatbotInformation 
-          chatbot={chatbot} 
-          onDelete={() => {}} // Agregamos esta prop que faltaba
-        />
-      </TabsContent>
-
-      <TabsContent value="config" className="space-y-4">
-        <ChatbotConfiguration 
-          chatbot={chatbot}
-          chatbotId={chatbot.id} // Agregamos esta prop que faltaba
-        />
-      </TabsContent>
-      
-      <TabsContent value="whatsapp" className="space-y-4">
-        <ChatbotWhatsAppSettings chatbotId={chatbot.id} />
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-6">
+      <Tabs defaultValue="information" className="w-full">
+        <TabsList className="grid grid-cols-5 mb-4">
+          <TabsTrigger value="information">Información</TabsTrigger>
+          <TabsTrigger value="behavior">Comportamiento</TabsTrigger>
+          <TabsTrigger value="settings">Configuración</TabsTrigger>
+          <TabsTrigger value="integrations">Integraciones</TabsTrigger>
+          <TabsTrigger value="share">Compartir</TabsTrigger>
+        </TabsList>
+        
+        <Separator className="mb-6" />
+        
+        <TabsContent value="information">
+          <ChatbotInformation chatbot={chatbot} />
+        </TabsContent>
+        
+        <TabsContent value="behavior">
+          <ChatbotBehavior chatbot={chatbot} />
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <ChatbotSettings chatbot={chatbot} />
+        </TabsContent>
+        
+        <TabsContent value="integrations">
+          <ChatbotIntegrations 
+            chatbot={chatbot} 
+            chatbotId={chatbot.id} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="share">
+          <ChatbotShare chatbotId={chatbot.id} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
