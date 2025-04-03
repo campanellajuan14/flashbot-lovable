@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts"
@@ -415,16 +414,84 @@ async function processIncomingMessage(
       
       try {
         console.log("Preparing to send WhatsApp message...");
-        // Send message to WhatsApp
-        const whatsappResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
+        console.log(`Template to use: reply_to_message`);
+        console.log(`Response content: ${response.substring(0, 100)}...`);
+        
+        // Primero intentar con una plantilla aprobada
+        try {
+          const templatePayload = {
+            messaging_product: 'whatsapp',
+            to: message.from,
+            type: 'template',
+            template: {
+              name: 'reply_to_message',
+              language: {
+                code: 'es'
+              },
+              components: [
+                {
+                  type: 'body',
+                  parameters: [
+                    {
+                      type: 'text',
+                      text: response
+                    }
+                  ]
+                }
+              ]
+            }
+          };
+          
+          console.log("Sending template payload:", JSON.stringify(templatePayload));
+          
+          // Send message to WhatsApp
+          const whatsappResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(templatePayload)
+            }
+          );
+          
+          let responseData = await whatsappResponse.json();
+          console.log("WhatsApp API template response:", JSON.stringify(responseData));
+          
+          if (!whatsappResponse.ok) {
+            throw new Error(`Template message failed: ${JSON.stringify(responseData)}`);
+          }
+          
+          // Template message sent successfully
+          console.log("Template message sent successfully");
+          
+          // Log sent message
+          await supabase
+            .from('whatsapp_messages')
+            .insert({
+              user_id: configData.user_id,
+              phone_number_id: phoneNumberId,
+              wa_message_id: responseData.messages?.[0]?.id,
+              conversation_id: conversationId,
+              chatbot_id: configData.active_chatbot_id,
+              from_number: phoneNumberId,
+              to_number: message.from,
+              message_type: 'template',
+              message_content: response,
+              direction: 'outbound',
+              status: 'sent',
+              timestamp: new Date().toISOString(),
+              metadata: responseData
+            });
+        } catch (templateError) {
+          // Plantilla falló, probar con mensaje de texto
+          console.log("Template error:", templateError.message);
+          console.log("Trying to send as regular text message...");
+          
+          try {
+            const textPayload = {
               messaging_product: 'whatsapp',
               recipient_type: 'individual',
               to: message.from,
@@ -433,40 +500,60 @@ async function processIncomingMessage(
                 preview_url: true,
                 body: response
               }
-            })
+            };
+            
+            console.log("Sending text payload:", JSON.stringify(textPayload));
+            
+            const textResponse = await fetch(
+              `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(textPayload)
+              }
+            );
+            
+            const textResponseData = await textResponse.json();
+            console.log("WhatsApp text response:", JSON.stringify(textResponseData));
+            
+            if (!textResponse.ok) {
+              throw new Error(`Text message failed: ${JSON.stringify(textResponseData)}`);
+            }
+            
+            // Text message sent successfully
+            console.log("Text message sent successfully");
+            
+            // Log sent message
+            await supabase
+              .from('whatsapp_messages')
+              .insert({
+                user_id: configData.user_id,
+                phone_number_id: phoneNumberId,
+                wa_message_id: textResponseData.messages?.[0]?.id,
+                conversation_id: conversationId,
+                chatbot_id: configData.active_chatbot_id,
+                from_number: phoneNumberId,
+                to_number: message.from,
+                message_type: 'text',
+                message_content: response,
+                direction: 'outbound',
+                status: 'sent',
+                timestamp: new Date().toISOString(),
+                metadata: textResponseData
+              });
+          } catch (textError) {
+            console.error("Both template and text message failed:", textError.message);
+            throw new Error(`Could not send WhatsApp message: ${templateError.message} / ${textError.message}`);
           }
-        );
-        
-        const responseData = await whatsappResponse.json();
-        console.log("WhatsApp API response:", JSON.stringify(responseData));
-        
-        if (!whatsappResponse.ok) {
-          console.error(`Error sending message: HTTP ${whatsappResponse.status} - ${JSON.stringify(responseData)}`);
-          return;
         }
-        
-        // Log sent message
-        await supabase
-          .from('whatsapp_messages')
-          .insert({
-            user_id: configData.user_id,
-            phone_number_id: phoneNumberId,
-            wa_message_id: responseData.messages?.[0]?.id,
-            conversation_id: conversationId,
-            chatbot_id: configData.active_chatbot_id,
-            from_number: phoneNumberId,
-            to_number: message.from,
-            message_type: 'text',
-            message_content: response,
-            direction: 'outbound',
-            status: 'sent',
-            timestamp: new Date().toISOString(),
-            metadata: responseData
-          });
         
         console.log("Response sent and logged successfully");
       } catch (error) {
-        console.error("Error sending response to WhatsApp:", error);
+        console.error("Error sending response to WhatsApp:", error.message);
+        console.error("Stack trace:", error.stack);
       }
     }
   } catch (error) {
