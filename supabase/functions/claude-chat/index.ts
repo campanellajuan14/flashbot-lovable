@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
 
@@ -35,25 +34,7 @@ serve(async (req) => {
     console.log('- Origin:', origin);
     console.log('- Referer:', referer);
 
-    // Special widget authorization check
-    // Allow requests from the widget preview page or with widget source
-    const isWidgetRequest = 
-      (clientInfo && (clientInfo.includes('widget') || clientInfo.includes('embed'))) || 
-      referer.includes('widget') || 
-      origin.includes('widget') ||
-      apiKey === SUPABASE_ANON_KEY;
-
-    if (!authHeader && !isWidgetRequest) {
-      console.error('Unauthorized request: No authentication and not a widget request');
-      return new Response(JSON.stringify({
-        error: 'Unauthorized',
-        details: 'No valid authentication provided'
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
+    // Parse request data first so we have access to source
     const requestData = await req.json();
     const { messages, behavior, chatbotName, settings, chatbotId, widget_id, source, conversationId, user_info } = requestData;
 
@@ -63,6 +44,36 @@ serve(async (req) => {
     console.log('- Widget ID:', widget_id);
     console.log('- Chatbot ID:', chatbotId);
     console.log('- Conversation ID:', conversationId);
+    
+    // Now that we have source, do authorization checks
+    // Special widget authorization check
+    // Allow requests from the widget preview page or with widget source
+    const isWidgetRequest = 
+      (clientInfo && (clientInfo.includes('widget') || clientInfo.includes('embed'))) || 
+      referer.includes('widget') || 
+      origin.includes('widget') ||
+      apiKey === SUPABASE_ANON_KEY;
+      
+    // Allow requests from WhatsApp webhook function
+    const isInternalRequest = 
+      source === 'whatsapp-webhook' ||
+      source === 'whatsapp_webhook' ||
+      clientInfo?.includes('whatsapp') ||
+      referer?.includes('whatsapp');
+      
+    console.log('- Is widget request:', isWidgetRequest);
+    console.log('- Is internal (webhook) request:', isInternalRequest);
+
+    if (!authHeader && !isWidgetRequest && !isInternalRequest) {
+      console.error('Unauthorized request: No authentication and not a widget/webhook request');
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        details: 'No valid authentication provided'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error('Invalid request: messages array is required');
