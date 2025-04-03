@@ -1,243 +1,158 @@
 
-import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, X } from "lucide-react";
-import { ShareSettingsType } from "./ShareSettings";
+import { Eye, Phone } from "lucide-react";
+import { ShareSettings } from "./share/types";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatbotPreviewDialogProps {
   chatbotId: string;
-  widgetConfig: ShareSettingsType | null;
-  children?: React.ReactNode;
+  widgetConfig: ShareSettings | null;
 }
 
-const ChatbotPreviewDialog = ({ chatbotId, widgetConfig, children }: ChatbotPreviewDialogProps) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'web' | 'whatsapp'>('web');
 
-  if (!widgetConfig) return null;
+  // Función para verificar si WhatsApp está configurado y activo
+  const [isWhatsAppConfigured, setIsWhatsAppConfigured] = useState<boolean | null>(null);
+  const [isWhatsAppActive, setIsWhatsAppActive] = useState<boolean>(false);
+  const [isThisChatbotActive, setIsThisChatbotActive] = useState<boolean>(false);
 
-  const { appearance, content, colors, behavior } = widgetConfig;
-  const hideBackground = appearance?.hideBackground || false;
+  const checkWhatsAppConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_whatsapp_config')
+        .select('is_active, active_chatbot_id')
+        .single();
+      
+      if (error) {
+        console.error("Error verificando configuración WhatsApp:", error);
+        setIsWhatsAppConfigured(false);
+        return;
+      }
+      
+      setIsWhatsAppConfigured(true);
+      setIsWhatsAppActive(data.is_active);
+      setIsThisChatbotActive(data.active_chatbot_id === chatbotId);
+    } catch (error) {
+      console.error("Error al verificar WhatsApp:", error);
+      setIsWhatsAppConfigured(false);
+    }
+  };
+  
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      checkWhatsAppConfig();
+    }
+    setIsOpen(open);
+  };
+
+  const getWhatsAppStatusText = () => {
+    if (isWhatsAppConfigured === null) {
+      return "Verificando estado de WhatsApp...";
+    }
+    
+    if (!isWhatsAppConfigured) {
+      return "WhatsApp no está configurado";
+    }
+    
+    if (!isWhatsAppActive) {
+      return "WhatsApp está desactivado";
+    }
+    
+    if (!isThisChatbotActive) {
+      return "Este chatbot no está asignado a WhatsApp";
+    }
+    
+    return "Activo: Este chatbot responde mensajes de WhatsApp";
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="outline" className="gap-2 group" type="button">
-            <Eye className="h-4 w-4 group-hover:animate-pulse" /> 
-            Preview
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 overflow-hidden">
-        <div className="p-4 bg-muted/30 border-b">
-          <DialogHeader className="text-left">
-            <DialogTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2 text-primary" /> 
-              Widget Preview
-            </DialogTitle>
-            <DialogDescription>
-              This is how your chatbot will appear when embedded on your website
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-        
-        <div className="flex-1 p-6 overflow-auto">
-          {hideBackground ? (
-            <div className="h-full flex flex-col" 
-              style={{ 
-                backgroundColor: 'transparent',
-                color: colors?.text || '#333333',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-              {/* Messages only */}
-              {content?.welcome_message && (
-                <div className="flex justify-start">
-                  <div 
-                    style={{
-                      backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                      color: colors?.text || '#333333',
-                      padding: '8px 12px',
-                      borderRadius: '18px 18px 18px 0',
-                      maxWidth: '80%',
-                      textAlign: 'left'
-                    }}
-                  >
-                    {content?.welcome_message}
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex justify-end">
-                <div 
-                  style={{
-                    backgroundColor: colors?.user_bubble || colors?.primary || '#2563eb',
-                    color: '#ffffff',
-                    padding: '8px 12px',
-                    borderRadius: '18px 18px 0 18px',
-                    maxWidth: '80%',
-                    textAlign: 'left'
-                  }}
-                >
-                  How can I help you today?
-                </div>
-              </div>
-              
-              <div className="flex justify-start">
-                <div 
-                  style={{
-                    backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                    color: colors?.text || '#333333',
-                    padding: '8px 12px',
-                    borderRadius: '18px 18px 18px 0',
-                    maxWidth: '80%',
-                    textAlign: 'left'
-                  }}
-                >
-                  I'm here to answer your questions. What can I help you with?
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full border rounded-md overflow-hidden shadow-md" 
-              style={{ 
-                backgroundColor: colors?.background || '#ffffff',
-                color: colors?.text || '#333333',
-                borderRadius: `${appearance?.border_radius || 8}px`,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column'
-              }}>
-              {/* Header */}
-              <div className="p-4" style={{ backgroundColor: colors?.primary || '#2563eb', color: '#ffffff' }}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-medium">{content?.title || 'Chat'}</h3>
-                    {content?.subtitle && <p className="text-sm opacity-90">{content?.subtitle}</p>}
-                  </div>
-                  <button className="text-white/80 hover:text-white transition-colors">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Messages */}
-              <div 
-                className="flex-1 p-4 overflow-y-auto"
-                style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px'
-                }}
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1"
+        onClick={() => handleOpenChange(true)}
+      >
+        <Eye className="h-4 w-4" />
+        Vista previa
+      </Button>
+      
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Vista previa del chatbot</DialogTitle>
+            <div className="flex space-x-2 pt-2">
+              <Button 
+                variant={previewMode === 'web' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPreviewMode('web')}
               >
-                {content?.welcome_message && (
-                  <div className="flex justify-start">
-                    <div 
-                      style={{
-                        backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                        color: colors?.text || '#333333',
-                        padding: '8px 12px',
-                        borderRadius: '18px 18px 18px 0',
-                        maxWidth: '80%',
-                        textAlign: 'left'
-                      }}
-                    >
-                      {content?.welcome_message}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex justify-end">
-                  <div 
-                    style={{
-                      backgroundColor: colors?.user_bubble || colors?.primary || '#2563eb',
-                      color: '#ffffff',
-                      padding: '8px 12px',
-                      borderRadius: '18px 18px 0 18px',
-                      maxWidth: '80%',
-                      textAlign: 'left'
-                    }}
-                  >
-                    How can I help you today?
-                  </div>
-                </div>
-                
-                <div className="flex justify-start">
-                  <div 
-                    style={{
-                      backgroundColor: colors?.bot_bubble || '#f1f0f0',
-                      color: colors?.text || '#333333',
-                      padding: '8px 12px',
-                      borderRadius: '18px 18px 18px 0',
-                      maxWidth: '80%',
-                      textAlign: 'left'
-                    }}
-                  >
-                    I'm here to answer your questions. What can I help you with?
-                  </div>
-                </div>
-              </div>
-              
-              {/* Input */}
-              <div className="p-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={content?.placeholder_text || "Type a message..."}
-                    className="flex-1 p-2 border rounded"
-                    style={{ 
-                      borderColor: 'rgba(0,0,0,0.2)',
-                      borderRadius: '4px',
-                      color: colors?.text || '#333333'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    style={{
-                      backgroundColor: colors?.primary || '#2563eb',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '0 12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-              
-              {/* Branding */}
-              {content?.branding && (
-                <div 
-                  className="p-2 text-center text-xs" 
-                  style={{ borderTop: '1px solid rgba(0,0,0,0.1)', color: '#999' }}
-                >
-                  <a 
-                    href="https://flashbot.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ color: '#999', textDecoration: 'none' }}
-                  >
-                    Powered by Flashbot
-                  </a>
-                </div>
-              )}
+                <Eye className="h-4 w-4 mr-2" />
+                Web
+              </Button>
+              <Button
+                variant={previewMode === 'whatsapp' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPreviewMode('whatsapp')}
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                WhatsApp
+              </Button>
             </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto">
+            {previewMode === 'web' ? (
+              <div className="relative w-full h-full min-h-[500px] bg-muted/30 rounded-md border overflow-hidden">
+                <iframe 
+                  src={`${window.location.origin}/widget/${chatbotId}`}
+                  className="absolute inset-0 w-full h-full"
+                ></iframe>
+              </div>
+            ) : (
+              <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center space-y-4 bg-muted/30 rounded-md border p-8">
+                <Phone className="h-16 w-16 text-muted-foreground" />
+                <h3 className="text-xl font-semibold">Canal de WhatsApp</h3>
+                
+                <Badge variant={isThisChatbotActive && isWhatsAppActive ? "default" : "outline"}>
+                  {getWhatsAppStatusText()}
+                </Badge>
+                
+                <div className="text-center text-muted-foreground mt-4 max-w-md space-y-4">
+                  <p>
+                    La vista previa para WhatsApp no está disponible directamente.
+                    Para probar el chatbot, envía un mensaje al número de WhatsApp configurado.
+                  </p>
+                  
+                  {(!isWhatsAppConfigured || !isWhatsAppActive || !isThisChatbotActive) && (
+                    <div className="bg-muted p-4 rounded-md text-sm">
+                      <p className="font-medium">Para activar WhatsApp:</p>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Configura tu cuenta en Configuración &gt; WhatsApp</li>
+                        <li>Activa WhatsApp para tu cuenta</li>
+                        <li>Asigna este chatbot como el activo para WhatsApp</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/settings/whatsapp'}
+                >
+                  Ir a configuración de WhatsApp
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

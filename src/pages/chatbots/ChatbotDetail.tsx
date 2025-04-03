@@ -1,286 +1,108 @@
-import React, { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Edit, Trash2, Loader2, Share2 } from "lucide-react";
+
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import ShareSettings from "@/components/chatbots/share/ShareSettings";
-import ChatbotInformation from "./components/detail/ChatbotInformation";
-import ChatbotConfiguration from "./components/detail/ChatbotConfiguration";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Edit, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import ChatbotDetails from "./components/detail/ChatbotDetails";
 
 const ChatbotDetail = () => {
-  const { id: chatbotId } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
-
+  
   const {
     data: chatbot,
     isLoading,
-    isError,
     error,
   } = useQuery({
-    queryKey: ["chatbot", chatbotId],
+    queryKey: ["chatbot", id],
     queryFn: async () => {
-      if (!chatbotId) throw new Error("Chatbot ID required");
-
+      if (!id) throw new Error("Chatbot ID is required");
+      
       const { data, error } = await supabase
         .from("chatbots")
         .select("*")
-        .eq("id", chatbotId)
+        .eq("id", id)
+        .eq("user_id", user?.id)
         .single();
-
+        
       if (error) throw error;
-      
-      if (data) {
-        data.behavior = data.behavior || {};
-        data.settings = data.settings || {};
-      }
-      
       return data;
     },
+    enabled: !!id && !!user?.id,
   });
 
-  const deleteChatbotMutation = useMutation({
-    mutationFn: async () => {
-      if (!chatbotId) throw new Error("Chatbot ID required");
-
-      const { error } = await supabase.from("chatbots").delete().eq("id", chatbotId);
-
-      if (error) throw error;
-      return chatbotId;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Chatbot deleted",
-        description: "The chatbot has been successfully deleted.",
-      });
-      navigate("/chatbots");
-    },
-    onError: (error) => {
-      console.error("Error deleting chatbot:", error);
-      toast({
-        title: "Error",
-        description:
-          "Failed to delete the chatbot. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: async () => {
-      if (!chatbotId || !chatbot) throw new Error("Chatbot required");
-
-      const { error } = await supabase
-        .from("chatbots")
-        .update({ is_active: !chatbot.is_active })
-        .eq("id", chatbotId);
-
-      if (error) throw error;
-      return !chatbot.is_active;
-    },
-    onSuccess: (newActiveState) => {
-      toast({
-        title: newActiveState
-          ? "Chatbot activated"
-          : "Chatbot deactivated",
-        description: newActiveState
-          ? "The chatbot has been successfully activated."
-          : "The chatbot has been successfully deactivated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["chatbot", chatbotId] });
-    },
-    onError: (error) => {
-      console.error("Error changing chatbot state:", error);
-      toast({
-        title: "Error",
-        description:
-          "Failed to change the chatbot state. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleDeleteChatbot = () => {
-    deleteChatbotMutation.mutate();
-    setShowDeleteDialog(false);
+  const handleBack = () => {
+    navigate("/chatbots");
   };
 
-  const handleToggleActive = () => {
-    toggleActiveMutation.mutate();
+  const handleEdit = () => {
+    navigate(`/chatbots/${id}/edit`);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <DashboardLayout>
+        <div className="flex-1 items-center justify-center flex">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
-  if (isError || !chatbot) {
+  if (error || !chatbot) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error
-              ? error.message
-              : "An error occurred while loading the chatbot"}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate("/chatbots")}>Back to Chatbots</Button>
-      </div>
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <h2 className="text-xl font-medium text-destructive mb-2">Error</h2>
+          <p className="text-destructive/80">
+            No se pudo cargar el chatbot. El chatbot no existe o no tienes permiso para verlo.
+          </p>
+          <Button className="mt-4" onClick={handleBack} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a la lista de chatbots
+          </Button>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/chatbots">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-lg font-semibold">{chatbot.name}</h1>
-              <p className="text-sm text-muted-foreground">
-                Chatbot details
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToggleActive}
-              disabled={toggleActiveMutation.isPending}
-              type="button"
-            >
-              {toggleActiveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              {chatbot.is_active ? "Deactivate" : "Activate"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <Link to={`/chatbots/${chatbotId}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Link>
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              asChild
-            >
-              <Link to={`/chatbots/${chatbotId}/preview`}>
-                <Play className="h-4 w-4 mr-2" />
-                Preview
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 p-4">
-        <div className="container max-w-5xl mx-auto">
-          <Tabs 
-            defaultValue="info" 
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="info" type="button">Information</TabsTrigger>
-              <TabsTrigger value="config" type="button">Configuration</TabsTrigger>
-              <TabsTrigger value="share" type="button">Share</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="info" className="space-y-6 animate-fade-in">
-              <ChatbotInformation 
-                chatbot={chatbot} 
-                onDelete={() => setShowDeleteDialog(true)} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="config" className="animate-fade-in">
-              <ChatbotConfiguration 
-                chatbot={chatbot} 
-                chatbotId={chatbotId || ''} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="share" className="animate-fade-in">
-              <ShareSettings />
-            </TabsContent>
-          </Tabs>
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-6">
+          <Button onClick={handleBack} variant="outline" size="sm" className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
           
-          {/* Delete Confirmation Dialog */}
-          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete chatbot?</DialogTitle>
-                <DialogDescription>
-                  This action will permanently delete the chatbot {chatbot.name} and cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteDialog(false)}
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteChatbot}
-                  disabled={deleteChatbotMutation.isPending}
-                  type="button"
-                >
-                  {deleteChatbotMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight">{chatbot.name}</h1>
+                <Badge variant={chatbot.is_active ? "default" : "outline"}>
+                  {chatbot.is_active ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+              {chatbot.description && (
+                <p className="text-muted-foreground mt-1">{chatbot.description}</p>
+              )}
+            </div>
+            <Button onClick={handleEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar chatbot
+            </Button>
+          </div>
         </div>
+
+        <ChatbotDetails chatbot={chatbot} />
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -1,80 +1,103 @@
 
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
 import { 
-  LayoutDashboard, 
-  Zap, 
-  FileText, 
+  Dices, 
+  MessageSquare, 
   Settings, 
   BarChart,
-  MessageSquare
+  FileText,
+  MessagesSquare,
+  Menu,
+  ChevronLeft,
+  Phone
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
-const Sidebar = () => {
-  const location = useLocation();
+interface SidebarProps {
+  className?: string;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useAuth();
   
   const navItems = [
-    {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
+    { 
+      label: "Chatbots", 
+      icon: <MessageSquare className="h-5 w-5" />, 
+      href: "/chatbots" 
     },
-    {
-      title: "Chatbots",
-      href: "/chatbots",
-      icon: Zap,
+    { 
+      label: "Conversaciones",
+      icon: <MessagesSquare className="h-5 w-5" />,
+      href: "/conversations"
     },
-    {
-      title: "Conversaciones",
-      href: "/conversations",
-      icon: MessageSquare,
-      description: "Ver las conversaciones de tus chatbots"
+    { 
+      label: "Documentos",
+      icon: <FileText className="h-5 w-5" />,
+      href: "/documents"
     },
-    {
-      title: "Documentos",
-      href: "/documents",
-      icon: FileText,
-      description: "Gestionar los documentos de tus chatbots"
+    { 
+      label: "Estadísticas", 
+      icon: <BarChart className="h-5 w-5" />, 
+      href: "/analytics" 
     },
-    {
-      title: "Analytics",
-      href: "/analytics",
-      icon: BarChart,
+    { 
+      label: "Configuración", 
+      icon: <Settings className="h-5 w-5" />, 
+      href: "/settings" 
     },
-    {
-      title: "Settings",
-      href: "/settings",
-      icon: Settings,
-    },
-  ];
-
-  const isActive = (href: string) => {
-    if (href === "/dashboard") {
-      return location.pathname === href;
+    { 
+      label: "WhatsApp", 
+      icon: <Phone className="h-5 w-5" />, 
+      href: "/settings/whatsapp" 
     }
-    return location.pathname === href || location.pathname.startsWith(`${href}/`);
-  };
-
+  ];
+  
+  if (!user) return null;
+  
   return (
-    <div className="w-64 border-r bg-sidebar shadow-sm">
-      <div className="h-full py-4">
-        <nav className="space-y-1 px-2">
+    <div className={cn("border-r bg-background relative flex flex-col min-h-screen", className)}>
+      <div className="absolute right-[-12px] top-4 hidden md:flex">
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="rounded-full bg-background border h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isCollapsed ? <Menu size={12} /> : <ChevronLeft size={12} />}
+        </button>
+      </div>
+      
+      <div className={cn(
+        "flex items-center h-16 border-b px-4",
+        isCollapsed ? "justify-center" : "justify-between"
+      )}>
+        <div className="flex items-center gap-2 font-bold text-xl">
+          {!isCollapsed && <span>ChatSimp</span>}
+          <Dices className="h-6 w-6 text-primary" />
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-auto py-2">
+        <nav className="grid gap-1 px-2">
           {navItems.map((item) => (
-            <Link
+            <NavLink
               key={item.href}
               to={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-                isActive(item.href)
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-              )}
-              title={item.description}
+              className={({ isActive }) => 
+                cn(
+                  "flex items-center gap-3 px-3 py-2 text-sm rounded-md",
+                  "hover:bg-accent hover:text-accent-foreground transition-colors",
+                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                  isCollapsed ? "justify-center" : ""
+                )
+              }
+              title={isCollapsed ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5" />
-              {item.title}
-            </Link>
+              {item.icon}
+              {!isCollapsed && <span>{item.label}</span>}
+            </NavLink>
           ))}
         </nav>
       </div>

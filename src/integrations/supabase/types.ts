@@ -342,6 +342,122 @@ export type Database = {
         }
         Relationships: []
       }
+      user_whatsapp_config: {
+        Row: {
+          active_chatbot_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          phone_number_id: string
+          secret_id: string
+          updated_at: string
+          user_id: string
+          waba_id: string
+          webhook_verified: boolean
+          webhook_verify_token: string
+        }
+        Insert: {
+          active_chatbot_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number_id: string
+          secret_id: string
+          updated_at?: string
+          user_id: string
+          waba_id: string
+          webhook_verified?: boolean
+          webhook_verify_token?: string
+        }
+        Update: {
+          active_chatbot_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number_id?: string
+          secret_id?: string
+          updated_at?: string
+          user_id?: string
+          waba_id?: string
+          webhook_verified?: boolean
+          webhook_verify_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_whatsapp_config_active_chatbot_id_fkey"
+            columns: ["active_chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "chatbots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          chatbot_id: string | null
+          conversation_id: string | null
+          direction: string
+          from_number: string
+          id: string
+          message_content: string
+          message_type: string
+          metadata: Json | null
+          phone_number_id: string
+          status: string | null
+          timestamp: string
+          to_number: string
+          user_id: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          chatbot_id?: string | null
+          conversation_id?: string | null
+          direction: string
+          from_number: string
+          id?: string
+          message_content: string
+          message_type: string
+          metadata?: Json | null
+          phone_number_id: string
+          status?: string | null
+          timestamp?: string
+          to_number: string
+          user_id: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          chatbot_id?: string | null
+          conversation_id?: string | null
+          direction?: string
+          from_number?: string
+          id?: string
+          message_content?: string
+          message_type?: string
+          metadata?: Json | null
+          phone_number_id?: string
+          status?: string | null
+          timestamp?: string
+          to_number?: string
+          user_id?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "chatbots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
