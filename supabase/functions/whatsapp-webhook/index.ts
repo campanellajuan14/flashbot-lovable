@@ -387,6 +387,7 @@ async function processIncomingMessage(
         
         if (!secretError && secretData) {
           apiToken = secretData.secret;
+          console.log("Successfully retrieved API token from vault");
         } else {
           // Fallback to direct token retrieval
           console.log("Vault access failed, using direct token fetch");
@@ -398,6 +399,9 @@ async function processIncomingMessage(
             
           if (!tokenError && tokenData) {
             apiToken = tokenData.encrypted_token;
+            console.log("Successfully retrieved API token from direct DB query");
+          } else {
+            console.error("Error retrieving token from DB:", tokenError);
           }
         }
       } catch (error) {
@@ -410,6 +414,7 @@ async function processIncomingMessage(
       }
       
       try {
+        console.log("Preparing to send WhatsApp message...");
         // Send message to WhatsApp
         const whatsappResponse = await fetch(
           `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
@@ -436,7 +441,7 @@ async function processIncomingMessage(
         console.log("WhatsApp API response:", JSON.stringify(responseData));
         
         if (!whatsappResponse.ok) {
-          console.error("Error sending message:", responseData);
+          console.error(`Error sending message: HTTP ${whatsappResponse.status} - ${JSON.stringify(responseData)}`);
           return;
         }
         
@@ -531,7 +536,7 @@ async function generateChatbotResponse(
     
     // Prepare system message including behavior settings
     const systemMessage = `${chatbot.behavior?.tone || 'You are a professional and friendly assistant.'} ${chatbot.behavior?.instructions || ''}`;
-    console.log(`System message: "${systemMessage}"`);
+    console.log(`System message: "${systemMessage.substring(0, 100)}..."`);
     
     // Invoke appropriate function based on model
     const functionName = 'claude-chat'; // Use the same edge function for both models
