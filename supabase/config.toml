@@ -1,4 +1,6 @@
 
+# This file sets up authentication, storage, and functions configuration
+
 project_id = "obiiomoqhpbgaymfphdz"
 
 [api]

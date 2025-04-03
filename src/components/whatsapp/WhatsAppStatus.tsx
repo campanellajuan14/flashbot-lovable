@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -21,7 +20,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
 
