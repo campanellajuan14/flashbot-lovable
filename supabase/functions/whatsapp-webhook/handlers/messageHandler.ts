@@ -1,4 +1,3 @@
-
 import { findOrCreateConversation } from "../utils/conversation.ts";
 import { getWhatsAppToken } from "../utils/tokenRetrieval.ts";
 import { generateChatbotResponse } from "./responseGenerator.ts";
@@ -143,17 +142,19 @@ export async function processIncomingMessage(
       // Generate chatbot response using Claude or GPT
       console.log("Generating chatbot response...");
       
-      let response = null;
+      let response: string = "";
       try {
         // Log important parameters for debugging
         console.log(`Calling claude-chat with chatbotId=${configData.active_chatbot_id}, conversationId=${conversationId}`);
         console.log(`Using model: ${chatbot?.settings?.model || 'gpt-4o'}`);
         
-        response = await generateChatbotResponse(supabase, configData.active_chatbot_id, conversationId, messageContent, chatbot);
+        const generatedResponse = await generateChatbotResponse(supabase, configData.active_chatbot_id, conversationId, messageContent, chatbot);
         
-        if (!response) {
+        if (!generatedResponse) {
           console.log("No response from claude-chat, using fallback message");
           response = "Lo siento, estoy teniendo problemas para generar una respuesta. Por favor, inténtelo de nuevo más tarde.";
+        } else {
+          response = generatedResponse;
         }
       } catch (responseError) {
         console.error("Error generating response:", responseError);
@@ -161,7 +162,7 @@ export async function processIncomingMessage(
         response = "Lo siento, estamos experimentando dificultades técnicas. Por favor, inténtelo de nuevo más tarde.";
       }
       
-      console.log(`Generated response: "${response?.substring(0, 50)}..."`);
+      console.log(`Generated response: "${response.substring(0, 50)}..."`);
       
       // Log assistant response in conversations table
       await supabase
@@ -201,15 +202,40 @@ async function sendWhatsAppResponse(
   conversationId: string,
   configData: any
 ) {
+  // Limitar longitud del mensaje para evitar problemas
+  const MAX_MESSAGE_LENGTH = 1000;
+  if (response.length > MAX_MESSAGE_LENGTH) {
+    console.log(`Truncando respuesta larga de ${response.length} a ${MAX_MESSAGE_LENGTH} caracteres`);
+    response = response.substring(0, MAX_MESSAGE_LENGTH) + "...";
+  }
+
+  // Verificar y formatear el número de teléfono correctamente
+  let formattedNumber = recipientNumber;
+  if (!formattedNumber.match(/^\d+$/)) {
+    // Si hay caracteres no numéricos, limpiarlos
+    formattedNumber = formattedNumber.replace(/\D/g, '');
+    console.log(`Número limpiado de caracteres no numéricos: ${formattedNumber}`);
+  }
+  
+  // Asegurarse de que el número tenga formato internacional
+  if (!formattedNumber.match(/^[1-9]\d{10,14}$/)) {
+    // Si no tiene el formato internacional correcto, podría ser un problema
+    console.warn(`⚠️ ADVERTENCIA: El número ${formattedNumber} no parece tener formato internacional estándar`);
+  }
+
+  console.log(`📱 Enviando a número: ${formattedNumber}`);
+  console.log(`🔑 Token (primeros 10 chars): ${apiToken.substring(0, 10)}...`);
+  console.log(`📞 Phone Number ID: ${phoneNumberId}`);
+
   // Intentamos primero con mensaje de texto regular (más sencillo y confiable)
   try {
-    console.log("Preparing to send WhatsApp text message...");
-    console.log(`Response content: ${response?.substring(0, 100)}...`);
+    console.log("📤 Enviando mensaje de texto directo a WhatsApp...");
+    console.log(`📋 Contenido: "${response.substring(0, 50)}${response.length > 50 ? '...' : ''}"`);
     
     const textPayload = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
-      to: recipientNumber,
+      to: formattedNumber,
       type: 'text',
       text: {
         preview_url: true,
@@ -217,54 +243,99 @@ async function sendWhatsAppResponse(
       }
     };
     
-    console.log("Sending text payload:", JSON.stringify(textPayload));
+    console.log("📦 Payload completo:", JSON.stringify(textPayload, null, 2));
     
-    // Sending directly to the WhatsApp API instead of using the proxy
-    const textResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(textPayload)
+    // Incluir timeout para evitar bloqueos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+    
+    try {
+      // Sending directly to the WhatsApp API
+      const textResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(textPayload),
+          signal: controller.signal
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      // Capturar respuesta como texto para mejor análisis
+      const textResponseText = await textResponse.text();
+      console.log("📥 Respuesta cruda de WhatsApp:", textResponseText);
+      
+      // Intentar convertir a JSON si es posible
+      let textResponseData;
+      try {
+        textResponseData = JSON.parse(textResponseText);
+        console.log("🔍 Respuesta como JSON:", JSON.stringify(textResponseData, null, 2));
+      } catch (jsonError) {
+        console.error("❌ Error al analizar respuesta JSON:", jsonError);
+        textResponseData = { error: "Invalid JSON response", raw: textResponseText };
       }
-    );
-    
-    const textResponseData = await textResponse.json();
-    console.log("WhatsApp text response:", JSON.stringify(textResponseData));
-    
-    if (!textResponse.ok) {
-      // Si el mensaje de texto falla, podría ser porque estamos fuera de la ventana de 24h
-      // Intentamos con plantilla como último recurso
-      throw new Error(`Text message failed: ${JSON.stringify(textResponseData)}`);
+      
+      // Verificar errores específicos de WhatsApp
+      if (!textResponse.ok) {
+        const errorCode = textResponseData?.error?.code;
+        const errorMessage = textResponseData?.error?.message || "Unknown error";
+        
+        console.error(`❌ Error al enviar mensaje (${textResponse.status}): Código ${errorCode}, Mensaje: ${errorMessage}`);
+        
+        // Identificar errores específicos
+        if (errorCode === 100) {
+          console.error("⚠️ Error de parámetros: Verifica el formato del número y payload");
+        } else if (errorCode === 131047 || errorCode === 131051) {
+          console.error("⚠️ Fuera de la ventana de 24h, se requiere plantilla");
+        } else if (errorCode === 131026) {
+          console.error("⚠️ El número no está registrado en WhatsApp");
+        } else if (errorCode === 190) {
+          console.error("⚠️ Token inválido o expirado");
+        }
+        
+        throw new Error(`WhatsApp API error ${errorCode}: ${errorMessage}`);
+      }
+      
+      // Mensaje enviado con éxito
+      console.log("✅ Mensaje de texto enviado correctamente");
+      
+      // Registrar mensaje enviado
+      await supabase.from('whatsapp_messages').insert({
+        user_id: configData.user_id,
+        phone_number_id: phoneNumberId,
+        wa_message_id: textResponseData.messages?.[0]?.id,
+        conversation_id: conversationId,
+        chatbot_id: configData.active_chatbot_id,
+        from_number: phoneNumberId,
+        to_number: formattedNumber,
+        message_type: 'text',
+        message_content: response,
+        direction: 'outbound',
+        status: 'sent',
+        timestamp: new Date().toISOString(),
+        metadata: textResponseData
+      });
+      
+      console.log("📝 Mensaje registrado en base de datos");
+      return true;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error("⏱️ Timeout al enviar mensaje (10s)");
+        throw new Error("WhatsApp API request timed out");
+      }
+      throw fetchError;
     }
-    
-    // Text message sent successfully
-    console.log("Text message sent successfully");
-    
-    // Log sent message
-    await supabase.from('whatsapp_messages').insert({
-      user_id: configData.user_id,
-      phone_number_id: phoneNumberId,
-      wa_message_id: textResponseData.messages?.[0]?.id,
-      conversation_id: conversationId,
-      chatbot_id: configData.active_chatbot_id,
-      from_number: phoneNumberId,
-      to_number: recipientNumber,
-      message_type: 'text',
-      message_content: response,
-      direction: 'outbound',
-      status: 'sent',
-      timestamp: new Date().toISOString(),
-      metadata: textResponseData
-    });
     
   } catch (textError) {
     // Text message failed, try with template
-    console.log("Text message error:", textError.message);
-    await sendTemplateMessage(supabase, apiToken, phoneNumberId, recipientNumber, conversationId, configData);
+    console.log("❌ Error enviando mensaje de texto:", textError.message);
+    return await sendTemplateMessage(supabase, apiToken, phoneNumberId, formattedNumber, conversationId, configData);
   }
 }
 
@@ -279,18 +350,19 @@ async function sendTemplateMessage(
   conversationId: string,
   configData: any
 ) {
-  console.log("Trying to send as template message...");
+  console.log("🔄 Intentando enviar mensajes con plantilla...");
   
   try {
-    // Let's look for any template that might be available
-    console.log("Getting available templates...");
-    let templateName = "hello_world"; // Default fallback template name
-    let languageCode = "es";          // Default language
+    // Buscar plantillas disponibles
+    console.log("🔍 Obteniendo plantillas disponibles...");
+    let templateName = "hello_world"; // Plantilla por defecto
+    let languageCode = "es";          // Idioma por defecto
     
-    // Query API for available templates
+    // Consultar API para obtener plantillas
     try {
+      console.log("📞 Llamando a la API para obtener plantillas...");
       const templatesResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${phoneNumberId}/message_templates?fields=name,status,language&limit=10`, 
+        `https://graph.facebook.com/v18.0/${phoneNumberId}/message_templates?fields=name,status,language&limit=20`, 
         {
           method: 'GET',
           headers: {
@@ -300,27 +372,45 @@ async function sendTemplateMessage(
         }
       );
       
-      if (templatesResponse.ok) {
-        const templatesData = await templatesResponse.json();
-        console.log("Available templates:", JSON.stringify(templatesData));
+      const templatesText = await templatesResponse.text();
+      console.log("📄 Respuesta de plantillas (raw):", templatesText);
+      
+      let templatesData;
+      try {
+        templatesData = JSON.parse(templatesText);
+        console.log("📋 Plantillas disponibles:", JSON.stringify(templatesData, null, 2));
         
-        // Find first APPROVED template
+        // Encontrar una plantilla APROBADA
         if (templatesData.data && templatesData.data.length > 0) {
+          console.log(`🔢 Se encontraron ${templatesData.data.length} plantillas`);
+          
+          // Listar todas las plantillas para diagnóstico
+          templatesData.data.forEach((template: any, index: number) => {
+            console.log(`📑 Plantilla ${index+1}: ${template.name} - Estado: ${template.status} - Idioma: ${template.language || 'desconocido'}`);
+          });
+          
           const approvedTemplate = templatesData.data.find((t: any) => t.status === 'APPROVED');
           if (approvedTemplate) {
             templateName = approvedTemplate.name;
             languageCode = approvedTemplate.language || 'es';
-            console.log(`Using approved template: ${templateName} (${languageCode})`);
+            console.log(`✅ Usando plantilla aprobada: ${templateName} (${languageCode})`);
+          } else {
+            console.warn("⚠️ No se encontraron plantillas APROBADAS, usando la primera disponible");
+            templateName = templatesData.data[0].name;
+            languageCode = templatesData.data[0].language || 'es';
           }
+        } else {
+          console.warn("⚠️ No se encontraron plantillas, usando valores por defecto");
         }
-      } else {
-        console.error("Error getting templates, using default");
+      } catch (parseError) {
+        console.error("❌ Error al analizar respuesta de plantillas:", parseError);
       }
     } catch (templatesError) {
-      console.error("Error fetching templates:", templatesError);
+      console.error("❌ Error al obtener plantillas:", templatesError);
+      console.log("⚠️ Continuando con plantilla por defecto");
     }
     
-    // Send with template
+    // Enviar con plantilla
     const templatePayload = {
       messaging_product: 'whatsapp',
       to: recipientNumber,
@@ -344,9 +434,9 @@ async function sendTemplateMessage(
       }
     };
     
-    console.log("Sending template payload:", JSON.stringify(templatePayload));
+    console.log("📦 Enviando payload de plantilla:", JSON.stringify(templatePayload, null, 2));
     
-    // Direct call to WhatsApp API instead of using proxy
+    // Llamada directa a la API de WhatsApp
     const templateResponse = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
       {
@@ -359,17 +449,31 @@ async function sendTemplateMessage(
       }
     );
     
-    const templateResponseData = await templateResponse.json();
-    console.log("WhatsApp template response:", JSON.stringify(templateResponseData));
+    const templateResponseText = await templateResponse.text();
+    console.log("📥 Respuesta cruda de plantilla:", templateResponseText);
     
-    if (!templateResponse.ok) {
-      throw new Error(`Template message failed: ${JSON.stringify(templateResponseData)}`);
+    let templateResponseData;
+    try {
+      templateResponseData = JSON.parse(templateResponseText);
+      console.log("🔍 Respuesta de plantilla como JSON:", JSON.stringify(templateResponseData, null, 2));
+    } catch (jsonError) {
+      console.error("❌ Error al analizar respuesta JSON de plantilla:", jsonError);
+      templateResponseData = { error: "Invalid JSON response", raw: templateResponseText };
     }
     
-    // Template message sent successfully
-    console.log("Template message sent successfully as fallback");
+    if (!templateResponse.ok) {
+      const errorCode = templateResponseData?.error?.code;
+      const errorMessage = templateResponseData?.error?.message || "Unknown error";
+      
+      console.error(`❌ Error al enviar plantilla (${templateResponse.status}): Código ${errorCode}, Mensaje: ${errorMessage}`);
+      
+      throw new Error(`Template message failed: ${errorMessage}`);
+    }
     
-    // Log sent message
+    // Plantilla enviada con éxito
+    console.log("✅ Mensaje de plantilla enviado con éxito como alternativa");
+    
+    // Registrar mensaje enviado
     await supabase.from('whatsapp_messages').insert({
       user_id: configData.user_id,
       phone_number_id: phoneNumberId,
@@ -386,8 +490,12 @@ async function sendTemplateMessage(
       metadata: templateResponseData
     });
     
+    console.log("📝 Mensaje de plantilla registrado en base de datos");
+    return true;
+    
   } catch (templateError) {
-    console.error("All message sending methods failed:", templateError.message);
-    console.error("Could not respond to the user's message");
+    console.error("❌ Todos los métodos de envío fallaron:", templateError.message);
+    console.error("⛔ No se pudo responder al mensaje del usuario");
+    return false;
   }
 }

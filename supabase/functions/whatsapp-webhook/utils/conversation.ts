@@ -1,4 +1,3 @@
-
 /**
  * Find or create a conversation for a user contacting a chatbot
  */
@@ -44,4 +43,17 @@ export async function findOrCreateConversation(
     console.error("Error in findOrCreateConversation:", error);
     return { data: null, error };
   }
+}
+
+/**
+ * Generate a random string of specified length for IDs, tracking, etc.
+ */
+export function getRandomString(length: number): string {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
 }
