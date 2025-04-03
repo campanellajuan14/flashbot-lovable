@@ -43,6 +43,7 @@ refresh_token_reuse_interval = 10
 double_confirm_changes = true
 enable_confirmations = false
 
+# Correctly formatted functions section
 [functions]
 enabled = true
 port = 54327
