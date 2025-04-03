@@ -29,9 +29,8 @@ export const WhatsAppStatus = () => {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  // Use a fixed value or extract it from a public source
-  const projectRef = "obiiomoqhpbgaymfphdz"; 
-  const webhookUrl = `https://${projectRef}.supabase.co/functions/v1/whatsapp-webhook`;
+  // URL de la Edge Function de Webhook
+  const webhookUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/whatsapp-webhook`;
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -182,13 +181,13 @@ export const WhatsAppStatus = () => {
             <div className="text-sm font-medium mb-1">URL del Webhook</div>
             <div className="flex items-center gap-2">
               <div className="text-sm text-muted-foreground truncate max-w-[300px]">
-                {webhookUrl}
+                {webhookUrl}?phone_number_id={config.phone_number_id}
               </div>
               <Button 
                 size="icon" 
                 variant="outline" 
                 className="h-6 w-6" 
-                onClick={() => copyToClipboard(webhookUrl, "URL del webhook copiada")}
+                onClick={() => copyToClipboard(`${webhookUrl}?phone_number_id=${config.phone_number_id}`, "URL del webhook copiada")}
               >
                 <Copy className="h-3 w-3" />
                 <span className="sr-only">Copiar URL</span>

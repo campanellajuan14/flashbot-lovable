@@ -88,19 +88,45 @@ export const WhatsAppConfigForm = () => {
     
     try {
       console.log("Llamando a la edge function save-whatsapp-config");
-      const { data, error } = await supabase.functions.invoke('save-whatsapp-config', {
-        body: {
+
+      // Usar la URL completa para la edge function
+      const functionUrl = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/save-whatsapp-config';
+      
+      // Obtener token de autorización del usuario actual
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      // Llamar directamente a la función con fetch para mejor control de errores
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': supabase.supabaseKey
+        },
+        body: JSON.stringify({
           phone_number_id: values.phoneNumberId,
           waba_id: values.wabaId,
           api_token: values.apiToken
-        }
+        })
       });
 
-      if (error) {
-        console.error("Error en la edge function:", error);
-        throw new Error(error.message || "Error al guardar la configuración");
+      if (!response.ok) {
+        // Intentar obtener el mensaje de error
+        let errorMessage = `Error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Falló al parsear el error, usamos el mensaje genérico
+        }
+        throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       console.log("Respuesta de la edge function:", data);
       
       toast({

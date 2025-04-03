@@ -14,6 +14,8 @@ const corsHeaders = {
 // Function to verify WhatsApp API token
 async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promise<boolean> {
   try {
+    console.log(`Verificando token para phone_number_id: ${phoneNumberId}`);
+    
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}`,
       {
@@ -29,7 +31,8 @@ async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promis
       console.error("Error verifying WhatsApp token:", error);
       return false;
     }
-
+    
+    console.log("Token verificado con éxito");
     return true;
   } catch (error) {
     console.error("Error in token verification:", error);
