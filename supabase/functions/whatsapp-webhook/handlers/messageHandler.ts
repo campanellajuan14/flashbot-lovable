@@ -15,7 +15,7 @@ export async function processIncomingMessage(
     // Obtener la configuración para este número de teléfono
     const { data: config, error: configError } = await supabase
       .from('user_whatsapp_config')
-      .select('user_id, active_chatbot_id, is_active')
+      .select('user_id, active_chatbot_id, is_active, secret_id')
       .eq('phone_number_id', phoneNumberId)
       .single();
       
@@ -41,6 +41,7 @@ export async function processIncomingMessage(
     // Importar los módulos necesarios
     const { findOrCreateConversation } = await import("../utils/conversation.ts");
     const { generateChatbotResponse } = await import("./responseGenerator.ts");
+    const { getWhatsAppToken } = await import("../utils/tokenRetrieval.ts");
     
     // Buscar o crear conversación
     const { data: conversation, error: conversationError } = await findOrCreateConversation(
@@ -128,31 +129,18 @@ export async function processIncomingMessage(
           content: response
         });
       
-      // Enviar la respuesta a WhatsApp
-      const { data: whatsappConfig, error: whatsappConfigError } = await supabase
-        .from('user_whatsapp_config')
-        .select('secret_id')
-        .eq('phone_number_id', phoneNumberId)
-        .single();
+      // Recuperar token para enviar respuesta usando la función mejorada
+      console.log(`🔑 Recuperando token de WhatsApp para secret_id: ${config.secret_id}`);
+      const token = await getWhatsAppToken(supabase, config.secret_id);
       
-      if (whatsappConfigError || !whatsappConfig) {
-        throw new Error(`No se pudo obtener la configuración para enviar la respuesta: ${whatsappConfigError?.message}`);
+      if (!token) {
+        throw new Error("No se pudo obtener un token válido de WhatsApp");
       }
       
-      // Recuperar token para enviar respuesta
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('user_whatsapp_tokens')
-        .select('encrypted_token')
-        .eq('id', whatsappConfig.secret_id)
-        .single();
-        
-      if (tokenError || !tokenData) {
-        throw new Error(`No se pudo obtener el token para enviar la respuesta: ${tokenError?.message}`);
-      }
-      
-      const token = tokenData.encrypted_token;
+      console.log(`✅ Token recuperado correctamente`);
       
       // Enviar respuesta a WhatsApp
+      console.log(`📤 Enviando respuesta a WhatsApp para ${message.from}`);
       const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
         method: 'POST',
         headers: {
@@ -174,6 +162,22 @@ export async function processIncomingMessage(
       if (!whatsappResponse.ok) {
         const errorData = await whatsappResponse.text();
         console.error(`❌ Error enviando respuesta a WhatsApp: ${whatsappResponse.status} ${errorData}`);
+        
+        // Información detallada para depuración
+        try {
+          const errorJson = JSON.parse(errorData);
+          console.error(`❌ Detalles del error: ${JSON.stringify(errorJson)}`);
+          
+          // Si es un error de token inválido, podríamos intentar regenerar/refrescar el token en una implementación futura
+          if (whatsappResponse.status === 401 || 
+             (errorJson.error && (errorJson.error.code === 190 || errorJson.error.message?.includes('access token')))) {
+            console.error(`❌ Error de autenticación - Token inválido o expirado. Se requiere actualización manual del token.`);
+          }
+        } catch (e) {
+          // Si no es JSON, mostrar como texto
+          console.error(`❌ Error no analizable: ${errorData}`);
+        }
+        
         throw new Error(`Error enviando mensaje a WhatsApp: ${whatsappResponse.status}`);
       }
       

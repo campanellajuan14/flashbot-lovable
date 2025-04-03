@@ -29,7 +29,7 @@ export async function generateChatbotResponse(
     const systemPrompt = `${chatbot.behavior?.tone || 'Eres un asistente profesional y amable.'} ${chatbot.behavior?.instructions || ''}`;
     console.log(`📝 [${requestId}] Instrucciones del sistema: "${systemPrompt.substring(0, 100)}..."`);
     
-    // Intentar con función Edge claude-chat primero
+    // Intentar con función Edge claude-chat primero con un tiempo de espera menor
     console.log(`🔄 [${requestId}] Invocando función Edge claude-chat...`);
     
     const startTime = Date.now();
@@ -52,9 +52,9 @@ export async function generateChatbotResponse(
           source: 'whatsapp-webhook',
           request_id: requestId
         },
-        // Establecer un timeout de 30 segundos
+        // Establecer un timeout de 15 segundos
         fetchOptions: {
-          signal: AbortSignal.timeout(30000)
+          signal: AbortSignal.timeout(15000)
         }
       });
       
@@ -78,55 +78,92 @@ export async function generateChatbotResponse(
     } catch (functionError) {
       console.error(`❌ [${requestId}] Error en función Edge:`, functionError);
       
-      // Si es un error de timeout, intentar método alternativo
+      // Si es un error de timeout, intentar método alternativo con OpenAI
       if (functionError.name === 'AbortError' || functionError.message?.includes('timeout')) {
-        console.warn(`⏱️ [${requestId}] Timeout en invocación de función Edge (>30s)`);
+        console.warn(`⏱️ [${requestId}] Timeout en invocación de función Edge (>15s)`);
         
-        // Intentar con llamada directa a OpenAI API si está disponible
-        const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+        // Intentar con llamada directa a OpenAI API
+        console.log(`🔄 [${requestId}] Intentando llamada directa a OpenAI API...`);
         
-        if (openaiApiKey) {
-          console.log(`🔄 [${requestId}] Intentando llamada directa a OpenAI API...`);
+        try {
+          // Obtener API key de OpenAI (asegúrese de que esté configurada en los secretos)
+          const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
           
-          try {
-            const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${openaiApiKey}`
-              },
-              body: JSON.stringify({
-                model: "gpt-4",
-                messages: [
-                  { role: "system", content: systemPrompt },
-                  { role: "user", content: userMessage }
-                ],
-                max_tokens: 1000,
-                temperature: 0.7
-              })
-            });
-            
-            if (!openaiResponse.ok) {
-              throw new Error(`OpenAI API error: ${openaiResponse.status}`);
-            }
-            
-            const openaiData = await openaiResponse.json();
-            const message = openaiData.choices[0]?.message?.content;
-            
-            if (message) {
-              console.log(`✅ [${requestId}] Respuesta recuperada de OpenAI directamente`);
-              return message;
-            }
-          } catch (openaiError) {
-            console.error(`❌ [${requestId}] Error en llamada directa a OpenAI:`, openaiError);
+          if (!openaiApiKey) {
+            console.error(`❌ [${requestId}] API key de OpenAI no está configurada`);
+            throw new Error("API key de OpenAI no configurada");
           }
+          
+          const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${openaiApiKey}`
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",  // Usar un modelo más rápido como fallback
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userMessage }
+              ],
+              max_tokens: maxTokens,
+              temperature: temperature
+            })
+          });
+          
+          if (!openaiResponse.ok) {
+            // Intentar obtener detalles del error
+            let errorDetail = "";
+            try {
+              const errorData = await openaiResponse.json();
+              errorDetail = JSON.stringify(errorData);
+            } catch (e) {
+              errorDetail = await openaiResponse.text();
+            }
+            throw new Error(`Error de OpenAI API: ${openaiResponse.status} - ${errorDetail}`);
+          }
+          
+          const openaiData = await openaiResponse.json();
+          const message = openaiData.choices[0]?.message?.content;
+          
+          if (message) {
+            console.log(`✅ [${requestId}] Respuesta recuperada de OpenAI directamente`);
+            return message;
+          } else {
+            throw new Error("Respuesta de OpenAI no contiene mensaje");
+          }
+        } catch (openaiError) {
+          console.error(`❌ [${requestId}] Error en llamada directa a OpenAI:`, openaiError);
+          throw openaiError;
         }
+      } else {
+        // Otro tipo de error
+        throw functionError;
       }
-      
-      throw functionError;
     }
   } catch (error) {
     console.error(`❌ [${requestId}] Error generando respuesta:`, error);
+    
+    // Mensaje de respaldo en caso de error
+    const fallbackMessage = "Lo siento, estoy teniendo dificultades para responder en este momento. Por favor, inténtalo de nuevo más tarde.";
+    
+    // Registrar información de diagnóstico
+    try {
+      await supabase.from('message_metrics').insert({
+        chatbot_id: chatbotId,
+        query: userMessage.substring(0, 500),
+        has_documents: false,
+        message_tokens: userMessage.length,
+        metadata: {
+          error: error.message || "Unknown error",
+          timestamp: new Date().toISOString(),
+          conversation_id: conversationId,
+          request_id: requestId
+        }
+      });
+    } catch (logError) {
+      console.error(`❌ [${requestId}] Error registrando métrica de error:`, logError);
+    }
     
     // Mensaje de error específico según el tipo de error
     if (error.message?.includes('rate limit') || error.message?.includes('429')) {
@@ -137,6 +174,6 @@ export async function generateChatbotResponse(
       return "Lo siento, hay un problema con la autenticación del servicio. El equipo técnico ha sido notificado.";
     }
     
-    return "Lo siento, estoy teniendo problemas para responder en este momento. Por favor, intenta de nuevo más tarde.";
+    return fallbackMessage;
   }
 }
