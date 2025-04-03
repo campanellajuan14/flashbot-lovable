@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { MessageSquare, Settings, History } from 'lucide-react';
+import { MessageSquare, Settings, History, TestLine } from 'lucide-react';
 import WhatsAppConfigForm from '@/components/whatsapp/WhatsAppConfigForm';
 import WhatsAppStatus from '@/components/whatsapp/WhatsAppStatus';
 import WhatsAppMessagesTab from './components/WhatsAppMessagesTab';
+import WhatsAppTestMessage from '@/components/whatsapp/WhatsAppTestMessage';
 
 const WhatsAppSettingsPage = () => {
   const [activeTab, setActiveTab] = useState<string>('config');
@@ -29,6 +30,10 @@ const WhatsAppSettingsPage = () => {
               <Settings className="h-4 w-4" />
               Configuración
             </TabsTrigger>
+            <TabsTrigger value="test" className="gap-2">
+              <TestLine className="h-4 w-4" />
+              Probar
+            </TabsTrigger>
             <TabsTrigger value="messages" className="gap-2">
               <History className="h-4 w-4" />
               Historial de Mensajes
@@ -43,6 +48,29 @@ const WhatsAppSettingsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <WhatsAppConfigForm />
               <WhatsAppStatus />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="test">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <WhatsAppTestMessage />
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle>Diagnóstico de Integración</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Utiliza este componente para verificar si tu integración de WhatsApp está funcionando correctamente:
+                  </p>
+                  
+                  <ul className="list-disc pl-5 space-y-2 text-sm">
+                    <li>Envía un mensaje de prueba al número que desees</li>
+                    <li>Si el mensaje se envía correctamente, tu configuración y token están funcionando</li>
+                    <li>Si recibes un error relacionado con el token, deberás actualizar el token en la pestaña de configuración</li>
+                    <li>Asegúrate de que el número incluya el código de país (ej: +34612345678)</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
           

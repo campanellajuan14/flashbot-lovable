@@ -11,14 +11,14 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.log("🔍 Intentando recuperar token desde user_whatsapp_tokens...");
       const { data: tokenData, error: tokenError } = await supabase
         .from('user_whatsapp_tokens')
-        .select('encrypted_token, updated_at, created_at')
+        .select('encrypted_token, created_at')
         .eq('id', secretId)
         .single();
         
       if (!tokenError && tokenData && tokenData.encrypted_token) {
-        // Usar updated_at si existe, sino usar created_at como respaldo
-        const lastUpdated = tokenData.updated_at || tokenData.created_at || 'desconocido';
-        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_tokens (actualizado: ${lastUpdated})`);
+        // Usar created_at como respaldo
+        const lastUpdated = tokenData.created_at || 'desconocido';
+        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_tokens (creado: ${lastUpdated})`);
         
         // Verificar la antigüedad del token (más de 60 días = advertencia)
         if (lastUpdated !== 'desconocido') {
@@ -72,13 +72,13 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
     try {
       console.log("🔍 Intentando recuperar token mediante consulta directa por secret_id...");
       
+      // Consulta directa sin usar updated_at que puede no existir
       const { data: configWithToken, error: configTokenError } = await supabase
         .from('user_whatsapp_config')
         .select(`
           phone_number_id,
           user_whatsapp_tokens!inner(
             encrypted_token,
-            updated_at,
             created_at
           )
         `)
@@ -86,12 +86,10 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
         .single();
       
       if (!configTokenError && configWithToken?.user_whatsapp_tokens?.encrypted_token) {
-        // Usar updated_at si existe, sino usar created_at como respaldo
-        const lastUpdated = configWithToken.user_whatsapp_tokens.updated_at || 
-                           configWithToken.user_whatsapp_tokens.created_at || 
-                           'desconocido';
+        // Usar created_at como respaldo
+        const lastUpdated = configWithToken.user_whatsapp_tokens.created_at || 'desconocido';
         
-        console.log(`✅ Token recuperado exitosamente mediante join (actualizado: ${lastUpdated})`);
+        console.log(`✅ Token recuperado exitosamente mediante join (creado: ${lastUpdated})`);
         
         // Verificar la antigüedad del token si hay fecha
         if (lastUpdated !== 'desconocido') {
@@ -155,22 +153,22 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.error("❌ Error en diagnóstico:", diagError);
     }
     
-    // All methods failed - last attempt with direct database query
+    // Last attempt: Check if there's a token directly in secret_data with no filtering
     try {
-      console.log("🔍 Último intento: consulta directa a la base de datos...");
+      console.log("🔍 Último intento: buscando token en secret_data sin filtros...");
       
-      const { data: lastResort, error: lastResortError } = await supabase
-        .from('user_whatsapp_tokens')
-        .select('*')
+      const { data: lastResortConfig, error: lastResortError } = await supabase
+        .from('user_whatsapp_config')
+        .select('secret_data')
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
         
-      if (!lastResortError && lastResort && lastResort.encrypted_token) {
-        console.log("⚠️ Usando el token más reciente disponible como último recurso");
-        return lastResort.encrypted_token;
+      if (!lastResortError && lastResortConfig && lastResortConfig.secret_data) {
+        console.log("⚠️ Usando token de secret_data más reciente como último recurso");
+        return lastResortConfig.secret_data;
       } else {
-        console.error("❌ No se encontraron tokens disponibles:", lastResortError?.message || "No hay datos");
+        console.error("❌ No se encontró token en secret_data:", lastResortError?.message || "No hay datos");
       }
     } catch (lastError) {
       console.error("❌ Error en último intento:", lastError);
