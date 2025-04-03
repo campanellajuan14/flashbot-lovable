@@ -46,7 +46,7 @@ export const WhatsAppConfigForm = () => {
     }
   });
 
-  // Cargar configuración existente
+  // Load existing configuration
   useEffect(() => {
     const loadConfig = async () => {
       if (!user?.id) return;
@@ -56,18 +56,19 @@ export const WhatsAppConfigForm = () => {
           .rpc('get_user_whatsapp_config');
         
         if (error) {
-          console.error("Error al cargar configuración:", error);
+          console.error("Error loading configuration:", error);
           return;
         }
         
         if (data) {
-          setExistingConfig(data as WhatsAppConfig);
-          form.setValue('phoneNumberId', data.phone_number_id || '');
-          form.setValue('wabaId', data.waba_id || '');
-          // No cargamos el token por seguridad
+          const config = data as WhatsAppConfig;
+          setExistingConfig(config);
+          form.setValue('phoneNumberId', config.phone_number_id || '');
+          form.setValue('wabaId', config.waba_id || '');
+          // Don't load token for security reasons
         }
       } catch (error) {
-        console.error("Error al cargar la configuración:", error);
+        console.error("Error loading configuration:", error);
       }
     };
     

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,17 +37,14 @@ export const WhatsAppMessagesTab = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['whatsapp-messages', page],
     queryFn: async () => {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error, count } = await supabase
-        .rpc('get_whatsapp_messages', { page_size: pageSize, page_number: page });
+      const { data, error } = await supabase
+        .rpc('get_whatsapp_messages', { page_number: page, page_size: pageSize });
 
       if (error) throw error;
 
       return {
-        messages: data as WhatsAppMessage[],
-        count: count || 0
+        messages: data?.data as WhatsAppMessage[],
+        count: data?.count as number || 0
       };
     }
   });
@@ -193,7 +189,6 @@ export const WhatsAppMessagesTab = () => {
   );
 };
 
-// Funciones auxiliares
 const formatPhone = (phone: string) => {
   if (!phone) return '-';
   return phone.length > 10 ? `${phone.slice(0, 5)}...${phone.slice(-4)}` : phone;

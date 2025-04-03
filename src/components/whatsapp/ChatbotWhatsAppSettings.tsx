@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -35,26 +34,27 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
       try {
         setIsLoading(true);
         
-        // Obtener la configuración de WhatsApp del usuario
+        // Get user's WhatsApp configuration
         const { data: whatsAppConfig, error: whatsAppError } = await supabase
           .rpc('get_user_whatsapp_config');
         
         if (whatsAppError) {
-          console.error("Error al obtener configuración de WhatsApp:", whatsAppError);
+          console.error("Error getting WhatsApp configuration:", whatsAppError);
           setHasWhatsAppConfig(false);
           return;
         }
         
         if (whatsAppConfig) {
+          const config = whatsAppConfig as WhatsAppConfig;
           setHasWhatsAppConfig(true);
-          setIsActive(whatsAppConfig.is_active || false);
-          setIsActiveChatbot(whatsAppConfig.active_chatbot_id === chatbotId);
+          setIsActive(config.is_active || false);
+          setIsActiveChatbot(config.active_chatbot_id === chatbotId);
         } else {
           setHasWhatsAppConfig(false);
         }
         
       } catch (error) {
-        console.error("Error al cargar configuración:", error);
+        console.error("Error loading configuration:", error);
       } finally {
         setIsLoading(false);
       }
@@ -69,7 +69,7 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
     setIsSaving(true);
     
     try {
-      // Actualizar la configuración de WhatsApp
+      // Update WhatsApp configuration status
       const { error } = await supabase
         .rpc('update_whatsapp_config_status', {
           is_active_value: checked
@@ -82,19 +82,19 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
       setIsActive(checked);
       
       toast({
-        title: checked ? "WhatsApp activado" : "WhatsApp desactivado",
+        title: checked ? "WhatsApp activated" : "WhatsApp deactivated",
         description: checked 
-          ? "Tu chatbot ahora podrá responder mensajes de WhatsApp" 
-          : "Tu chatbot ya no responderá mensajes de WhatsApp",
+          ? "Your chatbot can now respond to WhatsApp messages" 
+          : "Your chatbot will no longer respond to WhatsApp messages",
       });
       
     } catch (error: any) {
-      console.error("Error al actualizar estado de WhatsApp:", error);
+      console.error("Error updating WhatsApp status:", error);
       
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "No se pudo actualizar la configuración",
+        description: error.message || "Could not update configuration",
       });
       
     } finally {
@@ -108,7 +108,7 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
     setIsSaving(true);
     
     try {
-      // Actualizar el chatbot activo
+      // Update active chatbot for WhatsApp
       const { error } = await supabase
         .rpc('update_whatsapp_active_chatbot', {
           chatbot_id_value: checked ? chatbotId : null
@@ -121,19 +121,19 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
       setIsActiveChatbot(checked);
       
       toast({
-        title: checked ? "Chatbot activado para WhatsApp" : "Chatbot desactivado para WhatsApp",
+        title: checked ? "Chatbot activated for WhatsApp" : "Chatbot deactivated for WhatsApp",
         description: checked 
-          ? "Este chatbot ahora responderá los mensajes de WhatsApp" 
-          : "Este chatbot ya no responderá mensajes de WhatsApp",
+          ? "This chatbot will now respond to WhatsApp messages" 
+          : "This chatbot will no longer respond to WhatsApp messages",
       });
       
     } catch (error: any) {
-      console.error("Error al actualizar chatbot activo:", error);
+      console.error("Error updating active chatbot:", error);
       
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "No se pudo actualizar la configuración",
+        description: error.message || "Could not update configuration",
       });
       
     } finally {

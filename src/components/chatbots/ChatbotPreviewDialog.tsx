@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,32 +16,33 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogP
   const [isOpen, setIsOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<'web' | 'whatsapp'>('web');
 
-  // Función para verificar si WhatsApp está configurado y activo
+  // Function to check if WhatsApp is configured and active
   const [isWhatsAppConfigured, setIsWhatsAppConfigured] = useState<boolean | null>(null);
   const [isWhatsAppActive, setIsWhatsAppActive] = useState<boolean>(false);
   const [isThisChatbotActive, setIsThisChatbotActive] = useState<boolean>(false);
 
   const checkWhatsAppConfig = async () => {
     try {
-      // Usando la función rpc para evitar errores de tipo
+      // Using the rpc function to get WhatsApp config
       const { data, error } = await supabase
         .rpc('get_user_whatsapp_config');
       
       if (error) {
-        console.error("Error verificando configuración WhatsApp:", error);
+        console.error("Error checking WhatsApp configuration:", error);
         setIsWhatsAppConfigured(false);
         return;
       }
       
       if (data) {
+        const config = data as WhatsAppConfig;
         setIsWhatsAppConfigured(true);
-        setIsWhatsAppActive(data.is_active || false);
-        setIsThisChatbotActive(data.active_chatbot_id === chatbotId);
+        setIsWhatsAppActive(config.is_active || false);
+        setIsThisChatbotActive(config.active_chatbot_id === chatbotId);
       } else {
         setIsWhatsAppConfigured(false);
       }
     } catch (error) {
-      console.error("Error al verificar WhatsApp:", error);
+      console.error("Error checking WhatsApp:", error);
       setIsWhatsAppConfigured(false);
     }
   };

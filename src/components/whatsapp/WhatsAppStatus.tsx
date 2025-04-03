@@ -28,7 +28,7 @@ export const WhatsAppStatus = () => {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  // Usar un valor fijo o extraerlo de una forma pública
+  // Use a fixed value or extract it from a public source
   const projectRef = "obiiomoqhpbgaymfphdz"; 
   const webhookUrl = `https://${projectRef}.supabase.co/functions/v1/whatsapp-webhook`;
 
@@ -39,7 +39,7 @@ export const WhatsAppStatus = () => {
           .rpc('get_user_whatsapp_config');
 
         if (error) {
-          console.error('Error al cargar configuración:', error);
+          console.error('Error loading configuration:', error);
           setConfig(null);
         } else if (data) {
           setConfig(data as WhatsAppConfig);
@@ -47,7 +47,7 @@ export const WhatsAppStatus = () => {
           setConfig(null);
         }
       } catch (err) {
-        console.error('Error al cargar configuración:', err);
+        console.error('Error loading configuration:', err);
       } finally {
         setIsLoading(false);
       }

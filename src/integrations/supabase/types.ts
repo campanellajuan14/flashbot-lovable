@@ -511,6 +511,17 @@ export type Database = {
         }
         Returns: Json[]
       }
+      get_user_whatsapp_config: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_whatsapp_messages: {
+        Args: {
+          page_number: number
+          page_size: number
+        }
+        Returns: Json
+      }
       halfvec_avg: {
         Args: {
           "": number[]
@@ -664,6 +675,18 @@ export type Database = {
         Args: {
           temp_id: string
           doc: Json
+        }
+        Returns: undefined
+      }
+      update_whatsapp_active_chatbot: {
+        Args: {
+          chatbot_id_value: string
+        }
+        Returns: undefined
+      }
+      update_whatsapp_config_status: {
+        Args: {
+          is_active_value: boolean
         }
         Returns: undefined
       }
