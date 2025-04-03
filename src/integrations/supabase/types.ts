@@ -21,6 +21,7 @@ export type Database = {
           share_settings: Json | null
           updated_at: string
           user_id: string
+          user_id_text: string
         }
         Insert: {
           behavior?: Json
@@ -33,6 +34,7 @@ export type Database = {
           share_settings?: Json | null
           updated_at?: string
           user_id: string
+          user_id_text: string
         }
         Update: {
           behavior?: Json
@@ -45,6 +47,7 @@ export type Database = {
           share_settings?: Json | null
           updated_at?: string
           user_id?: string
+          user_id_text?: string
         }
         Relationships: []
       }
@@ -94,6 +97,7 @@ export type Database = {
           name: string
           updated_at: string
           user_id: string
+          user_id_text: string
         }
         Insert: {
           chatbot_id: string
@@ -105,6 +109,7 @@ export type Database = {
           name: string
           updated_at?: string
           user_id: string
+          user_id_text: string
         }
         Update: {
           chatbot_id?: string
@@ -116,6 +121,7 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+          user_id_text?: string
         }
         Relationships: [
           {
@@ -359,6 +365,12 @@ export type Database = {
           temp_id: string
         }
         Returns: undefined
+      }
+      extract_user_id: {
+        Args: {
+          user_id_value: string
+        }
+        Returns: string
       }
       get_retrieval_settings: {
         Args: {
