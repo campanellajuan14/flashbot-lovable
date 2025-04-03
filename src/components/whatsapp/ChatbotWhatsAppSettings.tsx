@@ -1,162 +1,204 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useParams } from 'react-router-dom';
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowRight, Check, MessageSquare, Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { MessageSquare, ArrowUpRight, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { WhatsAppConfig } from '@/integrations/supabase/whatsappTypes';
 
-interface ChatbotWhatsAppSettingsProps {
-  chatbotId: string;
-}
-
-const ChatbotWhatsAppSettings = ({ chatbotId }: ChatbotWhatsAppSettingsProps) => {
+const ChatbotWhatsAppSettings = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { id: chatbotId } = useParams();
   const [isLoading, setIsLoading] = useState(true);
-  const [isActive, setIsActive] = useState(false);
-  const [config, setConfig] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [config, setConfig] = useState<WhatsAppConfig | null>(null);
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
+  // Cargar la configuración de WhatsApp
   useEffect(() => {
-    const fetchConfig = async () => {
-      setIsLoading(true);
+    const loadConfig = async () => {
       try {
-        // Fetch WhatsApp configuration
-        const { data: whatsappConfig, error: configError } = await supabase
-          .rpc('get_user_whatsapp_config');
+        setIsLoading(true);
+        
+        // Obtener la configuración actual de WhatsApp
+        const { data, error } = await supabase
+          .rpc<WhatsAppConfig>('get_user_whatsapp_config');
           
-        if (configError) {
-          console.error("Error fetching WhatsApp configuration:", configError);
+        if (error) {
+          console.error("Error loading WhatsApp configuration:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudo cargar la configuración de WhatsApp",
+          });
           return;
         }
         
-        setConfig(whatsappConfig);
-        
-        // Check if this chatbot is already active
-        if (whatsappConfig && whatsappConfig.active_chatbot_id === chatbotId) {
-          setIsActive(true);
+        // Si hay configuración, actualizar el estado
+        if (data) {
+          setConfig(data);
+          setIsActive(!!data.is_active);
+          setIsEnabled(data.active_chatbot_id === chatbotId);
         }
-      } catch (error) {
-        console.error("Error loading WhatsApp status:", error);
+      } catch (err) {
+        console.error("Error:", err);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Ocurrió un error al cargar la configuración",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchConfig();
-  }, [chatbotId]);
-  
-  const activateChatbot = async () => {
-    setIsSaving(true);
+    if (chatbotId) {
+      loadConfig();
+    }
+  }, [chatbotId, toast]);
+
+  // Manejar cambio en el estado de activación del chatbot
+  const handleEnableToggle = async () => {
+    if (!config) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No hay configuración de WhatsApp. Configúrela primero.",
+      });
+      return;
+    }
+    
     try {
-      // Set this chatbot as active
-      const { error: chatbotError } = await supabase
+      setIsSaving(true);
+      
+      // Activar/desactivar este chatbot
+      const newChatbotId = isEnabled ? null : chatbotId;
+      
+      // Actualizar en la base de datos
+      const { error } = await supabase
         .rpc('update_whatsapp_active_chatbot', {
-          chatbot_id_value: chatbotId
+          chatbot_id_value: newChatbotId
         });
         
-      if (chatbotError) throw new Error(chatbotError.message);
-      
-      // Update active status if not already active
-      if (!config?.is_active) {
-        const { error: statusError } = await supabase
-          .rpc('update_whatsapp_config_status', {
-            is_active_value: true
-          });
-          
-        if (statusError) throw new Error(statusError.message);
+      if (error) {
+        throw new Error(error.message);
       }
       
-      setIsActive(true);
-      setConfig(prev => prev ? {...prev, active_chatbot_id: chatbotId, is_active: true} : null);
+      // Actualizar el estado local
+      setIsEnabled(!isEnabled);
+      setConfig(prev => prev ? {
+        ...prev,
+        active_chatbot_id: newChatbotId
+      } : null);
       
       toast({
-        title: "WhatsApp activado",
-        description: "Este chatbot responderá ahora a los mensajes de WhatsApp",
+        title: isEnabled ? "Chatbot desactivado" : "Chatbot activado",
+        description: isEnabled 
+          ? "Este chatbot ya no responderá mensajes de WhatsApp" 
+          : "Este chatbot ahora responderá mensajes de WhatsApp",
       });
-    } catch (error: any) {
-      console.error("Error setting WhatsApp chatbot:", error);
+      
+    } catch (err) {
+      console.error("Error toggling chatbot:", err);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "No se pudo activar WhatsApp para este chatbot",
+        description: "No se pudo actualizar la configuración",
       });
     } finally {
       setIsSaving(false);
     }
   };
-  
-  const deactivateChatbot = async () => {
-    setIsSaving(true);
+
+  // Manejar cambio en el estado general de WhatsApp
+  const handleActivationToggle = async () => {
+    if (!config) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No hay configuración de WhatsApp. Configúrela primero.",
+      });
+      return;
+    }
+    
     try {
-      // Set another chatbot as active or null
-      const { error: chatbotError } = await supabase
-        .rpc('update_whatsapp_active_chatbot', {
-          chatbot_id_value: null
+      setIsSaving(true);
+      
+      // Activar/desactivar WhatsApp
+      const { error } = await supabase
+        .rpc('update_whatsapp_config_status', {
+          is_active_value: !isActive
         });
         
-      if (chatbotError) throw new Error(chatbotError.message);
+      if (error) {
+        throw new Error(error.message);
+      }
       
-      setIsActive(false);
-      setConfig(prev => prev ? {...prev, active_chatbot_id: null} : null);
+      // Actualizar el estado local
+      setIsActive(!isActive);
+      setConfig(prev => prev ? {
+        ...prev,
+        is_active: !isActive
+      } : null);
       
       toast({
-        title: "WhatsApp desactivado",
-        description: "Este chatbot ya no responderá a los mensajes de WhatsApp",
+        title: isActive ? "WhatsApp desactivado" : "WhatsApp activado",
+        description: isActive 
+          ? "Los mensajes de WhatsApp ya no serán procesados" 
+          : "Los mensajes de WhatsApp ahora serán procesados",
       });
-    } catch (error: any) {
-      console.error("Error disabling WhatsApp chatbot:", error);
+      
+    } catch (err) {
+      console.error("Error toggling WhatsApp:", err);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "No se pudo desactivar WhatsApp para este chatbot",
+        description: "No se pudo actualizar la configuración",
       });
     } finally {
       setIsSaving(false);
     }
   };
-  
-  const goToWhatsAppSettings = () => {
-    navigate('/settings/whatsapp');
-  };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center h-32">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!config) {
+  // Si no hay configuración, mostrar mensaje
+  if (!isLoading && !config) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>WhatsApp</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Integración con WhatsApp
+          </CardTitle>
           <CardDescription>
-            Conecta este chatbot con WhatsApp Business
+            Configure primero su cuenta de WhatsApp Business en la sección de Configuración.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted/30 p-6 rounded-lg border text-center">
-            <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-            <h3 className="text-lg font-medium mb-1">WhatsApp no configurado</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Primero necesitas configurar la integración con WhatsApp Business API.
-            </p>
-            <Button onClick={goToWhatsAppSettings}>
-              Configurar WhatsApp
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/settings/whatsapp'}
+            className="flex items-center gap-2"
+          >
+            Ir a Configuración de WhatsApp <ArrowUpRight className="h-4 w-4" />
+          </Button>
         </CardContent>
       </Card>
     );
@@ -165,65 +207,118 @@ const ChatbotWhatsAppSettings = ({ chatbotId }: ChatbotWhatsAppSettingsProps) =>
   return (
     <Card>
       <CardHeader>
-        <CardTitle>WhatsApp</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          Integración con WhatsApp
+        </CardTitle>
         <CardDescription>
-          Conecta este chatbot con WhatsApp Business
+          Configure la integración de este chatbot con WhatsApp Business.
         </CardDescription>
       </CardHeader>
+      
       <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-base">Activar en WhatsApp</Label>
-            <p className="text-sm text-muted-foreground">
-              {isActive 
-                ? "Este chatbot está respondiendo mensajes de WhatsApp" 
-                : "Activa este chatbot para responder mensajes de WhatsApp"}
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isActive ? (
-              <Button 
-                variant="outline" 
-                onClick={deactivateChatbot}
-                disabled={isSaving}
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                Desactivar
-              </Button>
-            ) : (
-              <Button 
-                onClick={activateChatbot}
-                disabled={isSaving}
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                Activar
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {isActive && (
-          <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5">
-                <Check className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">Chatbot activo en WhatsApp</h3>
-                <div className="mt-2 text-sm text-green-700">
-                  <p>Este chatbot está configurado para responder automáticamente a los mensajes que recibas en WhatsApp Business.</p>
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-green-800 font-semibold"
-                    onClick={goToWhatsAppSettings}
-                  >
-                    Ver historial de mensajes
-                  </Button>
-                </div>
-              </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="whatsapp-status" className="font-medium">Estado de WhatsApp</Label>
+            <div className="flex items-center gap-2">
+              {isActive ? (
+                <span className="text-sm text-green-600 flex items-center gap-1 font-medium">
+                  <Check className="h-4 w-4" /> Activo
+                </span>
+              ) : (
+                <span className="text-sm text-red-600 flex items-center gap-1 font-medium">
+                  <X className="h-4 w-4" /> Inactivo
+                </span>
+              )}
+              <Switch
+                id="whatsapp-status"
+                checked={isActive}
+                onCheckedChange={handleActivationToggle}
+                disabled={isLoading || isSaving}
+              />
             </div>
           </div>
-        )}
+          <p className="text-sm text-muted-foreground">
+            {isActive 
+              ? "WhatsApp está activo y procesando mensajes entrantes." 
+              : "WhatsApp está desactivado. No se procesarán mensajes entrantes."}
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="chatbot-whatsapp" className="font-medium">Activar este chatbot para WhatsApp</Label>
+            <div className="flex items-center gap-2">
+              {isEnabled ? (
+                <span className="text-sm text-green-600 flex items-center gap-1 font-medium">
+                  <Check className="h-4 w-4" /> Activo
+                </span>
+              ) : (
+                <span className="text-sm text-red-600 flex items-center gap-1 font-medium">
+                  <X className="h-4 w-4" /> Inactivo
+                </span>
+              )}
+              <Switch
+                id="chatbot-whatsapp"
+                checked={isEnabled}
+                onCheckedChange={handleEnableToggle}
+                disabled={isLoading || isSaving || !config}
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {isEnabled 
+              ? "Este chatbot está configurado para responder mensajes de WhatsApp." 
+              : "Este chatbot no responderá mensajes de WhatsApp."}
+          </p>
+          
+          {isEnabled && config?.active_chatbot_id === chatbotId && (
+            <div className="bg-green-50 border border-green-200 rounded p-3 mt-3">
+              <p className="text-sm text-green-700 font-medium">
+                Este chatbot está actualmente configurado como respuesta automática para tu cuenta de WhatsApp.
+              </p>
+            </div>
+          )}
+          
+          {config?.active_chatbot_id && config.active_chatbot_id !== chatbotId && (
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-3">
+              <p className="text-sm text-amber-700">
+                Actualmente hay otro chatbot configurado para responder a WhatsApp. 
+                Si activas este chatbot, el otro será desactivado.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <Label className="font-medium">Estado del webhook</Label>
+          <div className="flex items-center gap-2">
+            {config?.webhook_verified ? (
+              <span className="text-sm text-green-600 flex items-center gap-1 font-medium">
+                <Check className="h-4 w-4" /> Verificado
+              </span>
+            ) : (
+              <span className="text-sm text-amber-600 flex items-center gap-1 font-medium">
+                <X className="h-4 w-4" /> No verificado
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {config?.webhook_verified 
+              ? "El webhook de WhatsApp está correctamente verificado." 
+              : "El webhook de WhatsApp no está verificado. Configure el webhook en Meta Business Suite."}
+          </p>
+          
+          <div className="mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/settings/whatsapp'}
+              className="flex items-center gap-2"
+            >
+              Ir a Configuración de WhatsApp <ArrowUpRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

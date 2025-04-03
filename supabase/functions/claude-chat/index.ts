@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
 
@@ -283,6 +284,12 @@ Important instructions about using these documents:
 4. Don't explicitly mention that you're using "documents" unless the user specifically asks about your sources.
 5. If you quote information from the documents, do so naturally and fluidly in your response.
 6. If you need to reference a specific document, you can refer to the content without mentioning that it is a document.`;
+    }
+
+    // Special instructions for WhatsApp
+    if (source === 'whatsapp-webhook' || source === 'whatsapp_webhook') {
+      systemPrompt += `\n\nIMPORTANT: You are responding to a WhatsApp message. Keep your responses concise and focused. 
+      Avoid very long explanations as they don't display well on mobile. Break text into shorter paragraphs for readability.`;
     }
 
     console.log('System prompt:', systemPrompt);

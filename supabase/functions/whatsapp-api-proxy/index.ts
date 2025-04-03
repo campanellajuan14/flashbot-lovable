@@ -1,3 +1,4 @@
+
 // Supabase Edge Function: whatsapp-api-proxy
 // Proxy seguro para llamadas a la API de WhatsApp
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -12,29 +13,73 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// Función para recuperar el token de WhatsApp del usuario
+// IMPROVED: More robust token retrieval function that tries multiple methods
 async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
+  console.log(`Attempting to retrieve WhatsApp token for user ${userId}, secret ID: ${secretId}`);
+  
   try {
-    // Usar Vault para recuperar el token seguro
+    // Method 1: Try to get from Vault first (if available)
     if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
-      console.log("Usando Supabase Vault para recuperar el token");
-      const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
-      
-      if (error) {
-        throw new Error(`Error desencriptando token desde Vault: ${error.message}`);
+      try {
+        console.log("Attempting to retrieve token from Vault...");
+        const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
+        
+        if (!error && data) {
+          console.log("Successfully retrieved API token from Vault");
+          return data;
+        } else {
+          console.error("Failed to retrieve token from Vault:", error);
+        }
+      } catch (vaultError) {
+        console.error("Vault access error:", vaultError);
       }
-      
-      if (!data) {
-        throw new Error(`No se pudo recuperar token desde Vault (data vacía)`);
-      }
-      
-      return data;
+    } else {
+      console.log("Vault not available, skipping Vault token retrieval");
     }
     
-    // Si Vault no está disponible, proporcionar un error claro
+    // Method 2: Try to get directly from user_whatsapp_tokens table
+    try {
+      console.log("Attempting to retrieve token from user_whatsapp_tokens table...");
+      const { data: tokenData, error: tokenError } = await supabaseAdmin
+        .from('user_whatsapp_tokens')
+        .select('encrypted_token')
+        .eq('id', secretId)
+        .single();
+        
+      if (!tokenError && tokenData && tokenData.encrypted_token) {
+        console.log("Successfully retrieved API token from user_whatsapp_tokens table");
+        return tokenData.encrypted_token;
+      } else {
+        console.error("Error retrieving token from user_whatsapp_tokens table:", tokenError);
+      }
+    } catch (dbError) {
+      console.error("Database access error:", dbError);
+    }
+    
+    // Method 3: Fallback - try direct query from user_whatsapp_config table
+    try {
+      console.log("Attempting to retrieve token from secret_data in user_whatsapp_config...");
+      const { data: configData, error: configError } = await supabaseAdmin
+        .from('user_whatsapp_config')
+        .select('secret_data')
+        .eq('secret_id', secretId)
+        .single();
+        
+      if (!configError && configData && configData.secret_data) {
+        console.log("Successfully retrieved API token from user_whatsapp_config");
+        return configData.secret_data;
+      } else {
+        console.error("Error retrieving token from user_whatsapp_config:", configError);
+      }
+    } catch (backupError) {
+      console.error("Backup token retrieval error:", backupError);
+    }
+    
+    // All methods failed
+    console.error("All token retrieval methods failed");
     throw new Error(
-      "No se puede recuperar el token de WhatsApp porque Vault no está disponible. " +
-      "Contacta al administrador del sistema para verificar la configuración de Vault."
+      "No se pudo recuperar el token de WhatsApp. " +
+      "Verifica que el token se haya guardado correctamente en la configuración."
     );
     
   } catch (error) {
@@ -117,15 +162,21 @@ serve(async (req) => {
       throw new Error("Missing required fields: action or params");
     }
     
-    // Recuperar token de WhatsApp
+    // Recuperar token de WhatsApp usando la función mejorada
     const whatsappToken = await getWhatsAppToken(supabaseAdmin, user.id, config.secret_id);
     
     if (!whatsappToken) {
       throw new Error("Could not retrieve WhatsApp token");
     }
     
+    console.log(`Successfully retrieved WhatsApp token for user ${user.id}`);
+    console.log(`Making API call to WhatsApp: ${action}`);
+    
     // Construir y ejecutar la llamada a la API de WhatsApp
     const whatsappApiUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/${action}`;
+    
+    console.log(`Calling WhatsApp API at URL: ${whatsappApiUrl}`);
+    console.log(`With params: ${JSON.stringify(params)}`);
     
     const whatsappResponse = await fetch(whatsappApiUrl, {
       method: 'POST',
@@ -139,8 +190,11 @@ serve(async (req) => {
     const responseData = await whatsappResponse.json();
     
     if (!whatsappResponse.ok) {
+      console.error(`WhatsApp API error: ${JSON.stringify(responseData)}`);
       throw new Error(`WhatsApp API error: ${JSON.stringify(responseData)}`);
     }
+    
+    console.log(`WhatsApp API response: ${JSON.stringify(responseData)}`);
     
     return new Response(JSON.stringify(responseData), {
       status: 200,

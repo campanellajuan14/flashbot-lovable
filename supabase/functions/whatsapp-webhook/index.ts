@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts"
@@ -381,40 +382,10 @@ async function processIncomingMessage(
           }
         });
       
-      // Send response to WhatsApp
-      console.log("Sending response to WhatsApp...");
-      
-      // Get API token
-      let apiToken = null;
-      try {
-        // Try to get from vault first
-        const { data: secretData, error: secretError } = await supabase.vault.decrypt(configData.secret_id);
-        
-        if (!secretError && secretData) {
-          apiToken = secretData.secret;
-          console.log("Successfully retrieved API token from vault");
-        } else {
-          // Fallback to direct token retrieval
-          console.log("Vault access failed, using direct token fetch");
-          const { data: tokenData, error: tokenError } = await supabase
-            .from('user_whatsapp_tokens')
-            .select('encrypted_token')
-            .eq('id', configData.secret_id)
-            .single();
-            
-          if (!tokenError && tokenData) {
-            apiToken = tokenData.encrypted_token;
-            console.log("Successfully retrieved API token from direct DB query");
-          } else {
-            console.error("Error retrieving token from DB:", tokenError);
-          }
-        }
-      } catch (error) {
-        console.error("Error retrieving API token:", error);
-      }
-      
+      // Get API token - IMPROVED TOKEN RETRIEVAL LOGIC
+      let apiToken = await getWhatsAppToken(supabase, configData.secret_id);
       if (!apiToken) {
-        console.error("Could not retrieve API token");
+        console.error("Could not retrieve API token using any method");
         return;
       }
       
@@ -476,21 +447,6 @@ async function processIncomingMessage(
           timestamp: new Date().toISOString(),
           metadata: textResponseData
         });
-        
-        // Also log assistant message to conversations
-        await supabase
-          .from('messages')
-          .insert({
-            conversation_id: conversationId,
-            content: response,
-            role: 'assistant',
-            metadata: {
-              source: 'whatsapp',
-              delivery_status: 'sent'
-            }
-          });
-        
-        console.log("Response logged in conversations and whatsapp_messages");
         
       } catch (textError) {
         // Text message failed, try with template
@@ -612,6 +568,79 @@ async function processIncomingMessage(
   }
 }
 
+// IMPROVED: More robust token retrieval function that tries multiple methods
+async function getWhatsAppToken(supabase: any, secretId: string): Promise<string | null> {
+  console.log(`Attempting to retrieve WhatsApp token for secret ID: ${secretId}`);
+  let token = null;
+
+  try {
+    // Method 1: Try to get from Vault first (if available)
+    if (supabase.vault && typeof supabase.vault.decrypt === 'function') {
+      try {
+        console.log("Attempting to retrieve token from Vault...");
+        const { data, error } = await supabase.vault.decrypt(secretId);
+        
+        if (!error && data) {
+          console.log("Successfully retrieved API token from Vault");
+          return data;
+        } else {
+          console.error("Failed to retrieve token from Vault:", error);
+        }
+      } catch (vaultError) {
+        console.error("Vault access error:", vaultError);
+      }
+    } else {
+      console.log("Vault not available, skipping Vault token retrieval");
+    }
+    
+    // Method 2: Try to get directly from user_whatsapp_tokens table
+    try {
+      console.log("Attempting to retrieve token from user_whatsapp_tokens table...");
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('user_whatsapp_tokens')
+        .select('encrypted_token')
+        .eq('id', secretId)
+        .single();
+        
+      if (!tokenError && tokenData && tokenData.encrypted_token) {
+        console.log("Successfully retrieved API token from user_whatsapp_tokens table");
+        return tokenData.encrypted_token;
+      } else {
+        console.error("Error retrieving token from user_whatsapp_tokens table:", tokenError);
+      }
+    } catch (dbError) {
+      console.error("Database access error:", dbError);
+    }
+    
+    // Method 3: Fallback - try direct query from user_whatsapp_config table
+    try {
+      console.log("Attempting to retrieve token from secret_data in user_whatsapp_config...");
+      const { data: configData, error: configError } = await supabase
+        .from('user_whatsapp_config')
+        .select('secret_data')
+        .eq('secret_id', secretId)
+        .single();
+        
+      if (!configError && configData && configData.secret_data) {
+        console.log("Successfully retrieved API token from user_whatsapp_config");
+        return configData.secret_data;
+      } else {
+        console.error("Error retrieving token from user_whatsapp_config:", configError);
+      }
+    } catch (backupError) {
+      console.error("Backup token retrieval error:", backupError);
+    }
+    
+    // All methods failed
+    console.error("All token retrieval methods failed");
+    return null;
+    
+  } catch (error) {
+    console.error("Error in getWhatsAppToken:", error);
+    return null;
+  }
+}
+
 async function findOrCreateConversation(
   supabase: any,
   chatbotId: string,
@@ -704,10 +733,10 @@ async function generateChatbotResponse(
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: {
         messages: messages,
-        model: model,
         chatbotId: chatbotId,
         conversationId: conversationId,
-        source: 'whatsapp-webhook'
+        source: 'whatsapp-webhook',
+        settings: chatbot.settings
       },
     });
     
@@ -716,15 +745,17 @@ async function generateChatbotResponse(
       throw error;
     }
     
-    console.log(`Response generated successfully with length: ${data?.response?.length || 0}`);
-    console.log(`Response preview: ${data?.response?.substring(0, 50) || "No response"}`);
+    console.log("Claude-chat function response:", JSON.stringify(data));
     
-    if (!data || !data.response) {
+    if (!data || !data.message) {
       console.error("No response data returned from function");
       return "Lo siento, tuve un problema procesando tu mensaje. Por favor, intenta de nuevo más tarde.";
     }
     
-    return data.response;
+    console.log(`Response generated successfully with length: ${data.message.length || 0}`);
+    console.log(`Response preview: ${data.message.substring(0, 100) || "No response"}`);
+    
+    return data.message;
   } catch (error) {
     console.error("Error generating response:", error);
     return "Lo siento, tuve un problema procesando tu mensaje. Por favor, intenta de nuevo más tarde.";
@@ -791,3 +822,4 @@ async function verifySignature(payload: string, signature: string, appSecret: st
     return false;
   }
 }
+
