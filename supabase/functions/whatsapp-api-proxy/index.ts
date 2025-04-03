@@ -1,4 +1,3 @@
-
 // Supabase Edge Function: whatsapp-api-proxy
 // Proxy seguro para llamadas a la API de WhatsApp
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -13,45 +12,29 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// Función para desencriptar el token en caso de no usar Vault
-function decryptToken(encryptedToken: string, secret: string): string {
-  // Esta es una función simulada ya que no podemos realmente desencriptar un hash
-  // En una implementación real, usaríamos encriptación bidireccional en lugar de un hash
-  console.log("Advertencia: usando método provisional para manejar tokens");
-  return encryptedToken;
-}
-
 // Función para recuperar el token de WhatsApp del usuario
 async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
   try {
-    // Intentar usar Vault si está disponible
+    // Usar Vault para recuperar el token seguro
     if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
       console.log("Usando Supabase Vault para recuperar el token");
       const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
       
       if (error) {
-        throw new Error(`Error decrypting token from Vault: ${error.message}`);
+        throw new Error(`Error desencriptando token desde Vault: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error(`No se pudo recuperar token desde Vault (data vacía)`);
       }
       
       return data;
     }
     
-    // Si Vault no está disponible, intentar recuperar de la tabla user_whatsapp_tokens
-    console.log("Vault no disponible, intentando recuperar token de la tabla");
-    const { data: tokenData, error: tokenError } = await supabaseAdmin
-      .from('user_whatsapp_tokens')
-      .select('encrypted_token')
-      .match({ id: secretId, user_id: userId })
-      .single();
-      
-    if (tokenError) {
-      throw new Error(`Error retrieving token: ${tokenError.message}`);
-    }
-    
-    // Desencriptar el token usando el método provisional
-    return decryptToken(
-      tokenData.encrypted_token,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    // Si Vault no está disponible, proporcionar un error claro
+    throw new Error(
+      "No se puede recuperar el token de WhatsApp porque Vault no está disponible. " +
+      "Contacta al administrador del sistema para verificar la configuración de Vault."
     );
     
   } catch (error) {
