@@ -23,6 +23,11 @@ import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { WhatsAppMessage } from '@/integrations/supabase/whatsappTypes';
 
+interface WhatsAppMessagesResponse {
+  data: WhatsAppMessage[];
+  count: number;
+}
+
 export const WhatsAppMessagesTab = () => {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,8 +42,8 @@ export const WhatsAppMessagesTab = () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .rpc('get_whatsapp_messages', {
-            page_number: page,
+          .rpc<WhatsAppMessagesResponse>('get_whatsapp_messages', {
+            page_number: page + 1, // Add 1 because our RPC expects 1-indexed pages
             page_size: messagesPerPage
           });
         
@@ -53,9 +58,10 @@ export const WhatsAppMessagesTab = () => {
         }
         
         // Make sure we have proper typing for messages
-        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
-          setMessages(data.data as WhatsAppMessage[]);
-          setHasMore((data.data as WhatsAppMessage[]).length === messagesPerPage);
+        if (data && typeof data === 'object') {
+          const messagesResponse = data as unknown as WhatsAppMessagesResponse;
+          setMessages(messagesResponse.data || []);
+          setHasMore((messagesResponse.data || []).length === messagesPerPage);
         } else {
           setMessages([]);
           setHasMore(false);
@@ -211,7 +217,7 @@ export const WhatsAppMessagesTab = () => {
             variant="outline" 
             size="sm"
             onClick={() => setPage(p => Math.max(0, p - 1))}
-            className={page === 0 ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={page === 0}
           >
             <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
           </Button>
@@ -219,7 +225,7 @@ export const WhatsAppMessagesTab = () => {
             variant="outline" 
             size="sm"
             onClick={() => setPage(p => p + 1)}
-            className={!hasMore ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={!hasMore}
           >
             Siguiente <ChevronRight className="h-4 w-4 ml-1" />
           </Button>

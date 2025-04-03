@@ -1,6 +1,11 @@
 
 import { supabase } from './client';
 
+interface WhatsAppConfig {
+  phone_number_id?: string;
+  [key: string]: any;
+}
+
 export interface WhatsAppTemplate {
   name: string;
   language: string;
@@ -23,7 +28,7 @@ export async function getWhatsAppTemplates(): Promise<WhatsAppTemplate[]> {
       throw new Error('No hay configuración de WhatsApp disponible');
     }
     
-    const config = configData as { phone_number_id?: string };
+    const config = configData as WhatsAppConfig;
     
     if (!config || !config.phone_number_id) {
       throw new Error('No hay phone_number_id en la configuración de WhatsApp');
@@ -90,7 +95,7 @@ export async function sendWhatsAppTemplate(
       throw new Error('No hay configuración de WhatsApp disponible');
     }
     
-    const config = configData as { phone_number_id?: string };
+    const config = configData as WhatsAppConfig;
     
     if (!config || !config.phone_number_id) {
       throw new Error('No hay phone_number_id en la configuración de WhatsApp');
