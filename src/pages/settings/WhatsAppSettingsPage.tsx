@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { MessageSquare, Settings, History, TestLine } from 'lucide-react';
+import { MessageSquare, Settings, History, TestTube } from 'lucide-react';
 import WhatsAppConfigForm from '@/components/whatsapp/WhatsAppConfigForm';
 import WhatsAppStatus from '@/components/whatsapp/WhatsAppStatus';
 import WhatsAppMessagesTab from './components/WhatsAppMessagesTab';
 import WhatsAppTestMessage from '@/components/whatsapp/WhatsAppTestMessage';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const WhatsAppSettingsPage = () => {
   const [activeTab, setActiveTab] = useState<string>('config');
@@ -31,7 +32,7 @@ const WhatsAppSettingsPage = () => {
               Configuración
             </TabsTrigger>
             <TabsTrigger value="test" className="gap-2">
-              <TestLine className="h-4 w-4" />
+              <TestTube className="h-4 w-4" />
               Probar
             </TabsTrigger>
             <TabsTrigger value="messages" className="gap-2">
