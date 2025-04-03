@@ -43,44 +43,56 @@ refresh_token_reuse_interval = 10
 double_confirm_changes = true
 enable_confirmations = false
 
-# Correctly formatted functions section
+# Functions configuration
 [functions]
 enabled = true
 port = 54327
 
 # Individual function configurations
-[functions.save-whatsapp-config]
+[[functions.function]]
+name = "save-whatsapp-config"
 verify_jwt = true
 
-[functions.whatsapp-api-proxy]
+[[functions.function]]
+name = "whatsapp-api-proxy"
 verify_jwt = true
 
-[functions.whatsapp-webhook]
+[[functions.function]]
+name = "whatsapp-webhook"
 verify_jwt = false
 
-[functions.claude-chat]
+[[functions.function]]
+name = "claude-chat"
 verify_jwt = false
 
-[functions.kv-store-document]
+[[functions.function]]
+name = "kv-store-document"
 verify_jwt = false
 
-[functions.register-conversation]
+[[functions.function]]
+name = "register-conversation"
 verify_jwt = false
 
-[functions.process-temp-documents]
+[[functions.function]]
+name = "process-temp-documents"
 verify_jwt = true
 
-[functions.kv-get-documents-by-chatbot]
+[[functions.function]]
+name = "kv-get-documents-by-chatbot"
 verify_jwt = false
 
-[functions.kv-clear-documents-by-chatbot]
+[[functions.function]]
+name = "kv-clear-documents-by-chatbot"
 verify_jwt = false
 
-[functions.match-documents]
+[[functions.function]]
+name = "match-documents"
 verify_jwt = false
 
-[functions.process-documents]
+[[functions.function]]
+name = "process-documents"
 verify_jwt = true
 
-[functions.widget-config]
+[[functions.function]]
+name = "widget-config"
 verify_jwt = false
