@@ -83,6 +83,9 @@ serve(async (req: Request) => {
       const reqClone = req.clone();
       const rawBody = await req.text();
       
+      // Log the raw body for debugging
+      console.log("Raw webhook payload received:", rawBody);
+      
       // Verify Meta signature if APP_SECRET is configured
       if (metaAppSecret) {
         const signature = req.headers.get('x-hub-signature-256') || '';
@@ -104,7 +107,7 @@ serve(async (req: Request) => {
         }
       }
 
-      const data = JSON.parse(rawBody) as WebhookMessage;
+      const data = JSON.parse(rawBody);
       console.log("Webhook payload received:", JSON.stringify(data));
       
       // Verify it's a WhatsApp notification
@@ -120,20 +123,25 @@ serve(async (req: Request) => {
         for (const change of entry.changes) {
           if (change.field === 'messages') {
             const value = change.value;
-            const phoneNumberId = value.metadata.phone_number_id;
+            const phoneNumberId = value.metadata?.phone_number_id;
+            
+            if (!phoneNumberId) {
+              console.error("Missing phone_number_id in webhook payload");
+              continue;
+            }
             
             // Process incoming messages
             if (value.messages && value.messages.length > 0) {
               for (const message of value.messages) {
                 console.log(`Processing message: ${JSON.stringify(message)}`);
                 
-                // Only process text messages
+                // Only process text messages for now
                 if (message.type === 'text' && message.text) {
                   await processIncomingMessage(
                     supabase, 
                     phoneNumberId,
                     message,
-                    value.contacts?.find(c => c.wa_id === message.from)?.profile.name || 'Usuario'
+                    value.contacts?.find(c => c.wa_id === message.from)?.profile?.name || 'Usuario'
                   );
                 } else {
                   console.log(`Skipping non-text message of type: ${message.type}`);

@@ -1,3 +1,4 @@
+
 import { getRandomString } from "../utils/conversation.ts";
 
 /**
@@ -28,10 +29,10 @@ export async function generateChatbotResponse(
     const systemPrompt = `${chatbot.behavior?.tone || 'Eres un asistente profesional y amable.'} ${chatbot.behavior?.instructions || ''}`;
     console.log(`📝 [${requestId}] Instrucciones del sistema: "${systemPrompt.substring(0, 100)}..."`);
     
-    // Invocar función adecuada según el modelo
+    // Intentar con función Edge claude-chat primero
     console.log(`🔄 [${requestId}] Invocando función Edge claude-chat...`);
     
-    const startTime = Date.now(); // Para medir tiempos de respuesta
+    const startTime = Date.now();
     
     try {
       const { data, error } = await supabase.functions.invoke('claude-chat', {
@@ -75,10 +76,51 @@ export async function generateChatbotResponse(
       
       return data.message;
     } catch (functionError) {
-      // Manejar específicamente errores de timeout
+      console.error(`❌ [${requestId}] Error en función Edge:`, functionError);
+      
+      // Si es un error de timeout, intentar método alternativo
       if (functionError.name === 'AbortError' || functionError.message?.includes('timeout')) {
-        console.error(`⏱️ [${requestId}] Timeout al invocar función Edge (>30s)`);
-        return "Lo siento, la generación de respuesta tomó demasiado tiempo. Por favor, intenta de nuevo más tarde.";
+        console.warn(`⏱️ [${requestId}] Timeout en invocación de función Edge (>30s)`);
+        
+        // Intentar con llamada directa a OpenAI API si está disponible
+        const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+        
+        if (openaiApiKey) {
+          console.log(`🔄 [${requestId}] Intentando llamada directa a OpenAI API...`);
+          
+          try {
+            const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${openaiApiKey}`
+              },
+              body: JSON.stringify({
+                model: "gpt-4",
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: userMessage }
+                ],
+                max_tokens: 1000,
+                temperature: 0.7
+              })
+            });
+            
+            if (!openaiResponse.ok) {
+              throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+            }
+            
+            const openaiData = await openaiResponse.json();
+            const message = openaiData.choices[0]?.message?.content;
+            
+            if (message) {
+              console.log(`✅ [${requestId}] Respuesta recuperada de OpenAI directamente`);
+              return message;
+            }
+          } catch (openaiError) {
+            console.error(`❌ [${requestId}] Error en llamada directa a OpenAI:`, openaiError);
+          }
+        }
       }
       
       throw functionError;

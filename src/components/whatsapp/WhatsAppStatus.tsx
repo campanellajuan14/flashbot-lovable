@@ -21,7 +21,6 @@ const WhatsAppStatus = () => {
   const [selectedChatbot, setSelectedChatbot] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
   
-  // Estados para prueba de mensajes
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [testMessage, setTestMessage] = useState('Mensaje de prueba');
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -38,7 +37,6 @@ const WhatsAppStatus = () => {
       try {
         setIsLoading(true);
         
-        // Fetch WhatsApp configuration
         const { data: whatsappConfig, error: configError } = await supabase
           .rpc<WhatsAppConfig>('get_user_whatsapp_config');
           
@@ -52,11 +50,9 @@ const WhatsAppStatus = () => {
           setIsActive(whatsappConfig.is_active || false);
           setSelectedChatbot(whatsappConfig.active_chatbot_id);
 
-          // Cargar plantillas de WhatsApp
           fetchTemplates(whatsappConfig);
         }
         
-        // Fetch user's chatbots
         const { data: chatbotData, error: chatbotError } = await supabase
           .from('chatbots')
           .select('id, name')
@@ -78,12 +74,10 @@ const WhatsAppStatus = () => {
     fetchData();
   }, [user?.id]);
 
-  // Función para cargar plantillas de WhatsApp
   const fetchTemplates = async (config: WhatsAppConfig) => {
     try {
       setLoadingTemplates(true);
       
-      // Llamar a la función Edge para obtener plantillas
       const { data, error } = await supabase.functions.invoke('whatsapp-api-proxy', {
         body: JSON.stringify({
           action: 'message_templates',
@@ -106,7 +100,6 @@ const WhatsAppStatus = () => {
         
         setTemplates(templatesList);
         
-        // Seleccionar la primera plantilla por defecto si hay alguna
         if (templatesList.length > 0) {
           setSelectedTemplate(templatesList[0].name);
           setLanguageCode(templatesList[0].language);
@@ -181,39 +174,33 @@ const WhatsAppStatus = () => {
     }
   };
   
-  // Función para enviar mensaje de prueba
   const handleSendTestMessage = async () => {
-    if (!testPhoneNumber || !config || !selectedTemplate) return;
+    if (!testPhoneNumber || !config) return;
     
     setIsSendingTest(true);
     setTestResult(null);
     
     try {
-      // Limpiar el número de teléfono (solo dígitos)
       const cleanedNumber = testPhoneNumber.replace(/\D/g, '');
       
-      // Asegurarse de que tiene el formato adecuado 
       const formattedNumber = cleanedNumber.startsWith('34') ? cleanedNumber : `34${cleanedNumber}`;
       
-      // Construir payload para mensaje de plantilla
       const messagePayload = {
         action: 'messages',
         params: {
           messaging_product: "whatsapp",
+          recipient_type: "individual",
           to: formattedNumber,
-          type: "template",
-          template: {
-            name: selectedTemplate,
-            language: {
-              code: languageCode
-            }
+          type: "text",
+          text: {
+            preview_url: false,
+            body: testMessage || "Mensaje de prueba desde Flashbot"
           }
         }
       };
       
       console.log("Enviando payload:", messagePayload);
       
-      // Llamar a la función edge
       const { data, error } = await supabase.functions.invoke('whatsapp-api-proxy', {
         body: JSON.stringify(messagePayload)
       });
@@ -398,7 +385,7 @@ const WhatsAppStatus = () => {
         <div className="space-y-4 border-t pt-4 mt-4">
           <h3 className="text-lg font-medium">Prueba de envío de mensajes</h3>
           <p className="text-sm text-muted-foreground">
-            Envía un mensaje de plantilla para comprobar la conexión con WhatsApp
+            Envía un mensaje de texto directo para comprobar la conexión con WhatsApp
           </p>
           
           <div className="space-y-4">
@@ -416,41 +403,18 @@ const WhatsAppStatus = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="template-select">Plantilla de WhatsApp</Label>
-              {loadingTemplates ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                  Cargando plantillas...
-                </div>
-              ) : templates.length > 0 ? (
-                <Select
-                  value={selectedTemplate || undefined}
-                  onValueChange={setSelectedTemplate}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona una plantilla" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.name} value={template.name}>
-                        {template.name} ({template.language})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-amber-600 text-sm p-2 bg-amber-50 rounded-md">
-                  No hay plantillas disponibles. Debes crear y aprobar plantillas en WhatsApp Business.
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Solo puedes usar plantillas aprobadas en WhatsApp Business
-              </p>
+              <Label htmlFor="test-message">Mensaje de prueba</Label>
+              <Input
+                id="test-message"
+                placeholder="Escribe un mensaje de prueba"
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+              />
             </div>
             
             <Button 
               onClick={handleSendTestMessage}
-              disabled={isSendingTest || !testPhoneNumber || !selectedTemplate}
+              disabled={isSendingTest || !testPhoneNumber}
               className="w-full"
             >
               {isSendingTest ? (
@@ -461,7 +425,7 @@ const WhatsAppStatus = () => {
               ) : (
                 <>
                   <SendIcon className="h-4 w-4 mr-2" />
-                  Enviar mensaje de prueba
+                  Enviar mensaje de texto directo
                 </>
               )}
             </Button>

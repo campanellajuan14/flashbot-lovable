@@ -49,7 +49,25 @@ async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
         console.error("❌ Error consultando tabla user_whatsapp_tokens:", tokenError);
       } else if (tokenData && tokenData.encrypted_token) {
         console.log("✅ Token recuperado exitosamente desde user_whatsapp_tokens");
-        return tokenData.encrypted_token;
+        
+        // Validar el token antes de devolverlo
+        try {
+          const validationResponse = await fetch('https://graph.facebook.com/v18.0/debug_token', {
+            headers: {
+              'Authorization': `Bearer ${tokenData.encrypted_token}`,
+            }
+          });
+          
+          if (!validationResponse.ok) {
+            console.error("❌ Token inválido o expirado");
+            throw new Error("Token inválido o expirado. Por favor, actualiza el token en la configuración.");
+          }
+          
+          return tokenData.encrypted_token;
+        } catch (validationError) {
+          console.error("❌ Error validando token:", validationError);
+          throw new Error("Error validando token de WhatsApp");
+        }
       }
     } catch (dbError) {
       console.error("❌ Error de base de datos:", dbError);
@@ -218,30 +236,16 @@ serve(async (req) => {
     if (!whatsappToken) {
       throw new Error("Could not retrieve WhatsApp token");
     }
-    console.log(`✅ Token de WhatsApp recuperado correctamente`);
+    console.log(`✅ Token de WhatsApp recuperado y validado correctamente`);
     
     // Tratamiento especial para recuperar plantillas (GET en lugar de POST)
     if (action === 'message_templates') {
       console.log("🔍 Obteniendo plantillas de WhatsApp");
       
       // Construir URL con los parámetros de consulta si existen
-      let templateUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/message_templates`;
-      
-      // Añadir parámetros como query string si existen
-      if (params) {
-        const queryParams = new URLSearchParams();
-        for (const [key, value] of Object.entries(params)) {
-          if (value !== undefined && value !== null) {
-            queryParams.append(key, value.toString());
-          }
-        }
-        
-        // Añadir query string a la URL si hay parámetros
-        const queryString = queryParams.toString();
-        if (queryString) {
-          templateUrl += `?${queryString}`;
-        }
-      }
+      const templateUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/message_templates${
+        params ? `?${new URLSearchParams(params)}` : ''
+      }`;
       
       console.log("🌐 URL para plantillas:", templateUrl);
       
@@ -257,6 +261,11 @@ serve(async (req) => {
         if (!templatesResponse.ok) {
           const errorText = await templatesResponse.text();
           console.error(`❌ Error HTTP ${templatesResponse.status} obteniendo plantillas:`, errorText);
+          
+          // Manejar específicamente error de token inválido
+          if (templatesResponse.status === 401) {
+            throw new Error("Token de WhatsApp inválido o expirado. Por favor, actualiza el token en la configuración.");
+          }
           
           try {
             const errorJson = JSON.parse(errorText);
@@ -324,12 +333,20 @@ serve(async (req) => {
   } catch (error) {
     console.error("❌ Error en whatsapp-api-proxy:", error);
     
+    // Mejorar mensajes de error para el usuario
+    const errorMessage = error.message || 'Internal server error';
+    const statusCode = errorMessage.includes('inválido o expirado') ? 401 
+                    : errorMessage.includes('Unauthorized') ? 401 
+                    : 500;
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error'
+        error: errorMessage,
+        code: statusCode,
+        details: error.stack
       }),
       { 
-        status: error.message.includes('Unauthorized') ? 401 : 500,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

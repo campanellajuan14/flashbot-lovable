@@ -349,6 +349,7 @@ export type Database = {
           id: string
           is_active: boolean
           phone_number_id: string
+          secret_data: string | null
           secret_id: string
           updated_at: string
           user_id: string
@@ -362,6 +363,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone_number_id: string
+          secret_data?: string | null
           secret_id: string
           updated_at?: string
           user_id: string
@@ -375,6 +377,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone_number_id?: string
+          secret_data?: string | null
           secret_id?: string
           updated_at?: string
           user_id?: string
@@ -389,6 +392,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "chatbots"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_whatsapp_tokens: {
+        Row: {
+          created_at: string
+          encrypted_token: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_token: string
+          id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_token?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_whatsapp_tokens_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user_whatsapp_config"
+            referencedColumns: ["secret_id"]
           },
         ]
       }

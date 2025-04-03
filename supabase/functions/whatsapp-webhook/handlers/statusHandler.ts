@@ -1,28 +1,35 @@
 
 /**
- * Process message status updates from WhatsApp
+ * Procesar actualizaciones de estado de mensajes
  */
-export async function processMessageStatus(supabase: any, phoneNumberId: string, status: any) {
+export async function processMessageStatus(
+  supabase: any,
+  phoneNumberId: string,
+  status: any
+) {
   try {
-    console.log(`Processing message status update: ${JSON.stringify(status)}`);
+    console.log(`📊 Actualizando estado de mensaje: ${status.id} a "${status.status}"`);
     
-    // Update message status in database
-    const { data, error } = await supabase
+    // Actualizar estado del mensaje en la base de datos
+    const { error } = await supabase
       .from('whatsapp_messages')
       .update({
         status: status.status,
-        timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString()
+        metadata: supabase.utils.Json.stringify({
+          ...status,
+          updated_at: new Date().toISOString()
+        })
       })
-      .eq('wa_message_id', status.id)
-      .eq('phone_number_id', phoneNumberId)
-      .select();
-    
+      .eq('wa_message_id', status.id);
+      
     if (error) {
-      console.error("Error updating message status:", error);
-    } else {
-      console.log(`Updated status for message: ${data?.length > 0 ? data[0].id : 'unknown'}`);
+      console.error(`❌ Error actualizando estado del mensaje: ${error.message}`);
+      return { success: false, error: error.message };
     }
+    
+    return { success: true };
   } catch (error) {
-    console.error("Error processing message status:", error);
+    console.error(`❌ Error procesando estado del mensaje: ${error.message}`);
+    return { success: false, error: error.message };
   }
 }
