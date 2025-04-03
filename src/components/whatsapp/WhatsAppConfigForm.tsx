@@ -53,7 +53,7 @@ export const WhatsAppConfigForm = () => {
       
       try {
         const { data, error } = await supabase
-          .rpc('get_user_whatsapp_config');
+          .rpc<WhatsAppConfig>('get_user_whatsapp_config');
         
         if (error) {
           console.error("Error loading configuration:", error);
@@ -61,10 +61,9 @@ export const WhatsAppConfigForm = () => {
         }
         
         if (data) {
-          const config = data as WhatsAppConfig;
-          setExistingConfig(config);
-          form.setValue('phoneNumberId', config.phone_number_id || '');
-          form.setValue('wabaId', config.waba_id || '');
+          setExistingConfig(data);
+          form.setValue('phoneNumberId', data.phone_number_id || '');
+          form.setValue('wabaId', data.waba_id || '');
           // Don't load token for security reasons
         }
       } catch (error) {
@@ -88,6 +87,7 @@ export const WhatsAppConfigForm = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("Llamando a la edge function save-whatsapp-config");
       const { data, error } = await supabase.functions.invoke('save-whatsapp-config', {
         body: {
           phone_number_id: values.phoneNumberId,
@@ -97,9 +97,12 @@ export const WhatsAppConfigForm = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error("Error en la edge function:", error);
+        throw new Error(error.message || "Error al guardar la configuración");
       }
 
+      console.log("Respuesta de la edge function:", data);
+      
       toast({
         title: "Configuración guardada",
         description: "La configuración de WhatsApp se ha guardado correctamente",

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogP
     try {
       // Using the rpc function to get WhatsApp config
       const { data, error } = await supabase
-        .rpc('get_user_whatsapp_config');
+        .rpc<WhatsAppConfig>('get_user_whatsapp_config');
       
       if (error) {
         console.error("Error checking WhatsApp configuration:", error);
@@ -34,10 +35,9 @@ const ChatbotPreviewDialog = ({ chatbotId, widgetConfig }: ChatbotPreviewDialogP
       }
       
       if (data) {
-        const config = data as WhatsAppConfig;
         setIsWhatsAppConfigured(true);
-        setIsWhatsAppActive(config.is_active || false);
-        setIsThisChatbotActive(config.active_chatbot_id === chatbotId);
+        setIsWhatsAppActive(data.is_active || false);
+        setIsThisChatbotActive(data.active_chatbot_id === chatbotId);
       } else {
         setIsWhatsAppConfigured(false);
       }

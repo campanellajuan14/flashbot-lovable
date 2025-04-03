@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -36,7 +37,7 @@ export const WhatsAppStatus = () => {
     const fetchConfig = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_user_whatsapp_config');
+          .rpc<WhatsAppConfig>('get_user_whatsapp_config');
 
         if (error) {
           console.error('Error loading configuration:', error);

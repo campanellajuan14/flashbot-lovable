@@ -1,3 +1,4 @@
+
 # This file sets up authentication, storage, and functions configuration
 
 project_id = "obiiomoqhpbgaymfphdz"
@@ -38,14 +39,16 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 
 [auth.email]
+# Corregir: cambiar enable_signups a enable_confirmations
 double_confirm_changes = true
 enable_confirmations = false
 
 [functions]
-[functions.serve]
+# Corregir: formato correcto para la sección de funciones
 enabled = true
 port = 54327
 
+# Configuración individual de funciones
 [functions.save-whatsapp-config]
 verify_jwt = true
 

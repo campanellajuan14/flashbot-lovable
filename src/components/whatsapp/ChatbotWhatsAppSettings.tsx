@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -35,20 +36,19 @@ export const ChatbotWhatsAppSettings: React.FC<ChatbotWhatsAppSettingsProps> = (
         setIsLoading(true);
         
         // Get user's WhatsApp configuration
-        const { data: whatsAppConfig, error: whatsAppError } = await supabase
-          .rpc('get_user_whatsapp_config');
+        const { data, error } = await supabase
+          .rpc<WhatsAppConfig>('get_user_whatsapp_config');
         
-        if (whatsAppError) {
-          console.error("Error getting WhatsApp configuration:", whatsAppError);
+        if (error) {
+          console.error("Error getting WhatsApp configuration:", error);
           setHasWhatsAppConfig(false);
           return;
         }
         
-        if (whatsAppConfig) {
-          const config = whatsAppConfig as WhatsAppConfig;
+        if (data) {
           setHasWhatsAppConfig(true);
-          setIsActive(config.is_active || false);
-          setIsActiveChatbot(config.active_chatbot_id === chatbotId);
+          setIsActive(data.is_active || false);
+          setIsActiveChatbot(data.active_chatbot_id === chatbotId);
         } else {
           setHasWhatsAppConfig(false);
         }
