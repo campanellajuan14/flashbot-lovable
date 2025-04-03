@@ -83,3 +83,55 @@ export interface MessageProcessResult {
   message_id?: string;
   error?: string;
 }
+
+/**
+ * Estructura de plantillas de WhatsApp
+ */
+export interface WhatsAppTemplate {
+  name: string;
+  language: {
+    code: string;  // ej: "en_US", "es_ES"
+  };
+  components?: Array<{
+    type: "header" | "body" | "footer" | "button";
+    parameters?: Array<{
+      type: "text" | "currency" | "date_time" | "image" | "document" | "video";
+      text?: string;
+      currency?: {
+        fallback_value: string;
+        code: string;
+        amount_1000: number;
+      };
+      date_time?: {
+        fallback_value: string;
+      };
+      image?: {
+        link: string;
+      };
+      document?: {
+        link: string;
+      };
+      video?: {
+        link: string;
+      };
+    }>;
+    sub_type?: "url" | "quick_reply" | "call_to_action";
+    index?: number;
+  }>;
+}
+
+/**
+ * Tipos de mensajes WhatsApp
+ */
+export enum WhatsAppMessageType {
+  TEXT = "text",
+  TEMPLATE = "template",
+  IMAGE = "image",
+  DOCUMENT = "document",
+  AUDIO = "audio",
+  VIDEO = "video",
+  STICKER = "sticker",
+  LOCATION = "location",
+  CONTACTS = "contacts",
+  INTERACTIVE = "interactive"
+}

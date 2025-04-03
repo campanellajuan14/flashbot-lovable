@@ -11,12 +11,23 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.log("🔍 Intentando recuperar token desde user_whatsapp_tokens...");
       const { data: tokenData, error: tokenError } = await supabase
         .from('user_whatsapp_tokens')
-        .select('encrypted_token')
+        .select('encrypted_token, updated_at')
         .eq('id', secretId)
         .single();
         
       if (!tokenError && tokenData && tokenData.encrypted_token) {
-        console.log("✅ Token recuperado exitosamente desde user_whatsapp_tokens");
+        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_tokens (actualizado: ${tokenData.updated_at || 'desconocido'})`);
+        
+        // Verificar la antigüedad del token (más de 60 días = advertencia)
+        if (tokenData.updated_at) {
+          const tokenDate = new Date(tokenData.updated_at);
+          const daysDiff = Math.floor((Date.now() - tokenDate.getTime()) / (1000 * 3600 * 24));
+          
+          if (daysDiff > 60) {
+            console.warn(`⚠️ El token tiene ${daysDiff} días de antigüedad, podría estar cerca de expirar`);
+          }
+        }
+        
         return tokenData.encrypted_token;
       } else {
         console.error("❓ No se encontró token en user_whatsapp_tokens:", tokenError?.message || "No hay datos");
@@ -30,12 +41,23 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.log("🔍 Intentando recuperar token desde secret_data en user_whatsapp_config...");
       const { data: configData, error: configError } = await supabase
         .from('user_whatsapp_config')
-        .select('secret_data')
+        .select('secret_data, updated_at')
         .eq('secret_id', secretId)
         .single();
         
       if (!configError && configData && configData.secret_data) {
-        console.log("✅ Token recuperado exitosamente desde user_whatsapp_config.secret_data");
+        console.log(`✅ Token recuperado exitosamente desde user_whatsapp_config.secret_data (actualizado: ${configData.updated_at || 'desconocido'})`);
+        
+        // Verificar la antigüedad del token (más de 60 días = advertencia)
+        if (configData.updated_at) {
+          const tokenDate = new Date(configData.updated_at);
+          const daysDiff = Math.floor((Date.now() - tokenDate.getTime()) / (1000 * 3600 * 24));
+          
+          if (daysDiff > 60) {
+            console.warn(`⚠️ El token tiene ${daysDiff} días de antigüedad, podría estar cerca de expirar`);
+          }
+        }
+        
         return configData.secret_data;
       } else {
         console.error("❓ No se encontró token en secret_data:", configError?.message || "No hay datos");
@@ -53,14 +75,26 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
         .select(`
           phone_number_id,
           user_whatsapp_tokens!inner(
-            encrypted_token
+            encrypted_token,
+            updated_at
           )
         `)
         .eq('secret_id', secretId)
         .single();
       
       if (!configTokenError && configWithToken?.user_whatsapp_tokens?.encrypted_token) {
-        console.log("✅ Token recuperado exitosamente mediante join");
+        console.log(`✅ Token recuperado exitosamente mediante join (actualizado: ${configWithToken.user_whatsapp_tokens.updated_at || 'desconocido'})`);
+        
+        // Verificar la antigüedad del token si hay fecha
+        if (configWithToken.user_whatsapp_tokens.updated_at) {
+          const tokenDate = new Date(configWithToken.user_whatsapp_tokens.updated_at);
+          const daysDiff = Math.floor((Date.now() - tokenDate.getTime()) / (1000 * 3600 * 24));
+          
+          if (daysDiff > 60) {
+            console.warn(`⚠️ El token tiene ${daysDiff} días de antigüedad, podría estar cerca de expirar`);
+          }
+        }
+        
         return configWithToken.user_whatsapp_tokens.encrypted_token;
       } else {
         console.error("❓ No se encontró token mediante join:", configTokenError?.message || "No hay datos");
@@ -93,17 +127,45 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
       console.log("🔍 Ejecutando diagnóstico de secret_id...");
       const { data: secretInfo, error: secretError } = await supabase
         .from('user_whatsapp_config')
-        .select('id, user_id, secret_id, is_active')
+        .select('id, user_id, secret_id, is_active, updated_at')
         .eq('secret_id', secretId)
         .single();
         
       if (!secretError && secretInfo) {
         console.log(`ℹ️ Información del secret_id ${secretId}: ${JSON.stringify(secretInfo)}`);
+        
+        // Verificar última actualización
+        if (secretInfo.updated_at) {
+          const configDate = new Date(secretInfo.updated_at);
+          const daysDiff = Math.floor((Date.now() - configDate.getTime()) / (1000 * 3600 * 24));
+          console.log(`ℹ️ La configuración se actualizó hace ${daysDiff} días`);
+        }
       } else {
         console.error(`❌ No se encontró información para secret_id ${secretId}`);
       }
     } catch (diagError) {
       console.error("❌ Error en diagnóstico:", diagError);
+    }
+    
+    // All methods failed - last attempt with direct database query
+    try {
+      console.log("🔍 Último intento: consulta directa a la base de datos...");
+      
+      const { data: lastResort, error: lastResortError } = await supabase
+        .from('user_whatsapp_tokens')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (!lastResortError && lastResort && lastResort.encrypted_token) {
+        console.log("⚠️ Usando el token más reciente disponible como último recurso");
+        return lastResort.encrypted_token;
+      } else {
+        console.error("❌ No se encontraron tokens disponibles:", lastResortError?.message || "No hay datos");
+      }
+    } catch (lastError) {
+      console.error("❌ Error en último intento:", lastError);
     }
     
     // All methods failed
@@ -113,5 +175,38 @@ export async function getWhatsAppToken(supabase: any, secretId: string): Promise
   } catch (error) {
     console.error("❌ Error general en getWhatsAppToken:", error);
     return null;
+  }
+}
+
+/**
+ * Verifica la validez de un token de WhatsApp
+ */
+export async function verifyWhatsAppToken(token: string, phoneNumberId: string): Promise<boolean> {
+  try {
+    console.log(`🔍 Verificando validez del token para el phone_number_id ${phoneNumberId}...`);
+    
+    const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      console.log(`✅ Token válido para el phone_number_id ${phoneNumberId}`);
+      return true;
+    } else {
+      const errorData = await response.text();
+      try {
+        const errorJson = JSON.parse(errorData);
+        console.error(`❌ Error verificando token: ${JSON.stringify(errorJson)}`);
+      } catch {
+        console.error(`❌ Error verificando token: ${errorData}`);
+      }
+      
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ Error en verificación de token:`, error);
+    return false;
   }
 }

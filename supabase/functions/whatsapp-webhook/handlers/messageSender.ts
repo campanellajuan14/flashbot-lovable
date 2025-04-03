@@ -42,6 +42,7 @@ export async function sendWhatsAppResponse(
         if (whatsappResponse.status === 401 || 
            (errorJson.error && (errorJson.error.code === 190 || errorJson.error.message?.includes('access token')))) {
           console.error(`❌ Error de autenticación - Token inválido o expirado. Se requiere actualización manual del token.`);
+          throw new Error("El token de WhatsApp es inválido o ha expirado. Por favor, actualiza el token en la configuración de WhatsApp.");
         }
       } catch (e) {
         // Si no es JSON, mostrar como texto
@@ -57,6 +58,84 @@ export async function sendWhatsAppResponse(
     return { success: true, data: responseData };
   } catch (error) {
     console.error(`❌ Error en sendWhatsAppResponse: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Envía una plantilla de WhatsApp
+ */
+export async function sendWhatsAppTemplate(
+  supabase: any,
+  phoneNumberId: string,
+  toNumber: string,
+  templateName: string,
+  languageCode: string = "es_ES",
+  components: any[] = [],
+  token: string
+) {
+  try {
+    console.log(`📤 Enviando plantilla "${templateName}" a WhatsApp para ${toNumber}`);
+    
+    const templateData = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: toNumber,
+      type: "template",
+      template: {
+        name: templateName,
+        language: {
+          code: languageCode
+        }
+      }
+    };
+    
+    // Añadir componentes si existen
+    if (components && components.length > 0) {
+      templateData.template.components = components;
+    }
+    
+    console.log(`📄 Datos de plantilla: ${JSON.stringify(templateData)}`);
+    
+    const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(templateData)
+    });
+    
+    if (!whatsappResponse.ok) {
+      const errorData = await whatsappResponse.text();
+      console.error(`❌ Error enviando plantilla a WhatsApp: ${whatsappResponse.status} ${errorData}`);
+      
+      try {
+        const errorJson = JSON.parse(errorData);
+        console.error(`❌ Detalles del error de plantilla: ${JSON.stringify(errorJson)}`);
+        
+        // Manejo específico para errores comunes de plantillas
+        if (errorJson.error && errorJson.error.message) {
+          if (errorJson.error.message.includes("template not found")) {
+            throw new Error(`La plantilla "${templateName}" no existe o no está aprobada.`);
+          } else if (errorJson.error.message.includes("access token")) {
+            throw new Error("El token de WhatsApp es inválido o ha expirado. Por favor, actualiza el token en la configuración.");
+          }
+        }
+      } catch (e) {
+        // Si no es JSON, mostrar como texto
+        console.error(`❌ Error de plantilla no analizable: ${errorData}`);
+      }
+      
+      throw new Error(`Error enviando plantilla a WhatsApp: ${whatsappResponse.status}`);
+    }
+    
+    const responseData = await whatsappResponse.json();
+    console.log(`📲 Plantilla enviada a WhatsApp, ID: ${responseData.messages?.[0]?.id}`);
+    
+    return { success: true, data: responseData };
+  } catch (error) {
+    console.error(`❌ Error en sendWhatsAppTemplate: ${error.message}`);
     throw error;
   }
 }

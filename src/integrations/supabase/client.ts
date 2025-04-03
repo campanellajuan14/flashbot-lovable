@@ -19,16 +19,18 @@ type CustomRPCFunctions =
   | 'update_whatsapp_active_chatbot'
   | 'get_whatsapp_messages';
 
-// Extendemos el tipo para incluir las llamadas RPC que no se generaron automáticamente
-interface ExtendedSupabaseClient extends SupabaseClient<Database> {
-  rpc<T = any>(
+// Extendemos el tipo supabase para exponer la propiedad anon key que necesitamos
+const supabase = {
+  ...baseClient,
+  // Función RPC sobrecargada para aceptar nuestras funciones personalizadas
+  rpc: <T = any>(
     fn: keyof Database['public']['Functions'] | CustomRPCFunctions,
     params?: object
-  ): Promise<{
-    data: T;
-    error: Error | null;
-  }>;
-}
+  ): Promise<{ data: T; error: any }> => {
+    return baseClient.rpc(fn as string, params);
+  },
+  // Exponemos la clave anon de forma segura para usar en ciertas solicitudes
+  supabaseKey: SUPABASE_PUBLISHABLE_KEY
+};
 
-// Exportamos el cliente con el tipo extendido
-export const supabase = baseClient as ExtendedSupabaseClient;
+export { supabase };
