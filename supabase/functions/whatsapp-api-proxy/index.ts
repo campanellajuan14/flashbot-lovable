@@ -1,335 +1,180 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+// Supabase Edge Function: whatsapp-api-proxy
+// Proxy seguro para llamadas a la API de WhatsApp
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createHash } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
+// Configuración de CORS
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+};
+
+// Función para desencriptar el token en caso de no usar Vault
+function decryptToken(encryptedToken: string, secret: string): string {
+  // Esta es una función simulada ya que no podemos realmente desencriptar un hash
+  // En una implementación real, usaríamos encriptación bidireccional en lugar de un hash
+  console.log("Advertencia: usando método provisional para manejar tokens");
+  return encryptedToken;
 }
 
-interface WhatsAppMessage {
-  recipient_type: string;
-  to: string;
-  type: string;
-  text?: {
-    body: string;
-  };
-  template?: {
-    name: string;
-    language: {
-      code: string;
-    };
-  };
-}
-
-interface ProxyRequest {
-  action: string;
-  phone_number_id?: string;
-  recipient_phone?: string;
-  message_content?: string;
-  message_type?: 'text' | 'template';
-  template_name?: string;
-  template_lang?: string;
-}
-
-serve(async (req: Request) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  console.log("Starting whatsapp-api-proxy function");
-
+// Función para recuperar el token de WhatsApp del usuario
+async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
   try {
-    // Set up Supabase clients
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-    // User authenticated client
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: req.headers.get('Authorization')! } },
-    });
-
-    // Admin client for vault access
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Intentar usar Vault si está disponible
+    if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
+      console.log("Usando Supabase Vault para recuperar el token");
+      const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
+      
+      if (error) {
+        throw new Error(`Error decrypting token from Vault: ${error.message}`);
+      }
+      
+      return data;
+    }
     
-    if (authError || !user) {
-      console.error("Authentication error:", authError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized. Please sign in." }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Si Vault no está disponible, intentar recuperar de la tabla user_whatsapp_tokens
+    console.log("Vault no disponible, intentando recuperar token de la tabla");
+    const { data: tokenData, error: tokenError } = await supabaseAdmin
+      .from('user_whatsapp_tokens')
+      .select('encrypted_token')
+      .match({ id: secretId, user_id: userId })
+      .single();
+      
+    if (tokenError) {
+      throw new Error(`Error retrieving token: ${tokenError.message}`);
     }
+    
+    // Desencriptar el token usando el método provisional
+    return decryptToken(
+      tokenData.encrypted_token,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
+    
+  } catch (error) {
+    console.error("Error retrieving WhatsApp token:", error);
+    throw error;
+  }
+}
 
-    // Get request data
-    const requestData = await req.json() as ProxyRequest;
-    console.log("Request data received:", JSON.stringify(requestData));
-
-    // Validate requested action
-    if (!requestData.action) {
-      return new Response(
-        JSON.stringify({ error: "An action must be specified" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+serve(async (req) => {
+  // Manejar las solicitudes OPTIONS para CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
+  }
+  
+  try {
+    // Crear cliente de Supabase con service role
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase configuration");
     }
-
-    // Get user's WhatsApp configuration
-    const { data: configData, error: configError } = await supabase
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    
+    // Verificar autenticación del usuario
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error("Unauthorized - Missing auth header");
+    }
+    
+    // Crear cliente de Supabase con el token JWT del usuario
+    const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    });
+    
+    // Obtener usuario autenticado
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      throw new Error("Unauthorized - Invalid user");
+    }
+    
+    // Obtener configuración de WhatsApp del usuario
+    const { data: config, error: configError } = await supabaseClient
       .from('user_whatsapp_config')
-      .select('phone_number_id, secret_id')
+      .select('*')
       .eq('user_id', user.id)
       .single();
-
-    if (configError || !configData) {
-      console.error("Error getting configuration:", configError);
-      return new Response(
-        JSON.stringify({ error: "No WhatsApp configuration found for this user" }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      
+    if (configError || !config) {
+      throw new Error("WhatsApp configuration not found");
     }
-
-    // Get API token from Vault
-    const { data: secretData, error: secretError } = await supabaseAdmin.vault.decrypt(configData.secret_id);
     
-    if (secretError) {
-      console.error("Error getting token from Vault:", secretError);
-      return new Response(
-        JSON.stringify({ error: "Error retrieving secure credentials", details: secretError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Verificar que WhatsApp esté activo
+    if (!config.is_active) {
+      throw new Error("WhatsApp integration is not active");
     }
-
-    // Use specific phone_number_id or default from user config
-    const phoneNumberId = requestData.phone_number_id || configData.phone_number_id;
-    const apiToken = secretData.secret;
-
-    // Process different actions
-    switch (requestData.action) {
-      case 'send_message':
-        return await handleSendMessage(
-          phoneNumberId, 
-          apiToken, 
-          requestData, 
-          user.id,
-          corsHeaders,
-          supabaseAdmin
-        );
-      
-      case 'get_business_profile':
-        return await handleGetProfile(phoneNumberId, apiToken, corsHeaders);
-      
-      case 'get_phone_numbers':
-        return await handleGetPhoneNumbers(apiToken, corsHeaders);
-      
-      default:
-        return new Response(
-          JSON.stringify({ error: `Unsupported action: ${requestData.action}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    
+    // Obtener datos de la solicitud
+    const requestData = await req.json();
+    const { action, params } = requestData;
+    
+    if (!action || !params) {
+      throw new Error("Missing required fields: action or params");
     }
+    
+    // Recuperar token de WhatsApp
+    const whatsappToken = await getWhatsAppToken(supabaseAdmin, user.id, config.secret_id);
+    
+    if (!whatsappToken) {
+      throw new Error("Could not retrieve WhatsApp token");
+    }
+    
+    // Construir y ejecutar la llamada a la API de WhatsApp
+    const whatsappApiUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/${action}`;
+    
+    const whatsappResponse = await fetch(whatsappApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${whatsappToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params)
+    });
+    
+    const responseData = await whatsappResponse.json();
+    
+    if (!whatsappResponse.ok) {
+      throw new Error(`WhatsApp API error: ${JSON.stringify(responseData)}`);
+    }
+    
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Error in whatsapp-api-proxy:", error);
+    
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error.message || 'Internal server error'
+      }),
+      { 
+        status: error.message.includes('Unauthorized') ? 401 : 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
-
-async function handleSendMessage(
-  phoneNumberId: string, 
-  apiToken: string, 
-  requestData: ProxyRequest,
-  userId: string,
-  corsHeaders: Record<string, string>,
-  supabaseAdmin: any
-) {
-  // Validate required parameters
-  if (!requestData.recipient_phone || !requestData.message_content) {
-    return new Response(
-      JSON.stringify({ error: "recipient_phone and message_content are required to send a message" }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // Format phone number (ensure it starts with country code)
-  const recipientPhone = formatPhoneNumber(requestData.recipient_phone);
-
-  // Build message according to type
-  let messageBody: WhatsAppMessage = {
-    recipient_type: "individual",
-    to: recipientPhone,
-    type: requestData.message_type || "text"
-  };
-
-  if (messageBody.type === "text") {
-    messageBody.text = {
-      body: requestData.message_content
-    };
-  } else if (messageBody.type === "template") {
-    messageBody.template = {
-      name: requestData.template_name || "hello_world",
-      language: {
-        code: requestData.template_lang || "es"
-      }
-    };
-  }
-
-  try {
-    // Call WhatsApp API to send message
-    console.log(`Sending message to ${recipientPhone} via WhatsApp API`);
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, 
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(messageBody)
-      }
-    );
-
-    const responseData = await response.json();
-    console.log("WhatsApp API response:", JSON.stringify(responseData));
-
-    // Log sent message
-    if (response.ok) {
-      try {
-        await supabaseAdmin
-          .from('whatsapp_messages')
-          .insert({
-            user_id: userId,
-            phone_number_id: phoneNumberId,
-            wa_message_id: responseData.messages?.[0]?.id,
-            from_number: phoneNumberId,
-            to_number: recipientPhone,
-            message_type: messageBody.type,
-            message_content: requestData.message_content,
-            direction: 'outbound',
-            status: 'sent',
-            metadata: responseData
-          });
-        console.log("Message logged successfully");
-      } catch (logError) {
-        console.error("Error logging sent message:", logError);
-        // Continue despite logging error
-      }
-    }
-
-    if (!response.ok) {
-      console.error("Error sending WhatsApp message:", responseData);
-      return new Response(
-        JSON.stringify({ error: "Error sending message", details: responseData }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, data: responseData }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error("Error sending message:", error);
-    return new Response(
-      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-}
-
-async function handleGetProfile(
-  phoneNumberId: string, 
-  apiToken: string, 
-  corsHeaders: Record<string, string>
-) {
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/whatsapp_business_profile`, 
-      {
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      return new Response(
-        JSON.stringify({ error: "Error getting business profile", details: responseData }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, data: responseData }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-}
-
-async function handleGetPhoneNumbers(
-  apiToken: string, 
-  corsHeaders: Record<string, string>
-) {
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/me/phone_numbers`, 
-      {
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      return new Response(
-        JSON.stringify({ error: "Error getting phone numbers", details: responseData }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, data: responseData }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Error communicating with WhatsApp API", details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-}
-
-function formatPhoneNumber(phone: string): string {
-  // Remove spaces, hyphens, and parentheses
-  let cleaned = phone.replace(/[\s\-()]/g, '');
-  
-  // Ensure it starts with +
-  if (!cleaned.startsWith('+')) {
-    // If starts with 521 (Mexico mobile) or 52 (Mexico fixed), add +
-    if (cleaned.startsWith('521') || cleaned.startsWith('52')) {
-      cleaned = '+' + cleaned;
-    } else {
-      // Default to Mexico if no country code
-      cleaned = '+52' + cleaned;
-    }
-  }
-  
-  return cleaned;
-}
