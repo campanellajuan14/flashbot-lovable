@@ -191,7 +191,7 @@ export async function verifyWhatsAppToken(token: string, phoneNumberId: string):
   try {
     console.log(`🔍 Verificando validez del token para el phone_number_id ${phoneNumberId}...`);
     
-    const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}`, {
+    const response = await fetch(`https://graph.facebook.com/v22.0/${phoneNumberId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

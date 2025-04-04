@@ -11,7 +11,7 @@ export async function sendWhatsAppResponse(
 ) {
   try {
     console.log(`📤 Enviando respuesta a WhatsApp para ${toNumber}`);
-    const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+    const whatsappResponse = await fetch(`https://graph.facebook.com/v22.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -97,7 +97,7 @@ export async function sendWhatsAppTemplate(
     
     console.log(`📄 Datos de plantilla: ${JSON.stringify(templateData)}`);
     
-    const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+    const whatsappResponse = await fetch(`https://graph.facebook.com/v22.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

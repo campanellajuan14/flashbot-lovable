@@ -274,7 +274,7 @@ serve(async (req) => {
       console.log("🔍 Obteniendo plantillas de WhatsApp");
       
       // Construir URL con los parámetros de consulta si existen
-      const templateUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/message_templates${
+      const templateUrl = `https://graph.facebook.com/v22.0/${config.phone_number_id}/message_templates${
         params ? `?${new URLSearchParams(params)}` : ''
       }`;
       
@@ -324,7 +324,7 @@ serve(async (req) => {
       throw new Error("Missing required field: params");
     }
     
-    const apiVersion = "v18.0"; // Usar una versión estable de la API
+    const apiVersion = "v22.0"; // Actualizado a versión v22.0
     const whatsappApiUrl = `https://graph.facebook.com/${apiVersion}/${config.phone_number_id}/${action}`;
     console.log(`🌐 URL API de WhatsApp: ${whatsappApiUrl}`);
     

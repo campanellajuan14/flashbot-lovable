@@ -46,7 +46,7 @@ async function verifyWhatsAppToken(phoneNumberId: string, token: string): Promis
     console.log(`Verificando token para phone_number_id: ${phoneNumberId}`);
     
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}`,
+      `https://graph.facebook.com/v22.0/${phoneNumberId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -200,43 +200,45 @@ serve(async (req) => {
       console.log("Storing token securely...");
       
       try {
-        // Intentar usar Vault si está disponible
+        // Crear un UUID para el secretId si no existe
+        if (!secretId) {
+          secretId = crypto.randomUUID();
+        }
+        
+        // Guardamos el token directamente (sin encriptar) tanto en user_whatsapp_tokens como en secret_data
+        // Intentar usar Vault si está disponible primero
         if (supabaseAdmin.vault && typeof supabaseAdmin.vault.encrypt === 'function') {
           console.log("Using Supabase Vault for token storage");
           const { data: secretData, error: secretError } = await supabaseAdmin.vault.encrypt(api_token);
           
           if (secretError) {
-            throw new Error(`Error storing token in Vault: ${secretError.message}`);
-          }
-          
-          secretId = secretData.id;
-        } else {
-          // Si Vault no está disponible, usar la tabla directamente con encriptación básica
-          console.log("Vault not available, using direct storage with basic encryption");
-          const encryptedToken = encryptToken(api_token, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "");
-          
-          // Crear un UUID para el secretId si no existe
-          if (!secretId) {
-            secretId = crypto.randomUUID();
-          }
-          
-          // Guardar el token encriptado directamente en la tabla user_whatsapp_tokens si existe
-          const { error: tokenStoreError } = await supabaseAdmin
-            .from('user_whatsapp_tokens')
-            .upsert({
-              id: secretId,
-              user_id: user.id,
-              encrypted_token: encryptedToken,
-              created_at: new Date().toISOString()
-            }, { onConflict: 'id' });
-            
-          if (tokenStoreError) {
-            console.error("Error storing encrypted token:", tokenStoreError);
-            // Si la tabla no existe, podríamos crearla, pero eso requeriría permisos de SQL
-            // Por ahora, mejor guardar el token encriptado en el campo secret_data de la tabla principal
-            secretId = secretId || crypto.randomUUID();
+            console.error("Error storing token in Vault:", secretError);
+            // Caemos en modo alternativo si Vault falla
+          } else {
+            secretId = secretData.id;
+            console.log("Token stored successfully in Vault with ID:", secretId);
           }
         }
+        
+        // Guardar siempre en user_whatsapp_tokens como medida de seguridad
+        console.log("Storing token in user_whatsapp_tokens table");
+        const { error: tokenStoreError } = await supabaseAdmin
+          .from('user_whatsapp_tokens')
+          .upsert({
+            id: secretId,
+            user_id: user.id,
+            encrypted_token: api_token, // Guardamos el token directamente (sin encriptar)
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+          
+        if (tokenStoreError) {
+          console.error("Error storing encrypted token:", tokenStoreError);
+          throw new Error("Error storing token in database: " + tokenStoreError.message);
+        }
+        
+        console.log("Token successfully stored in user_whatsapp_tokens");
+        
       } catch (error) {
         console.error("Error securing token:", error);
         return new Response(
@@ -264,6 +266,11 @@ serve(async (req) => {
       webhook_verify_token: webhookVerifyToken,
       active_chatbot_id: existingConfig?.active_chatbot_id || null
     };
+    
+    // Si tenemos un nuevo token, también lo guardamos en secret_data como backup
+    if (api_token) {
+      configData['secret_data'] = api_token;
+    }
     
     let result;
     
