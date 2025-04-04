@@ -17,29 +17,48 @@ serve(async (req) => {
   }
 
   try {
-    const { tempChatbotId } = await req.json();
+    // Check for required credentials
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    }
     
-    if (!tempChatbotId) {
+    // Parse request body to get tempChatbotId
+    let tempChatbotId: string;
+    try {
+      const body = await req.json();
+      tempChatbotId = body.tempChatbotId;
+      
+      if (!tempChatbotId) {
+        throw new Error("Missing required parameter: tempChatbotId");
+      }
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
       return new Response(
-        JSON.stringify({ error: "Se requiere tempChatbotId" }),
+        JSON.stringify({ error: "Invalid request body, tempChatbotId is required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    console.log(`Clearing documents for chatbot ID: ${tempChatbotId}`);
     
     // Limpiar documentos del storage KV
     const { error: clearError } = await supabase
       .rpc('clear_temp_documents', { temp_id: tempChatbotId });
     
     if (clearError) {
+      console.error(`Error clearing KV storage: ${clearError.message}`);
       throw new Error(`Error clearing KV storage: ${clearError.message}`);
     }
     
-    console.log(`Cleared documents for chatbot ${tempChatbotId}`);
+    console.log(`Successfully cleared documents for chatbot ${tempChatbotId}`);
     
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        message: `Documents cleared successfully for chatbot ID: ${tempChatbotId}`
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
@@ -48,7 +67,8 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : String(error) 
+        error: error instanceof Error ? error.message : String(error),
+        status: "error"
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -1,4 +1,5 @@
 
 project_id = "obiiomoqhpbgaymfphdz"
+
 [functions.kv-clear-documents-by-chatbot]
 verify_jwt = false

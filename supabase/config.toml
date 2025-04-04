@@ -69,6 +69,7 @@ verify_jwt = false
 
 [functions.kv-clear-documents-by-chatbot]
 verify_jwt = false
+invoke_jwt = false
 
 [functions.match-documents]
 verify_jwt = false
@@ -78,4 +79,3 @@ verify_jwt = true
 
 [functions.widget-config]
 verify_jwt = false
-
