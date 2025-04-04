@@ -42,7 +42,8 @@ serve(async (req) => {
       source, 
       conversationId, 
       user_info,
-      user_identifier
+      user_identifier,
+      request_id
     } = requestData;
 
     // Log request details for debugging
@@ -51,6 +52,7 @@ serve(async (req) => {
     console.log('- Widget ID:', widget_id);
     console.log('- Chatbot ID:', chatbotId);
     console.log('- Conversation ID:', conversationId);
+    console.log('- Request ID:', request_id || 'no-id');
     
     // Authorization check
     if (!isAuthorized(authHeader, apiKey, clientInfo, origin, referer, source || '')) {
@@ -115,14 +117,37 @@ serve(async (req) => {
       content: msg.content
     }));
 
-    // Call the Anthropic API
-    const data = await callAnthropicAPI(
-      formattedMessages, 
-      systemPrompt, 
-      effectiveSettings.model || defaultSettings.model,
-      effectiveSettings.maxTokens || defaultSettings.maxTokens,
-      effectiveSettings.temperature || defaultSettings.temperature
-    );
+    let data: any;
+    try {
+      // Call the Anthropic API
+      console.log(`🧠 [${request_id || 'no-id'}] Llamando a Claude API con modelo ${effectiveSettings.model || defaultSettings.model}`);
+      data = await callAnthropicAPI(
+        formattedMessages, 
+        systemPrompt, 
+        effectiveSettings.model || defaultSettings.model,
+        effectiveSettings.maxTokens || defaultSettings.maxTokens,
+        effectiveSettings.temperature || defaultSettings.temperature
+      );
+      console.log(`✅ [${request_id || 'no-id'}] Respuesta de Claude API recibida`);
+    } catch (anthropicError) {
+      console.error(`❌ [${request_id || 'no-id'}] Error de Claude API:`, anthropicError);
+      
+      // Determinar si es un error de sobrecarga
+      const errorMsg = anthropicError.message || '';
+      const isOverloadError = 
+        errorMsg.includes('overloaded') || 
+        errorMsg.includes('Overloaded') || 
+        errorMsg.includes('429') ||
+        errorMsg.includes('rate limit');
+      
+      if (isOverloadError) {
+        // Propagar el error para que el sistema de fallback pueda manejarlo
+        throw new Error(`Anthropic API overloaded: ${errorMsg}`);
+      }
+      
+      // Para otros errores, simplemente propagarlos
+      throw anthropicError;
+    }
     
     console.log('Anthropic API response:', data);
 
@@ -162,7 +187,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in claude-chat function:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : String(error),
+      errorType: error instanceof Error && error.message.includes('overloaded') ? 'overloaded' : 'general'  
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

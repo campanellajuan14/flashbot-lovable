@@ -78,9 +78,18 @@ export async function generateChatbotResponse(
     } catch (functionError) {
       console.error(`❌ [${requestId}] Error en función Edge:`, functionError);
       
-      // Si es un error de timeout, intentar método alternativo con OpenAI
-      if (functionError.name === 'AbortError' || functionError.message?.includes('timeout')) {
-        console.warn(`⏱️ [${requestId}] Timeout en invocación de función Edge (>15s)`);
+      // Determinar si debemos hacer fallback a OpenAI
+      const shouldUseFallback = 
+        functionError.name === 'AbortError' || 
+        functionError.message?.includes('timeout') ||
+        functionError.message?.includes('overloaded') ||
+        functionError.message?.includes('Overloaded') ||
+        (typeof functionError.message === 'string' && 
+          (functionError.message.toLowerCase().includes('429') || 
+           functionError.message.toLowerCase().includes('rate limit')));
+      
+      if (shouldUseFallback) {
+        console.warn(`⚠️ [${requestId}] Detectado error de sobrecarga o timeout en Claude, usando fallback a OpenAI`);
         
         // Intentar con llamada directa a OpenAI API
         console.log(`🔄 [${requestId}] Intentando llamada directa a OpenAI API...`);
