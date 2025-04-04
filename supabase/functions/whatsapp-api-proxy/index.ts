@@ -1,3 +1,4 @@
+
 // Supabase Edge Function: whatsapp-api-proxy
 // Proxy seguro para llamadas a la API de WhatsApp
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,86 +18,116 @@ async function getWhatsAppToken(supabaseAdmin, userId, secretId) {
   console.log(`⚙️ Intentando obtener token WhatsApp para usuario ${userId}, secretId: ${secretId}`);
   
   try {
-    // Primer método: intentar usar Vault
-    try {
-      if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
-        console.log("🗄️ Intentando obtener token desde Vault");
-        const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
-        
-        if (error) {
-          console.error("❌ Error desencriptando token desde Vault:", error.message);
-        } else if (data) {
-          console.log("✅ Token recuperado exitosamente desde Vault");
-          return data;
-        }
-      } else {
-        console.log("ℹ️ Vault no disponible, intentando otros métodos");
-      }
-    } catch (vaultError) {
-      console.error("❌ Error accediendo a Vault:", vaultError);
-    }
-    
-    // Segundo método: intentar obtener de user_whatsapp_tokens
+    // Segundo método: intentar obtener de user_whatsapp_tokens (más directo y confiable)
     try {
       console.log("🔍 Intentando obtener token desde tabla user_whatsapp_tokens");
       const { data: tokenData, error: tokenError } = await supabaseAdmin
         .from('user_whatsapp_tokens')
-        .select('encrypted_token')
+        .select('encrypted_token, created_at')
         .eq('id', secretId)
         .single();
         
       if (tokenError) {
         console.error("❌ Error consultando tabla user_whatsapp_tokens:", tokenError);
       } else if (tokenData && tokenData.encrypted_token) {
-        console.log("✅ Token recuperado exitosamente desde user_whatsapp_tokens");
-        
-        // Validar el token antes de devolverlo
-        try {
-          const validationResponse = await fetch('https://graph.facebook.com/v18.0/debug_token', {
-            headers: {
-              'Authorization': `Bearer ${tokenData.encrypted_token}`,
-            }
-          });
-          
-          if (!validationResponse.ok) {
-            console.error("❌ Token inválido o expirado");
-            throw new Error("Token inválido o expirado. Por favor, actualiza el token en la configuración.");
-          }
-          
-          return tokenData.encrypted_token;
-        } catch (validationError) {
-          console.error("❌ Error validando token:", validationError);
-          throw new Error("Error validando token de WhatsApp");
-        }
+        // Log del token parcial para diagnóstico (solo prefijo)
+        console.log(`✅ Token recuperado desde user_whatsapp_tokens: ${tokenData.encrypted_token.substring(0, 10)}...`);
+        console.log(`📅 Token creado/actualizado: ${tokenData.created_at || 'fecha desconocida'}`);
+        return tokenData.encrypted_token;
+      } else {
+        console.log("ℹ️ No se encontró token en user_whatsapp_tokens, verificando backups");
       }
     } catch (dbError) {
       console.error("❌ Error de base de datos:", dbError);
     }
     
-    // Tercer método: verificar campo secret_data en user_whatsapp_config
+    // Tercer método: verificar campo secret_data en user_whatsapp_config (respaldo)
     try {
       console.log("🔍 Intentando obtener token desde secret_data en user_whatsapp_config");
       const { data: configData, error: configError } = await supabaseAdmin
         .from('user_whatsapp_config')
-        .select('secret_data')
-        .eq('user_id', userId)
+        .select('secret_data, updated_at')
         .eq('secret_id', secretId)
         .single();
         
       if (configError) {
         console.error("❌ Error consultando secret_data:", configError);
       } else if (configData && configData.secret_data) {
-        console.log("✅ Token recuperado exitosamente desde secret_data");
+        console.log(`✅ Token recuperado desde secret_data: ${configData.secret_data.substring(0, 10)}...`);
+        console.log(`📅 Token actualizado: ${configData.updated_at || 'fecha desconocida'}`);
         return configData.secret_data;
+      } else {
+        console.log("ℹ️ No se encontró token en secret_data");
       }
     } catch (fallbackError) {
       console.error("❌ Error en método fallback:", fallbackError);
     }
     
+    // Primer método: intentar usar Vault (menos confiable, usar como último recurso)
+    try {
+      if (supabaseAdmin.vault && typeof supabaseAdmin.vault.decrypt === 'function') {
+        console.log("🗄️ Intentando obtener token desde Vault como último recurso");
+        const { data, error } = await supabaseAdmin.vault.decrypt(secretId);
+        
+        if (error) {
+          console.error("❌ Error desencriptando token desde Vault:", error.message);
+        } else if (data) {
+          console.log(`✅ Token recuperado desde Vault: ${data.substring(0, 10)}...`);
+          return data;
+        }
+      } else {
+        console.log("ℹ️ Vault no disponible");
+      }
+    } catch (vaultError) {
+      console.error("❌ Error accediendo a Vault:", vaultError);
+    }
+    
+    // Diagnóstico adicional para depuración
+    try {
+      console.log("🔍 Ejecutando diagnóstico adicional");
+      
+      const { data: configInfo, error: configError } = await supabaseAdmin
+        .from('user_whatsapp_config')
+        .select('id, phone_number_id, waba_id, is_active, webhook_verified')
+        .eq('secret_id', secretId)
+        .single();
+        
+      if (configError) {
+        console.error("❌ Error obteniendo configuración:", configError);
+      } else if (configInfo) {
+        console.log("📋 Información de configuración encontrada:", {
+          configId: configInfo.id,
+          phoneNumberId: configInfo.phone_number_id,
+          wabaId: configInfo.waba_id,
+          isActive: configInfo.is_active,
+          webhookVerified: configInfo.webhook_verified
+        });
+      }
+      
+      // Verificar si hay algún token disponible para este usuario
+      const { data: anyTokens, error: anyTokensError } = await supabaseAdmin
+        .from('user_whatsapp_tokens')
+        .select('id, created_at, updated_at')
+        .eq('user_id', userId)
+        .limit(5);
+        
+      if (anyTokensError) {
+        console.error("❌ Error buscando tokens:", anyTokensError);
+      } else if (anyTokens && anyTokens.length > 0) {
+        console.log(`🔑 Encontrados ${anyTokens.length} tokens para el usuario:`, anyTokens);
+      } else {
+        console.log("⚠️ No se encontraron tokens para este usuario");
+      }
+      
+    } catch (diagError) {
+      console.error("❌ Error en diagnóstico:", diagError);
+    }
+    
     // Si llegamos aquí, todos los métodos fallaron
     throw new Error(
-      "No se pudo recuperar el token de WhatsApp usando ningún método. " +
-      "Verifica la configuración del token en el panel de WhatsApp."
+      "No se pudo recuperar el token de WhatsApp. " +
+      "Es posible que el token no esté correctamente configurado o que haya expirado. " +
+      "Por favor, actualiza el token en la configuración de WhatsApp."
     );
     
   } catch (error) {
@@ -236,7 +267,7 @@ serve(async (req) => {
     if (!whatsappToken) {
       throw new Error("Could not retrieve WhatsApp token");
     }
-    console.log(`✅ Token de WhatsApp recuperado y validado correctamente`);
+    console.log(`✅ Token de WhatsApp recuperado correctamente (primeros caracteres: ${whatsappToken.substring(0, 5)}...)`);
     
     // Tratamiento especial para recuperar plantillas (GET en lugar de POST)
     if (action === 'message_templates') {
@@ -293,10 +324,14 @@ serve(async (req) => {
       throw new Error("Missing required field: params");
     }
     
-    const whatsappApiUrl = `https://graph.facebook.com/v18.0/${config.phone_number_id}/${action}`;
+    const apiVersion = "v18.0"; // Usar una versión estable de la API
+    const whatsappApiUrl = `https://graph.facebook.com/${apiVersion}/${config.phone_number_id}/${action}`;
     console.log(`🌐 URL API de WhatsApp: ${whatsappApiUrl}`);
     
     try {
+      // Registrar la solicitud exacta que se envía a WhatsApp para diagnóstico
+      console.log("📨 Enviando solicitud a WhatsApp API con payload:", JSON.stringify(params));
+      
       const whatsappResponse = await fetch(whatsappApiUrl, {
         method: 'POST',
         headers: {
@@ -310,8 +345,48 @@ serve(async (req) => {
         const errorText = await whatsappResponse.text();
         console.error(`❌ Error HTTP ${whatsappResponse.status} en API WhatsApp:`, errorText);
         
+        // Registrar información detallada de la solicitud fallida para depuración
+        console.error("📋 Detalles de la solicitud fallida:", { 
+          url: whatsappApiUrl,
+          status: whatsappResponse.status,
+          statusText: whatsappResponse.statusText,
+          headers: Object.fromEntries(whatsappResponse.headers.entries()),
+          errorText
+        });
+        
+        // Para errores 401/403, es muy probable que sea un problema de token
+        if (whatsappResponse.status === 401 || whatsappResponse.status === 403) {
+          throw new Error(
+            "Token de WhatsApp inválido o expirado. " +
+            "Por favor, actualiza el token en la configuración de WhatsApp Business."
+          );
+        }
+        
         try {
           const errorJson = JSON.parse(errorText);
+          
+          // Procesamiento especial para errores comunes de la API de WhatsApp
+          if (errorJson.error) {
+            if (errorJson.error.code === 100 || errorJson.error.code === 190) {
+              throw new Error(
+                "Token de WhatsApp inválido o con permisos insuficientes. " +
+                "Verifica que el token tenga los permisos necesarios y que esté vigente."
+              );
+            } else if (errorJson.error.code === 132000) {
+              throw new Error(
+                "Número de teléfono inválido o con formato incorrecto. " +
+                "Asegúrate de incluir el código de país completo (ej: +34612345678)."
+              );
+            } else if (errorJson.error.message && errorJson.error.message.includes("template")) {
+              throw new Error(
+                "Error con la plantilla: " + errorJson.error.message + ". " +
+                "Verifica que la plantilla exista y esté aprobada en tu cuenta de WhatsApp Business."
+              );
+            }
+            
+            throw new Error(`Error de WhatsApp API: ${errorJson.error.message || JSON.stringify(errorJson.error)}`);
+          }
+          
           throw new Error(`WhatsApp API error (${whatsappResponse.status}): ${JSON.stringify(errorJson)}`);
         } catch (jsonError) {
           throw new Error(`WhatsApp API error (${whatsappResponse.status}): ${errorText}`);
@@ -335,14 +410,23 @@ serve(async (req) => {
     
     // Mejorar mensajes de error para el usuario
     const errorMessage = error.message || 'Internal server error';
-    const statusCode = errorMessage.includes('inválido o expirado') ? 401 
+    const statusCode = errorMessage.includes('inválido o expirado') || errorMessage.includes('token') ? 401 
                     : errorMessage.includes('Unauthorized') ? 401 
                     : 500;
+    
+    // Clasificar el tipo de error para mejor diagnóstico del cliente
+    const errorType = 
+      errorMessage.includes('token') || errorMessage.includes('Token') ? 'token_error' :
+      errorMessage.includes('template') ? 'template_error' :
+      errorMessage.includes('teléfono') || errorMessage.includes('phone') ? 'phone_number_error' :
+      errorMessage.includes('configuración') || errorMessage.includes('config') ? 'config_error' :
+      'general_error';
     
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
         code: statusCode,
+        type: errorType,
         details: error.stack
       }),
       { 

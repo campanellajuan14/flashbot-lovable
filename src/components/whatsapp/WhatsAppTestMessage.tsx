@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle, AlertCircle, Send } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Send, AlertTriangle } from "lucide-react";
 import { sendWhatsAppTextMessage } from '@/integrations/supabase/whatsappTemplates';
 
 export const WhatsAppTestMessage = () => {
@@ -17,6 +17,7 @@ export const WhatsAppTestMessage = () => {
     success: boolean;
     messageId?: string;
     error?: string;
+    errorType?: string; // token_error, template_error, etc.
   } | null>(null);
   
   const { toast } = useToast();
@@ -35,7 +36,13 @@ export const WhatsAppTestMessage = () => {
     // Asegurar que el número tiene formato internacional
     let formattedNumber = phoneNumber;
     if (!formattedNumber.startsWith('+')) {
-      formattedNumber = '+' + formattedNumber;
+      // Si empieza con el prefijo del país pero sin +, añadir +
+      if (/^[0-9]{1,3}/.test(formattedNumber)) {
+        formattedNumber = '+' + formattedNumber;
+      } else {
+        // Asumir número español si no tiene prefijo internacional
+        formattedNumber = '+34' + formattedNumber;
+      }
     }
     
     setIsLoading(true);
@@ -62,9 +69,18 @@ export const WhatsAppTestMessage = () => {
       console.error("Error al enviar mensaje de prueba:", error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       
+      // Determinar el tipo de error para mostrar mensaje más claro
+      const errorType = 
+        errorMessage.toLowerCase().includes('token') || 
+        errorMessage.toLowerCase().includes('autoriza') ? 'token_error' :
+        errorMessage.toLowerCase().includes('teléfono') || 
+        errorMessage.toLowerCase().includes('phone') ? 'phone_error' : 
+        'general_error';
+      
       setResult({
         success: false,
-        error: errorMessage
+        error: errorMessage,
+        errorType
       });
       
       toast({
@@ -74,6 +90,66 @@ export const WhatsAppTestMessage = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const renderErrorHelpText = () => {
+    if (!result || result.success || !result.errorType) return null;
+    
+    switch(result.errorType) {
+      case 'token_error':
+        return (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-start">
+              <AlertTriangle className="text-amber-500 mr-2 h-5 w-5 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-amber-800">Problema con el token de WhatsApp</h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  El token podría ser inválido o haber expirado. Intenta actualizar el token en la pestaña de Configuración.
+                </p>
+                <div className="mt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-amber-700 border-amber-300 hover:bg-amber-100"
+                    onClick={() => window.open('https://developers.facebook.com/apps/', '_blank')}
+                  >
+                    Ir a Meta for Developers
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'phone_error':
+        return (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-start">
+              <AlertCircle className="text-blue-500 mr-2 h-5 w-5 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-800">Formato de número incorrecto</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Asegúrate de incluir el código de país completo (ej: +34612345678).
+                  Los números deben estar en formato E.164 para WhatsApp Business API.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <div className="flex items-start">
+              <AlertCircle className="text-gray-500 mr-2 h-5 w-5 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-gray-800">Error de envío</h4>
+                <p className="text-sm text-gray-700 mt-1">
+                  Verifica la configuración de WhatsApp y asegúrate de que tu cuenta de WhatsApp Business API esté activa.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
     }
   };
   
@@ -129,6 +205,8 @@ export const WhatsAppTestMessage = () => {
             )}
           </Alert>
         )}
+        
+        {renderErrorHelpText()}
       </CardContent>
       <CardFooter>
         <Button 

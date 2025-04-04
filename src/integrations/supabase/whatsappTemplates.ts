@@ -197,9 +197,14 @@ export async function sendWhatsAppTemplate(
       // Intentar mostrar más detalles del error
       try {
         const errorJson = JSON.parse(errorText);
-        if (errorJson.error && errorJson.error.includes("inválido o expirado")) {
+        
+        // Manejo de errores específicos
+        if (errorJson.type === 'token_error') {
           throw new Error("El token de WhatsApp ha expirado o es inválido. Por favor, actualiza el token en la configuración de WhatsApp.");
+        } else if (errorJson.error && errorJson.error.includes("template")) {
+          throw new Error(`Error con la plantilla "${templateName}": ${errorJson.error}. Asegúrate de que la plantilla exista y esté aprobada.`);
         }
+        
         throw new Error(`Error enviando plantilla: ${errorJson.error || errorText}`);
       } catch (e) {
         if (e instanceof Error) {
@@ -241,14 +246,14 @@ export async function sendWhatsAppTextMessage(
     
     if (configError || !configData) {
       console.error('Error obteniendo configuración de WhatsApp:', configError);
-      throw new Error('No hay configuración de WhatsApp disponible');
+      throw new Error('No hay configuración de WhatsApp disponible. Verifica tu configuración en la sección de WhatsApp.');
     }
     
     const config = configData as WhatsAppConfig;
     
     if (!config.phone_number_id) {
       console.error('Configuración incompleta:', config);
-      throw new Error('No hay phone_number_id en la configuración de WhatsApp');
+      throw new Error('No hay phone_number_id en la configuración de WhatsApp. Completa la configuración primero.');
     }
     
     // Obtenemos la sesión actual para la autorización
@@ -256,11 +261,12 @@ export async function sendWhatsAppTextMessage(
     
     if (!session) {
       console.error('No hay sesión activa');
-      throw new Error('No hay sesión activa');
+      throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
     }
     
     console.log("Enviando payload:", {
       action: 'messages',
+      phone_number_id: config.phone_number_id,
       params: {
         messaging_product: "whatsapp",
         recipient_type: "individual",
@@ -273,7 +279,7 @@ export async function sendWhatsAppTextMessage(
       }
     });
     
-    // Llamamos a la función whatsapp-api-proxy
+    // Llamamos a la función whatsapp-api-proxy con mejor manejo de errores
     const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/whatsapp-api-proxy', {
       method: 'POST',
       headers: {
@@ -303,10 +309,21 @@ export async function sendWhatsAppTextMessage(
       
       try {
         const errorJson = JSON.parse(errorText);
-        if (errorJson.error && errorJson.error.includes("inválido o expirado")) {
+        
+        // Mejor manejo de errores específicos
+        if (errorJson.type === 'token_error' || (errorJson.error && (
+            errorJson.error.includes("token") || 
+            errorJson.error.includes("Token") || 
+            errorJson.error.includes("autoriza")
+          ))) {
           throw new Error("El token de WhatsApp ha expirado o es inválido. Por favor, actualiza el token en la configuración de WhatsApp.");
         }
-        throw new Error(`Error enviando mensaje: ${errorJson.error || errorText}`);
+        
+        if (errorJson.type === 'phone_number_error' || (errorJson.error && errorJson.error.includes("teléfono"))) {
+          throw new Error("El número de teléfono no es válido o no tiene el formato correcto. Asegúrate de usar el formato internacional (+34XXXXXXXXX).");
+        }
+        
+        throw new Error(`Error enviando mensaje: ${errorJson.error || JSON.stringify(errorJson)}`);
       } catch (e) {
         if (e instanceof Error) {
           throw e; // Rethrow el error ya procesado
