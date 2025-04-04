@@ -1,12 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
-import { corsHeaders, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, defaultSettings } from "./config.ts";
+import { corsHeaders, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, defaultSettings, fallbackSettings } from "./config.ts";
 import { isAuthorized, generateUnauthorizedResponse } from "./utils/auth.ts";
 import { getRetrievalSettings, searchRelevantDocuments, createDocumentContext } from "./utils/retrieval.ts";
 import { buildSystemPrompt } from "./utils/prompts.ts";
 import { handleConversation, logMessageMetrics } from "./utils/conversation.ts";
 import { callAnthropicAPI } from "./services/anthropicService.ts";
+import { callOpenAIAPI } from "./services/openaiService.ts";
 import { RequestData, ResponseData, Message } from "./types.ts";
 
 serve(async (req) => {
@@ -118,8 +119,10 @@ serve(async (req) => {
     }));
 
     let data: any;
+    let usedFallback = false;
+    
     try {
-      // Call the Anthropic API
+      // Try calling the Anthropic API first
       console.log(`🧠 [${request_id || 'no-id'}] Llamando a Claude API con modelo ${effectiveSettings.model || defaultSettings.model}`);
       data = await callAnthropicAPI(
         formattedMessages, 
@@ -132,7 +135,7 @@ serve(async (req) => {
     } catch (anthropicError) {
       console.error(`❌ [${request_id || 'no-id'}] Error de Claude API:`, anthropicError);
       
-      // Determinar si es un error de sobrecarga
+      // Determine if it's an overload error
       const errorMsg = anthropicError.message || '';
       const isOverloadError = 
         errorMsg.includes('overloaded') || 
@@ -140,16 +143,31 @@ serve(async (req) => {
         errorMsg.includes('429') ||
         errorMsg.includes('rate limit');
       
+      // If it's an overload error, try with OpenAI as fallback
       if (isOverloadError) {
-        // Propagar el error para que el sistema de fallback pueda manejarlo
-        throw new Error(`Anthropic API overloaded: ${errorMsg}`);
+        console.log(`⚠️ [${request_id || 'no-id'}] Claude sobrecargado, usando OpenAI como fallback`);
+        
+        try {
+          data = await callOpenAIAPI(
+            formattedMessages,
+            systemPrompt,
+            fallbackSettings.model,
+            fallbackSettings.maxTokens,
+            fallbackSettings.temperature
+          );
+          usedFallback = true;
+          console.log(`✅ [${request_id || 'no-id'}] Respuesta de OpenAI recibida como fallback`);
+        } catch (openaiError) {
+          console.error(`❌ [${request_id || 'no-id'}] Error en fallback de OpenAI:`, openaiError);
+          throw new Error(`Claude sobrecargado y fallback a OpenAI falló: ${openaiError.message}`);
+        }
+      } else {
+        // For other errors, propagate the original error
+        throw anthropicError;
       }
-      
-      // Para otros errores, simplemente propagarlos
-      throw anthropicError;
     }
     
-    console.log('Anthropic API response:', data);
+    console.log('API response:', data);
 
     // Handle conversation registration and persistence
     const { conversationId: generatedConversationId } = await handleConversation(
@@ -167,7 +185,8 @@ serve(async (req) => {
       message: data.content[0].text,
       model: data.model,
       usage: data.usage,
-      conversation_id: generatedConversationId
+      conversation_id: generatedConversationId,
+      used_fallback: usedFallback
     };
     
     // Add document references

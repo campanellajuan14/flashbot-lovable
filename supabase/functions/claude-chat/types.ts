@@ -41,6 +41,7 @@ export interface RequestData {
   conversationId?: string;
   user_info?: UserInfo;
   user_identifier?: string;
+  request_id?: string;
 }
 
 export interface Document {
@@ -64,6 +65,7 @@ export interface ResponseData {
     name: string;
     similarity: number;
   }>;
+  used_fallback?: boolean; // Added field to indicate fallback was used
 }
 
 export interface AnthropicResponse {

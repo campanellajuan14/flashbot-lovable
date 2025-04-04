@@ -39,10 +39,10 @@ export async function callAnthropicAPI(
       console.error('Anthropic API error:', errorText);
       
       try {
-        // Intentar analizar como JSON para obtener detalles específicos del error
+        // Try to parse as JSON to get specific error details
         const errorData = JSON.parse(errorText);
         
-        // Detectar errores específicos para mejor manejo
+        // Detect specific errors for better handling
         if (errorData?.error?.type === 'overloaded_error') {
           throw new Error(`Anthropic API overloaded: ${errorText}`);
         }
@@ -53,7 +53,7 @@ export async function callAnthropicAPI(
         
         throw new Error(`API error: ${response.status} ${errorText}`);
       } catch (parseError) {
-        // Si no es JSON, usar el texto directamente
+        // If not JSON, use the text directly
         throw new Error(`API error: ${response.status} ${errorText}`);
       }
     }

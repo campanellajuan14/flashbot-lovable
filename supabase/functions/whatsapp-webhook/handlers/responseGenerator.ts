@@ -1,4 +1,3 @@
-
 import { getRandomString } from "../utils/conversation.ts";
 
 /**
@@ -13,10 +12,10 @@ export async function generateChatbotResponse(
 ): Promise<string> {
   console.log(`🧠 Generando respuesta para chatbot ${chatbotId}, conversación ${conversationId}`);
   
-  const requestId = getRandomString(8); // ID único para seguimiento de la petición
+  const requestId = getRandomString(8); // Unique ID for request tracking
   
   try {
-    // Determinar qué modelo usar según la configuración del chatbot
+    // Determine which model to use based on chatbot configuration
     const model = chatbot?.settings?.model || 'gpt-4o';
     const maxTokens = chatbot?.settings?.maxTokens || 1000;
     const temperature = chatbot?.settings?.temperature || 0.7;
@@ -25,11 +24,11 @@ export async function generateChatbotResponse(
     console.log(`📋 [${requestId}] Usando modelo: ${model}, temperatura: ${temperature}, max_tokens: ${maxTokens}`);
     console.log(`🔍 [${requestId}] Mensaje del usuario: "${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}"`);
     
-    // Preparar instrucciones del sistema con comportamiento configurado
+    // Prepare system instructions with configured behavior
     const systemPrompt = `${chatbot.behavior?.tone || 'Eres un asistente profesional y amable.'} ${chatbot.behavior?.instructions || ''}`;
     console.log(`📝 [${requestId}] Instrucciones del sistema: "${systemPrompt.substring(0, 100)}..."`);
     
-    // Intentar con función Edge claude-chat primero con un tiempo de espera menor
+    // Try with Edge claude-chat function first with a shorter timeout
     console.log(`🔄 [${requestId}] Invocando función Edge claude-chat...`);
     
     const startTime = Date.now();
@@ -38,12 +37,12 @@ export async function generateChatbotResponse(
       const { data, error } = await supabase.functions.invoke('claude-chat', {
         body: {
           messages: [
-            // Mensaje del sistema
+            // System message
             {
               role: 'system',
               content: systemPrompt
             },
-            // Mensaje del usuario
+            // User message
             { role: 'user', content: userMessage }
           ],
           model: model,
@@ -52,7 +51,7 @@ export async function generateChatbotResponse(
           source: 'whatsapp-webhook',
           request_id: requestId
         },
-        // Establecer un timeout de 15 segundos
+        // Set a timeout of 15 seconds
         fetchOptions: {
           signal: AbortSignal.timeout(15000)
         }
@@ -74,11 +73,18 @@ export async function generateChatbotResponse(
       console.log(`✅ [${requestId}] Respuesta generada correctamente (${data.message.length} caracteres)`);
       console.log(`📃 [${requestId}] Vista previa: "${data.message.substring(0, 50)}${data.message.length > 50 ? '...' : ''}"`);
       
+      // Check if fallback was used and log it
+      if (data.used_fallback) {
+        console.log(`ℹ️ [${requestId}] Se utilizó el fallback a OpenAI debido a sobrecarga de Claude`);
+      }
+      
       return data.message;
     } catch (functionError) {
       console.error(`❌ [${requestId}] Error en función Edge:`, functionError);
       
-      // Determinar si debemos hacer fallback a OpenAI
+      // Determine if we should use fallback to OpenAI directly
+      // Note: Now we shouldn't need this direct fallback as much since the claude-chat function has its own fallback,
+      // but we'll keep it as an extra safety measure for timeout scenarios
       const shouldUseFallback = 
         functionError.name === 'AbortError' || 
         functionError.message?.includes('timeout') ||
@@ -89,13 +95,13 @@ export async function generateChatbotResponse(
            functionError.message.toLowerCase().includes('rate limit')));
       
       if (shouldUseFallback) {
-        console.warn(`⚠️ [${requestId}] Detectado error de sobrecarga o timeout en Claude, usando fallback a OpenAI`);
+        console.warn(`⚠️ [${requestId}] Detectado error de sobrecarga o timeout en función Edge, usando fallback directo a OpenAI`);
         
-        // Intentar con llamada directa a OpenAI API
+        // Try with direct call to OpenAI API
         console.log(`🔄 [${requestId}] Intentando llamada directa a OpenAI API...`);
         
         try {
-          // Obtener API key de OpenAI (asegúrese de que esté configurada en los secretos)
+          // Get OpenAI API key (make sure it's configured in secrets)
           const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
           
           if (!openaiApiKey) {
@@ -110,7 +116,7 @@ export async function generateChatbotResponse(
               "Authorization": `Bearer ${openaiApiKey}`
             },
             body: JSON.stringify({
-              model: "gpt-4o-mini",  // Usar un modelo más rápido como fallback
+              model: "gpt-4o-mini",  // Use a faster model as fallback
               messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userMessage }
@@ -121,7 +127,7 @@ export async function generateChatbotResponse(
           });
           
           if (!openaiResponse.ok) {
-            // Intentar obtener detalles del error
+            // Try to get error details
             let errorDetail = "";
             try {
               const errorData = await openaiResponse.json();
@@ -146,17 +152,17 @@ export async function generateChatbotResponse(
           throw openaiError;
         }
       } else {
-        // Otro tipo de error
+        // Other type of error
         throw functionError;
       }
     }
   } catch (error) {
     console.error(`❌ [${requestId}] Error generando respuesta:`, error);
     
-    // Mensaje de respaldo en caso de error
+    // Fallback message in case of error
     const fallbackMessage = "Lo siento, estoy teniendo dificultades para responder en este momento. Por favor, inténtalo de nuevo más tarde.";
     
-    // Registrar información de diagnóstico
+    // Log diagnostic information
     try {
       await supabase.from('message_metrics').insert({
         chatbot_id: chatbotId,
@@ -174,7 +180,7 @@ export async function generateChatbotResponse(
       console.error(`❌ [${requestId}] Error registrando métrica de error:`, logError);
     }
     
-    // Mensaje de error específico según el tipo de error
+    // Specific error message based on error type
     if (error.message?.includes('rate limit') || error.message?.includes('429')) {
       return "Lo siento, nuestro servicio está experimentando mucho tráfico. Por favor, intenta de nuevo en unos minutos.";
     }
