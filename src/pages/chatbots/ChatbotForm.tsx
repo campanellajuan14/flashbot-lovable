@@ -10,13 +10,15 @@ import { useChatbotForm } from "./hooks/useChatbotForm";
 import LoadingState from "./components/LoadingState";
 import { getTemplateById } from "./templates/data";
 import ChatbotFormHeader from "./components/ChatbotFormHeader";
-import ChatbotFormTabs from "./components/ChatbotFormTabs";
 import FormActions from "./components/FormActions";
+import BasicInfoTab from "./components/BasicInfoTab";
+import AdvancedSettingsTab from "./components/AdvancedSettingsTab";
+import ChatbotWhatsAppSettings from "@/components/whatsapp/ChatbotWhatsAppSettings";
+import { Separator } from "@/components/ui/separator";
 
 const ChatbotForm = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("basic");
   const [showInitialDialog, setShowInitialDialog] = useState<boolean>(!id);
   
   const {
@@ -40,7 +42,6 @@ const ChatbotForm = () => {
       e.stopPropagation();
     }
     setShowInitialDialog(false);
-    setActiveTab("basic");
   };
   
   // Ensure we prevent default and stop propagation
@@ -53,14 +54,12 @@ const ChatbotForm = () => {
     if (templateId === "") {
       // View all templates
       setShowInitialDialog(false);
-      setActiveTab("templates");
     } else {
       // Select specific template
       const template = getTemplateById(templateId);
       if (template) {
         handleTemplateSelect(template);
         setShowInitialDialog(false);
-        setActiveTab("basic");
       }
     }
   };
@@ -90,7 +89,7 @@ const ChatbotForm = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="space-y-6 max-w-4xl mx-auto">
         {/* Initial choice dialog */}
         <InitialChoiceDialog 
           open={showInitialDialog}
@@ -101,26 +100,44 @@ const ChatbotForm = () => {
         
         <ChatbotFormHeader isEditing={isEditing} />
 
+        {/* Document Navigation - Only show in edit mode */}
         {isEditing && (
-          <DocumentNavigation chatbotId={id || ""} />
+          <div className="mb-6">
+            <DocumentNavigation chatbotId={id || ""} />
+          </div>
         )}
 
-        <form onSubmit={onSubmitForm} className="text-left">
-          <ChatbotFormTabs 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            form={form}
-            aiProvider={aiProvider}
-            isEditing={isEditing}
-            selectedTemplateId={selectedTemplateId}
-            chatbotId={id}
-            userId={user?.id}
-            handleNestedChange={handleNestedChange}
-            handleChange={handleChange}
-            handleProviderChange={handleProviderChange}
-            handleTemplateSelect={handleTemplateSelect}
-            handleStartFromScratch={handleStartFromScratch}
-          />
+        <form onSubmit={onSubmitForm} className="text-left space-y-6">
+          {/* Basic Information Section */}
+          <div className="mb-6">
+            <BasicInfoTab 
+              form={form}
+              handleChange={handleChange}
+              handleNestedChange={handleNestedChange}
+              chatbotId={id}
+              userId={user?.id}
+            />
+          </div>
+          
+          {/* Advanced Settings Section */}
+          <div className="mb-6">
+            <AdvancedSettingsTab 
+              form={form}
+              aiProvider={aiProvider}
+              handleNestedChange={handleNestedChange}
+              handleProviderChange={handleProviderChange}
+            />
+          </div>
+          
+          {/* WhatsApp Integration Section - Only show in edit mode */}
+          {isEditing && (
+            <>
+              <Separator className="my-6" />
+              <div className="mb-6">
+                <ChatbotWhatsAppSettings />
+              </div>
+            </>
+          )}
           
           <FormActions 
             isSubmitting={isSubmitting}
