@@ -76,7 +76,7 @@ const AccessibleSection = () => {
             </ul>
             <div className="flex flex-col gap-3 min-[400px]:flex-row">
               <Button size="lg" className="gap-1 shadow-md hover:shadow-lg hover:translate-y-[-2px] transition-all" asChild>
-                <Link to="/auth/signup">
+                <Link to="/signup">
                   Start Building <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
