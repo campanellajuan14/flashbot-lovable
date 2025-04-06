@@ -56,7 +56,7 @@ const Header = ({ isScrolled = false, variant = "default" }: HeaderProps) => {
                 className={isHomeVariant ? "shadow-md hover:shadow-lg transition-all" : ""} 
                 asChild
               >
-                <Link to="/chatbots/new">
+                <Link to="/signup">
                   {isHomeVariant ? "Build your chatbot" : "Create free bot"}
                 </Link>
               </Button>
