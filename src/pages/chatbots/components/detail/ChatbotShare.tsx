@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Share } from "lucide-react";
 
 interface ChatbotShareProps {
@@ -12,20 +13,22 @@ const ChatbotShare: React.FC<ChatbotShareProps> = ({ chatbotId }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Compartir</CardTitle>
+        <CardTitle>Share</CardTitle>
         <CardDescription>
-          Opciones para compartir tu chatbot
+          Options to share your chatbot
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="p-6 bg-muted rounded-lg border flex flex-col items-center justify-center text-center">
-          <h3 className="font-medium text-lg mb-2">Compartir chatbot</h3>
+          <h3 className="font-medium text-lg mb-2">Share your chatbot</h3>
           <p className="text-muted-foreground mb-4">
-            Configura cómo se ve y comporta tu chatbot cuando lo compartes con otros.
+            Configure how your chatbot looks and behaves when shared with others.
           </p>
-          <Button>
-            <Share className="h-4 w-4 mr-2" />
-            Configurar opciones de compartir
+          <Button asChild>
+            <Link to={`/chatbots/${chatbotId}/edit?tab=share`}>
+              <Share className="h-4 w-4 mr-2" />
+              Configure sharing options
+            </Link>
           </Button>
         </div>
       </CardContent>
