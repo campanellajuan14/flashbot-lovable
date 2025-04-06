@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
+import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate, Bug } from "lucide-react";
 import { ShareSettings } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -14,8 +14,9 @@ interface EmbedCodeTabProps {
 const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, chatbotId }) => {
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
+  const [testMode, setTestMode] = useState(false);
   
-  // Base script URL - updated to the new domain
+  // Base script URL - use a stable domain
   const scriptBaseUrl = "https://flashbot.lovable.app";
   
   // The ID to use in the embed code - make sure we're using the correct ID
@@ -36,11 +37,12 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const scriptCode = `<script 
   src="${scriptBaseUrl}/widget.js" 
   data-widget-id="${embedWidgetId || 'missing-id'}"
+  ${testMode ? 'data-debug="true"' : ''}
   async>
 </script>`;
 
   const iframeCode = `<iframe 
-  src="${scriptBaseUrl}/widget/${embedWidgetId}"
+  src="${scriptBaseUrl}/widget/${embedWidgetId}${testMode ? '?debug=true' : ''}"
   width="100%" 
   height="700" 
   style="border:none;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);max-height:90vh" 
@@ -55,8 +57,8 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate the preview URL for the widget with the new domain
-  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
+  // Generate the preview URL for the widget with the stable domain
+  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}${testMode ? '?debug=true' : ''}`;
 
   return (
     <div className="space-y-6">
@@ -162,6 +164,22 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
         <p className="text-xs text-muted-foreground mt-2">
           This is the unique identifier for your chatbot widget. Keep it safe.
         </p>
+      </div>
+      
+      <div className="flex items-center bg-muted/20 p-3 rounded-lg border border-dashed border-muted">
+        <div className="flex items-center">
+          <Bug className="h-4 w-4 mr-2 text-muted-foreground" />
+          <span className="text-sm mr-2">Debug Mode</span>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer ml-auto">
+          <input 
+            type="checkbox" 
+            checked={testMode} 
+            onChange={(e) => setTestMode(e.target.checked)}
+            className="sr-only peer" 
+          />
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+        </label>
       </div>
 
       <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">

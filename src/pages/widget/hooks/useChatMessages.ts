@@ -40,14 +40,23 @@ export const useChatMessages = (
     const userMessage = inputValue.trim();
     setInputValue("");
     
-    // Add user message to state
-    setMessages([...messages, { role: "user", content: userMessage }]);
+    // Add user message to state immediately
+    const newMessages = [...messages, { role: "user", content: userMessage }];
+    setMessages(newMessages);
     setSending(true);
     
     try {
-      // Send message to API
-      console.log("Sending message with conversation ID:", conversationId);
+      // Log the start of the API call
+      console.log("[useChatMessages] Sending message with conversation ID:", conversationId);
       
+      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+        window.widgetDiagnostics.addEvent('SEND_MESSAGE', 'Sending message to API', {
+          conversationId: conversationId || 'new',
+          messageLength: userMessage.length
+        });
+      }
+      
+      const startTime = Date.now();
       const response = await fetch('https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/claude-chat', {
         method: 'POST',
         headers: { 
@@ -55,7 +64,8 @@ export const useChatMessages = (
           'apikey': ANON_KEY,
           'Authorization': `Bearer ${ANON_KEY}`,
           'x-client-info': 'widget-embed-component',
-          'Origin': window.location.origin
+          'Origin': window.location.origin,
+          'x-diagnostic-info': `widgetId=${widgetId};ts=${Date.now()}`
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: userMessage }],
@@ -66,56 +76,108 @@ export const useChatMessages = (
           user_info: {
             url: window.location.href,
             userAgent: navigator.userAgent,
-            referrer: document.referrer
+            referrer: document.referrer,
+            timestamp: new Date().toISOString()
           }
         })
       });
       
+      const apiTime = Date.now() - startTime;
+      console.log(`[useChatMessages] API response received in ${apiTime}ms with status: ${response.status}`);
+      
+      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+        window.widgetDiagnostics.addEvent('API_RESPONSE', 'Received API response', {
+          status: response.status,
+          time: apiTime
+        });
+      }
+      
       if (!response.ok) {
-        console.error(`Error enviando mensaje: ${response.status} ${response.statusText}`);
+        console.error(`[useChatMessages] Error sending message: ${response.status} ${response.statusText}`);
         
         // Try to get the error message
-        let errorMessage = "Error al enviar mensaje";
+        let errorMessage = "Error sending message";
         try {
           const errorData = await response.json();
+          console.error('[useChatMessages] Error details:', errorData);
+          
+          if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+            window.widgetDiagnostics.addEvent('API_ERROR', 'Error from API (JSON)', errorData);
+          }
+          
           if (errorData && errorData.error) {
             errorMessage = errorData.error;
           }
         } catch (e) {
-          const errorText = await response.text();
-          console.error(`Contenido de la respuesta de error: ${errorText}`);
+          try {
+            const errorText = await response.text();
+            console.error(`[useChatMessages] Error response text: ${errorText}`);
+            
+            if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+              window.widgetDiagnostics.addEvent('API_ERROR', 'Error from API (Text)', { text: errorText });
+            }
+          } catch (textError) {
+            console.error('[useChatMessages] Could not parse error response', textError);
+            
+            if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+              window.widgetDiagnostics.addEvent('API_ERROR', 'Could not parse error response', { 
+                error: String(textError) 
+              });
+            }
+          }
         }
         
         throw new Error(errorMessage);
       }
       
       const result = await response.json();
-      console.log("Respuesta del servidor:", result);
+      console.log("[useChatMessages] API response:", result);
+      
+      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+        window.widgetDiagnostics.addEvent('MESSAGE_RECEIVED', 'Received bot message', {
+          conversationId: result.conversation_id || conversationId,
+          messageLength: result.message?.length || 0
+        });
+      }
       
       // Save conversation ID if first response
       if (result.conversation_id && !conversationId) {
+        console.log("[useChatMessages] Setting new conversation ID:", result.conversation_id);
         setConversationId(result.conversation_id);
       }
       
       // Add bot response to state
-      const updatedMessages = [...messages, { role: "user", content: userMessage }, { role: "assistant", content: result.message }];
+      const updatedMessages = [...newMessages, { role: "assistant", content: result.message }];
       setMessages(updatedMessages);
       
       // Save conversation if needed
       if (config.config.behavior?.persist_conversation && widgetId) {
+        console.log("[useChatMessages] Saving conversation to localStorage");
         localStorage.setItem(`flashbot_chat_${widgetId}`, JSON.stringify({
           messages: updatedMessages,
           conversationId: result.conversation_id || conversationId
         }));
+        
+        if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+          window.widgetDiagnostics.addEvent('STORAGE', 'Saved conversation to localStorage', {
+            messageCount: updatedMessages.length
+          });
+        }
       }
       
     } catch (error: any) {
-      console.error("Error enviando mensaje:", error);
+      console.error("[useChatMessages] Error sending message:", error);
       
-      // Add error message
-      setMessages([...messages, { role: "user", content: userMessage }, { 
+      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+        window.widgetDiagnostics.addEvent('ERROR', 'Error sending message', {
+          error: error.message || String(error)
+        });
+      }
+      
+      // Add error message to the chat
+      setMessages([...newMessages, { 
         role: "assistant", 
-        content: "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo más tarde." 
+        content: "Sorry, there was an error processing your message. Please try again later." 
       }]);
       
     } finally {
@@ -131,3 +193,19 @@ export const useChatMessages = (
     handleSendMessage
   };
 };
+
+// Augment the Window interface 
+declare global {
+  interface Window {
+    widgetDiagnostics?: {
+      startTime: string;
+      events: Array<{
+        timestamp: string;
+        type: string;
+        message: string;
+        data: any;
+      }>;
+      addEvent: (type: string, message: string, data?: any) => void;
+    };
+  }
+}

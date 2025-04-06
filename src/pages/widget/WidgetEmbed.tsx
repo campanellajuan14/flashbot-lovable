@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import WidgetLoading from "./components/WidgetLoading";
 import WidgetError from "./components/WidgetError";
@@ -12,6 +12,19 @@ const WidgetEmbed: React.FC = () => {
   const { widgetId } = useParams<{ widgetId: string }>();
   
   console.log("[WidgetEmbed] Initializing with widget ID:", widgetId);
+  
+  // Add more detailed page load timing information
+  useEffect(() => {
+    const startTime = new Date().getTime();
+    console.log("[WidgetEmbed] Page loaded at:", new Date().toISOString());
+    console.log("[WidgetEmbed] URL:", window.location.href);
+    console.log("[WidgetEmbed] Referrer:", document.referrer || "None");
+    
+    return () => {
+      const loadTime = new Date().getTime() - startTime;
+      console.log("[WidgetEmbed] Component unmounted after", loadTime, "ms");
+    };
+  }, []);
   
   const { 
     loading, 
