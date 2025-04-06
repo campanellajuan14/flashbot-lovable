@@ -56,7 +56,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link to={`/chatbots/${chatbot.id}`} className="flex w-full cursor-pointer">
+                  <Link to={`/chatbots/${chatbot.id}/edit`} className="flex w-full cursor-pointer">
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Link>
@@ -105,7 +105,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({ chatbot, onCopyId, onDelete }
       </CardContent>
       <CardFooter className="mt-auto flex justify-between pt-2 border-t">
         <Button variant="outline" size="sm" asChild>
-          <Link to={`/chatbots/${chatbot.id}`}>
+          <Link to={`/chatbots/${chatbot.id}/edit`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Link>

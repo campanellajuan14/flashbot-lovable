@@ -78,7 +78,7 @@ const ChatbotDetail = () => {
         <div className="mb-6">
           <Button onClick={handleBack} variant="outline" size="sm" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            Back
           </Button>
           
           <div className="flex items-start justify-between">
@@ -86,7 +86,7 @@ const ChatbotDetail = () => {
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold tracking-tight">{chatbot.name}</h1>
                 <Badge variant={chatbot.is_active ? "default" : "outline"}>
-                  {chatbot.is_active ? "Activo" : "Inactivo"}
+                  {chatbot.is_active ? "Active" : "Inactive"}
                 </Badge>
               </div>
               {chatbot.description && (
@@ -95,7 +95,7 @@ const ChatbotDetail = () => {
             </div>
             <Button onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
-              Editar chatbot
+              Edit chatbot
             </Button>
           </div>
         </div>
