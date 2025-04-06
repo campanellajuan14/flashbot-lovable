@@ -9,7 +9,7 @@ import { useWidgetConfig } from "./hooks/useWidgetConfig";
 import { useChatMessages } from "./hooks/useChatMessages";
 
 const WidgetEmbed: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { widgetId } = useParams<{ widgetId: string }>();
   const { 
     loading, 
     error, 
@@ -18,7 +18,7 @@ const WidgetEmbed: React.FC = () => {
     setMessages,
     conversationId,
     setConversationId
-  } = useWidgetConfig(id);
+  } = useWidgetConfig(widgetId);
 
   const {
     inputValue,
@@ -26,7 +26,7 @@ const WidgetEmbed: React.FC = () => {
     handleInputChange,
     handleSendMessage
   } = useChatMessages(
-    id, 
+    widgetId, 
     config, 
     messages, 
     setMessages, 
