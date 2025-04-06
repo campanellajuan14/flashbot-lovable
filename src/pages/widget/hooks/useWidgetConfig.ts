@@ -55,15 +55,25 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
+        console.error("[useWidgetConfig] No widget ID provided");
         setError("Widget ID not found");
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`Attempting to load configuration for widget ID: ${widgetId}`);
+        console.log(`[useWidgetConfig] Attempting to load configuration for widget ID: ${widgetId}`);
         const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
-        console.log(`Full URL: ${apiUrl}`);
+        console.log(`[useWidgetConfig] Full URL: ${apiUrl}`);
+
+        console.log("[useWidgetConfig] Request headers:", {
+          'Content-Type': 'application/json',
+          'apikey': ANON_KEY ? 'Present (not showing full key)' : 'Missing',
+          'Authorization': ANON_KEY ? 'Bearer token present' : 'Missing bearer token',
+          'x-client-info': 'widget-embed-component',
+          'Origin': window.location.origin,
+          'Referer': document.referrer || window.location.href
+        });
 
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -72,31 +82,36 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             'apikey': ANON_KEY,
             'Authorization': `Bearer ${ANON_KEY}`,
             'x-client-info': 'widget-embed-component',
-            'Origin': window.location.origin
+            'Origin': window.location.origin,
+            'Referer': document.referrer || window.location.href
           }
         });
         
-        console.log(`Response received with status: ${response.status} ${response.statusText}`);
+        console.log(`[useWidgetConfig] Response received with status: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
-          console.error(`Error loading widget: ${response.status} ${response.statusText}`);
+          console.error(`[useWidgetConfig] Error loading widget: ${response.status} ${response.statusText}`);
           let errorMessage = `Error loading widget configuration`;
           
           try {
             const errorData = await response.json();
+            console.error('[useWidgetConfig] Error details:', errorData);
             if (errorData && errorData.error) {
               errorMessage = errorData.error;
             }
+            if (errorData && errorData.details) {
+              console.error('[useWidgetConfig] Additional error details:', errorData.details);
+            }
           } catch (e) {
             const errorText = await response.text();
-            console.error(`Response content: ${errorText}`);
+            console.error(`[useWidgetConfig] Response content: ${errorText}`);
           }
           
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("Widget configuration loaded:", data);
+        console.log("[useWidgetConfig] Widget configuration loaded:", data);
         
         // Default configuration to avoid errors
         const defaultConfig: WidgetConfig = {
@@ -128,30 +143,37 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         };
         
         setConfig(defaultConfig);
+        console.log("[useWidgetConfig] Config set successfully:", defaultConfig);
 
         // Check if we have a saved conversation
         if (defaultConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
+          console.log(`[useWidgetConfig] Checking for saved conversation:`, savedConversation ? "Found" : "Not found");
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
+              console.log(`[useWidgetConfig] Parsed saved conversation:`, { 
+                messageCount: savedMessages?.length || 0, 
+                conversationId: savedId || "None"
+              });
               if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("Error processing saved conversation:", e);
+              console.error("[useWidgetConfig] Error processing saved conversation:", e);
             }
           }
         }
 
         // Show welcome message if no messages and welcome message exists
         if (defaultConfig.config.content.welcome_message && (!messages || messages.length === 0)) {
+          console.log("[useWidgetConfig] Adding welcome message");
           setMessages([
             { role: "assistant", content: defaultConfig.config.content.welcome_message }
           ]);
         }
 
       } catch (error: any) {
-        console.error("Error loading widget configuration:", error);
+        console.error("[useWidgetConfig] Error loading widget configuration:", error);
         setError(error.message || "Error loading widget configuration");
       } finally {
         setLoading(false);

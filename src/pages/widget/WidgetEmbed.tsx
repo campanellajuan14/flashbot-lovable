@@ -11,7 +11,7 @@ import { useChatMessages } from "./hooks/useChatMessages";
 const WidgetEmbed: React.FC = () => {
   const { widgetId } = useParams<{ widgetId: string }>();
   
-  console.log("Widget ID from URL params:", widgetId);
+  console.log("[WidgetEmbed] Initializing with widget ID:", widgetId);
   
   const { 
     loading, 
@@ -22,6 +22,14 @@ const WidgetEmbed: React.FC = () => {
     conversationId,
     setConversationId
   } = useWidgetConfig(widgetId);
+
+  console.log("[WidgetEmbed] Config loaded status:", { 
+    loading, 
+    error: error ? error : "No error", 
+    configExists: !!config,
+    messagesCount: messages?.length || 0,
+    conversationId: conversationId || "None"
+  });
 
   const {
     inputValue,
@@ -38,12 +46,19 @@ const WidgetEmbed: React.FC = () => {
   );
 
   if (loading) {
+    console.log("[WidgetEmbed] Still loading widget config");
     return <WidgetLoading />;
   }
 
   if (error || !config) {
+    console.error("[WidgetEmbed] Error or missing config:", error);
     return <WidgetError error={error} />;
   }
+
+  console.log("[WidgetEmbed] Rendering widget with config:", { 
+    appearance: config.config.appearance,
+    hideBackground: config.config.appearance?.hideBackground || false
+  });
 
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;

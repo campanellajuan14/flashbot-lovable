@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
 import { ShareSettings } from "./types";
@@ -21,8 +21,17 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   // The ID to use in the embed code - make sure we're using the correct ID
   const embedWidgetId = widgetConfig?.widget_id || widgetId;
   
-  console.log("EmbedCodeTab - Widget ID:", embedWidgetId);
-  console.log("EmbedCodeTab - Widget Config:", widgetConfig);
+  // Add logging to see what widget ID we're using
+  useEffect(() => {
+    console.log("EmbedCodeTab - Props:", {
+      widgetId,
+      configWidgetId: widgetConfig?.widget_id,
+      usingWidgetId: embedWidgetId,
+      chatbotId
+    });
+    
+    console.log("EmbedCodeTab - Full widgetConfig:", widgetConfig);
+  }, [widgetId, widgetConfig, embedWidgetId, chatbotId]);
 
   const scriptCode = `<script 
   src="${scriptBaseUrl}/widget.js" 
