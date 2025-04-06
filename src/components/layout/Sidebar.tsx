@@ -73,8 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         "flex items-center h-16 border-b px-4",
         isCollapsed ? "justify-center" : "justify-between"
       )}>
-        <div className="flex items-center gap-2 font-bold text-xl">
-          {!isCollapsed && <span>ChatSimp</span>}
+        <div className="flex items-center justify-center">
           <Dices className="h-6 w-6 text-primary" />
         </div>
       </div>
