@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { 
-  Dices, 
   MessageSquare, 
   Settings, 
   BarChart,
@@ -70,12 +69,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       </div>
       
       <div className={cn(
-        "flex items-center h-16 border-b px-4",
-        isCollapsed ? "justify-center" : "justify-between"
+        "h-16 border-b",
+        isCollapsed ? "flex justify-center items-center" : ""
       )}>
-        <div className="flex items-center justify-center">
-          <Dices className="h-6 w-6 text-primary" />
-        </div>
+        {/* Header area without any icon */}
       </div>
       
       <div className="flex-1 overflow-auto py-2">
