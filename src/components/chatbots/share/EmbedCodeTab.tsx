@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
@@ -14,11 +15,14 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
   
-  // Base script URL - actualizado al nuevo dominio
+  // Base script URL - updated to the new domain
   const scriptBaseUrl = "https://flashbot.lovable.app";
   
   // The ID to use in the embed code - make sure we're using the correct ID
   const embedWidgetId = widgetConfig?.widget_id || widgetId;
+  
+  console.log("EmbedCodeTab - Widget ID:", embedWidgetId);
+  console.log("EmbedCodeTab - Widget Config:", widgetConfig);
 
   const scriptCode = `<script 
   src="${scriptBaseUrl}/widget.js" 
@@ -42,7 +46,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate the preview URL for the widget con el nuevo dominio
+  // Generate the preview URL for the widget with the new domain
   const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
 
   return (

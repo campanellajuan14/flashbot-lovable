@@ -10,6 +10,9 @@ import { useChatMessages } from "./hooks/useChatMessages";
 
 const WidgetEmbed: React.FC = () => {
   const { widgetId } = useParams<{ widgetId: string }>();
+  
+  console.log("Widget ID from URL params:", widgetId);
+  
   const { 
     loading, 
     error, 

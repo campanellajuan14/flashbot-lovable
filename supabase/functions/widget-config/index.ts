@@ -63,13 +63,19 @@ serve(async (req) => {
     let chatbot = null;
     let error = null;
     
-    // 1. First approach: Search by widget_id in share_settings
-    console.log("Method 1: Searching by widget_id in share_settings");
+    // 1. First approach: Search by widget_id in share_settings - FIXED TO USE ->> OPERATOR
+    console.log("Method 1: Searching by widget_id in share_settings using ->> operator");
     const { data: widgetData, error: widgetError } = await supabase
       .from('chatbots')
       .select('id, name, description, share_settings')
-      .eq('share_settings->widget_id', widgetId)
-      .single();
+      .eq('share_settings->>widget_id', widgetId)
+      .maybeSingle();
+    
+    console.log("Method 1 Result:", { 
+      found: !!widgetData, 
+      error: widgetError?.message,
+      chatbotId: widgetData?.id 
+    });
     
     if (!widgetError && widgetData) {
       chatbot = widgetData;
@@ -83,7 +89,13 @@ serve(async (req) => {
         .from('chatbots')
         .select('id, name, description, share_settings')
         .eq('id', widgetId)
-        .single();
+        .maybeSingle();
+        
+      console.log("Method 2 Result:", { 
+        found: !!directData, 
+        error: directError?.message,
+        chatbotId: directData?.id 
+      });
         
       if (!directError && directData) {
         chatbot = directData;
@@ -97,6 +109,11 @@ serve(async (req) => {
           .from('chatbots')
           .select('id, name, description, share_settings')
           .eq('share_settings->enabled', true);
+          
+        console.log("Method 3 Result:", { 
+          foundCount: allChatbots?.length || 0, 
+          error: allChatbotsError?.message 
+        });
           
         if (!allChatbotsError && allChatbots) {
           console.log(`Found ${allChatbots.length} chatbots with enabled widgets`);
@@ -119,7 +136,7 @@ serve(async (req) => {
     }
     
     if (!chatbot) {
-      console.error("Widget not found with any method:", error);
+      console.error("CRITICAL: Widget not found with any method:", error);
       return new Response(
         JSON.stringify({ 
           error: "Widget not found or not active", 

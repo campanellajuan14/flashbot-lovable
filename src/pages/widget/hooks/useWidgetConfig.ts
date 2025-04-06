@@ -55,15 +55,15 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
   useEffect(() => {
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        setError("ID del widget no encontrado");
+        setError("Widget ID not found");
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
+        console.log(`Attempting to load configuration for widget ID: ${widgetId}`);
         const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
-        console.log(`URL completo: ${apiUrl}`);
+        console.log(`Full URL: ${apiUrl}`);
 
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -76,11 +76,11 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
           }
         });
         
-        console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
+        console.log(`Response received with status: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
-          console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
-          let errorMessage = `Error al cargar la configuración del widget`;
+          console.error(`Error loading widget: ${response.status} ${response.statusText}`);
+          let errorMessage = `Error loading widget configuration`;
           
           try {
             const errorData = await response.json();
@@ -89,14 +89,14 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             }
           } catch (e) {
             const errorText = await response.text();
-            console.error(`Contenido de la respuesta: ${errorText}`);
+            console.error(`Response content: ${errorText}`);
           }
           
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("Configuración del widget cargada:", data);
+        console.log("Widget configuration loaded:", data);
         
         // Default configuration to avoid errors
         const defaultConfig: WidgetConfig = {
@@ -106,8 +106,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             appearance: data.config?.appearance || {},
             content: data.config?.content || {
               title: "Chat",
-              placeholder_text: "Escribe tu mensaje...",
-              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?"
+              placeholder_text: "Type your message...",
+              welcome_message: "Hello! How can I help you today?"
             },
             colors: data.config?.colors || {
               primary: "#2563eb",
@@ -138,7 +138,7 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
               if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("Error procesando la conversación guardada:", e);
+              console.error("Error processing saved conversation:", e);
             }
           }
         }
@@ -151,8 +151,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         }
 
       } catch (error: any) {
-        console.error("Error cargando la configuración del widget:", error);
-        setError(error.message || "Error al cargar la configuración del widget");
+        console.error("Error loading widget configuration:", error);
+        setError(error.message || "Error loading widget configuration");
       } finally {
         setLoading(false);
       }
