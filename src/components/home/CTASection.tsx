@@ -43,7 +43,7 @@ const CTASection = () => {
               className="gap-1 shadow-md hover:shadow-lg hover:translate-y-[-2px] transition-all"
               asChild
             >
-              <Link to="/auth/signup">
+              <Link to="/signup">
                 Get Started Now <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

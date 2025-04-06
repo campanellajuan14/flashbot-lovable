@@ -47,7 +47,7 @@ const Header = ({ isScrolled = false, variant = "default" }: HeaderProps) => {
           ) : (
             <div className="flex gap-4">
               <Link
-                to="/auth/signin"
+                to="/signin"
                 className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 Login

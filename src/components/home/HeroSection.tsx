@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -60,7 +59,7 @@ const HeroSection = ({ isScrolled, onVideoOpen }: HeroSectionProps) => {
               className="flex flex-col gap-3 min-[400px]:flex-row"
             >
               <Button size="lg" className="gap-1 shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all" asChild>
-                <Link to="/auth/signup">
+                <Link to="/signup">
                   Get Started <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
