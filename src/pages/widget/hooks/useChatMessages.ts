@@ -127,7 +127,11 @@ export const useChatMessages = ({
         content: `Lo siento, ocurrió un error al enviar tu mensaje. Detalles: ${error instanceof Error ? error.message : String(error)}`
       };
       // Use the stable `currentMessages` to avoid race conditions if user sends multiple messages quickly
-      setMessages([...currentMessages, errorMessage]); 
+      
+      // --- DEBUGGING RESTART ISSUE: Temporarily disable adding error message to state ---
+      // setMessages([...currentMessages, errorMessage]); 
+      console.log("[useChatMessages] DEBUG: Skipping setMessages with error message to test restart issue.");
+      // --- END DEBUGGING ---
 
     } finally {
       // Always ensure sending state is turned off
