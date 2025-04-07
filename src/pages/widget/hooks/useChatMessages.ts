@@ -128,10 +128,10 @@ export const useChatMessages = ({
       };
       // Use the stable `currentMessages` to avoid race conditions if user sends multiple messages quickly
       
-      // --- DEBUGGING RESTART ISSUE: Temporarily disable adding error message to state ---
-      // setMessages([...currentMessages, errorMessage]); 
-      console.log("[useChatMessages] DEBUG: Skipping setMessages with error message to test restart issue.");
-      // --- END DEBUGGING ---
+      // --- Restore adding error message to state ---
+      setMessages([...currentMessages, errorMessage]); 
+      // console.log("[useChatMessages] DEBUG: Skipping setMessages with error message to test restart issue.");
+      // --- END Restore ---
 
     } finally {
       // Always ensure sending state is turned off
