@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 
 interface WidgetConfig {
@@ -43,60 +42,201 @@ interface WidgetConfig {
   };
 }
 
+export interface WidgetErrorInfo {
+  error: string;
+  details?: string;
+  allowedDomains?: string[];
+}
+
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
+
+// Define a global diagnostic object for widget issues
+declare global {
+  interface Window {
+    widgetDiagnostics?: {
+      startTime: string;
+      events: Array<{
+        timestamp: string;
+        type: string;
+        message: string;
+        data: any;
+      }>;
+      addEvent: (type: string, message: string, data?: any) => void;
+    };
+  }
+}
+
+// Create a diagnostic object in the window for potential widget issues
+if (typeof window !== 'undefined') {
+  window.widgetDiagnostics = window.widgetDiagnostics || {
+    startTime: new Date().toISOString(),
+    events: [],
+    addEvent: function(type, message, data) {
+      this.events.push({
+        timestamp: new Date().toISOString(),
+        type,
+        message,
+        data: data || null
+      });
+      console.log(`[Widget-Diagnostics] [${type}]`, message, data || '');
+    }
+  };
+}
 
 export const useWidgetConfig = (widgetId: string | undefined) => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<WidgetErrorInfo | null>(null);
   const [config, setConfig] = useState<WidgetConfig | null>(null);
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const addDiagnosticEvent = (type: string, message: string, data?: any) => {
+      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
+        window.widgetDiagnostics.addEvent(type, message, data);
+      }
+    };
+
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        setError("ID del widget no encontrado");
+        console.error("[useWidgetConfig] No widget ID provided");
+        addDiagnosticEvent('ERROR', 'No widget ID provided', null);
+        setErrorInfo({
+          error: "ID del widget no proporcionado",
+          details: "Se requiere un ID de widget válido para cargar la configuración"
+        });
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
-        const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
-        console.log(`URL completo: ${apiUrl}`);
+        console.log(`[useWidgetConfig] Attempt ${retryCount + 1}: Loading configuration for widget ID: ${widgetId}`);
+        addDiagnosticEvent('FETCH', `Attempt ${retryCount + 1}: Loading widget configuration`, { widgetId });
+        
+        // Add debug parameter to help with troubleshooting
+        const isDebugMode = window.location.search.includes('debug=true');
+        const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}${isDebugMode ? '&debug=true' : ''}`;
+        console.log(`[useWidgetConfig] Full URL: ${apiUrl}`);
+        addDiagnosticEvent('URL', 'API endpoint', { url: apiUrl });
 
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': ANON_KEY,
-            'Authorization': `Bearer ${ANON_KEY}`,
-            'x-client-info': 'widget-embed-component',
-            'Origin': window.location.origin
-          }
+        // Include more diagnostic headers to help troubleshoot
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': ANON_KEY,
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-client-info': 'widget-embed-component',
+          'Origin': window.location.origin,
+          'Referer': document.referrer || window.location.href,
+          'x-diagnostic-info': `widgetId=${widgetId};attempt=${retryCount+1};ts=${Date.now()};host=${window.location.hostname}`
+        };
+
+        console.log("[useWidgetConfig] Request headers:", {
+          'Content-Type': headers['Content-Type'],
+          'apikey': headers['apikey'] ? 'Present (not showing full key)' : 'Missing',
+          'Authorization': headers['Authorization'] ? 'Bearer token present' : 'Missing bearer token',
+          'x-client-info': headers['x-client-info'],
+          'Origin': headers['Origin'],
+          'Referer': headers['Referer'],
+          'x-diagnostic-info': headers['x-diagnostic-info']
         });
         
-        console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
+        addDiagnosticEvent('HEADERS', 'Request headers', {
+          'apikey': headers['apikey'] ? 'Present' : 'Missing',
+          'Authorization': headers['Authorization'] ? 'Present' : 'Missing',
+          'Origin': headers['Origin'],
+          'Referer': headers['Referer'],
+          'diagnostic': headers['x-diagnostic-info']
+        });
+
+        const startTime = Date.now();
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers,
+          signal,
+          cache: 'no-cache' // Bypass cache for fresh results
+        });
+        
+        const responseTime = Date.now() - startTime;
+        console.log(`[useWidgetConfig] Response received in ${responseTime}ms with status: ${response.status} ${response.statusText}`);
+        addDiagnosticEvent('RESPONSE', `Received response with status ${response.status}`, { 
+          status: response.status, 
+          statusText: response.statusText,
+          timeMs: responseTime
+        });
         
         if (!response.ok) {
-          console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
-          let errorMessage = `Error al cargar la configuración del widget`;
+          console.error(`[useWidgetConfig] Error loading widget: ${response.status} ${response.statusText}`);
+          addDiagnosticEvent('ERROR', `Error response: ${response.status}`, { status: response.status });
+          
+          let errorMessage = `Error loading widget configuration (${response.status})`;
+          let errorDetails = null;
+          let allowedDomains = undefined;
           
           try {
             const errorData = await response.json();
+            console.error('[useWidgetConfig] Error details:', errorData);
+            addDiagnosticEvent('ERROR', 'Error details from response', errorData);
+            
             if (errorData && errorData.error) {
               errorMessage = errorData.error;
             }
+            if (errorData && errorData.details) {
+              errorDetails = errorData.details;
+              console.error('[useWidgetConfig] Additional error details:', errorData.details);
+              addDiagnosticEvent('ERROR', 'Additional error details', errorData.details);
+            }
+            if (errorData && errorData.allowedDomains) {
+              allowedDomains = errorData.allowedDomains;
+              console.error('[useWidgetConfig] Allowed domains:', errorData.allowedDomains);
+              addDiagnosticEvent('ERROR', 'Allowed domains', errorData.allowedDomains);
+            }
           } catch (e) {
-            const errorText = await response.text();
-            console.error(`Contenido de la respuesta: ${errorText}`);
+            try {
+              const errorText = await response.text();
+              console.error(`[useWidgetConfig] Response content: ${errorText}`);
+              addDiagnosticEvent('ERROR', 'Error response text', { text: errorText });
+              errorDetails = errorText;
+            } catch (textError) {
+              console.error('[useWidgetConfig] Could not parse response', textError);
+              addDiagnosticEvent('ERROR', 'Could not parse response', { error: String(textError) });
+            }
           }
           
-          throw new Error(errorMessage);
+          // If still retries left, try again
+          if (retryCount < maxRetries) {
+            console.log(`[useWidgetConfig] Retry ${retryCount + 1}/${maxRetries} in ${retryDelay}ms`);
+            addDiagnosticEvent('RETRY', `Scheduling retry ${retryCount + 1}/${maxRetries}`, {
+              delay: retryDelay,
+              nextAttemptIn: new Date(Date.now() + retryDelay).toISOString()
+            });
+            
+            setRetryCount(retryCount + 1);
+            setTimeout(loadWidgetConfig, retryDelay);
+            return;
+          }
+          
+          // Set final error state after exhausting retries
+          setErrorInfo({
+            error: errorMessage,
+            details: errorDetails || undefined,
+            allowedDomains: allowedDomains
+          });
+          setLoading(false);
+          return;
         }
 
         const data = await response.json();
-        console.log("Configuración del widget cargada:", data);
+        console.log("[useWidgetConfig] Widget configuration loaded:", data);
+        addDiagnosticEvent('SUCCESS', 'Widget configuration loaded', { 
+          id: data.id,
+          name: data.name
+        });
         
         // Default configuration to avoid errors
         const defaultConfig: WidgetConfig = {
@@ -106,8 +246,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             appearance: data.config?.appearance || {},
             content: data.config?.content || {
               title: "Chat",
-              placeholder_text: "Escribe tu mensaje...",
-              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?"
+              placeholder_text: "Type your message...",
+              welcome_message: "Hello! How can I help you today?"
             },
             colors: data.config?.colors || {
               primary: "#2563eb",
@@ -128,38 +268,70 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         };
         
         setConfig(defaultConfig);
+        setErrorInfo(null);
+        console.log("[useWidgetConfig] Config set successfully:", defaultConfig);
+        addDiagnosticEvent('CONFIG', 'Configuration set successfully', {
+          hasAppearance: !!defaultConfig.config.appearance,
+          hasContent: !!defaultConfig.config.content,
+          hasColors: !!defaultConfig.config.colors,
+          hasBehavior: !!defaultConfig.config.behavior
+        });
 
         // Check if we have a saved conversation
         if (defaultConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
+          console.log(`[useWidgetConfig] Checking for saved conversation:`, savedConversation ? "Found" : "Not found");
+          addDiagnosticEvent('STORAGE', 'Checking for saved conversation', { found: !!savedConversation });
+          
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
+              console.log(`[useWidgetConfig] Parsed saved conversation:`, { 
+                messageCount: savedMessages?.length || 0, 
+                conversationId: savedId || "None"
+              });
+              addDiagnosticEvent('STORAGE', 'Parsed saved conversation', { 
+                messageCount: savedMessages?.length || 0,
+                hasConversationId: !!savedId
+              });
+              
               if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("Error procesando la conversación guardada:", e);
+              console.error("[useWidgetConfig] Error processing saved conversation:", e);
+              addDiagnosticEvent('ERROR', 'Error processing saved conversation', { error: String(e) });
             }
           }
         }
 
-        // Show welcome message if no messages and welcome message exists
-        if (defaultConfig.config.content.welcome_message && (!messages || messages.length === 0)) {
-          setMessages([
-            { role: "assistant", content: defaultConfig.config.content.welcome_message }
-          ]);
+        setLoading(false);
+      } catch (error) {
+        console.error('[useWidgetConfig] Uncaught error:', error);
+        addDiagnosticEvent('ERROR', 'Uncaught error in config loading', { error: String(error) });
+        
+        // If we still have retries, try again
+        if (retryCount < maxRetries) {
+          console.log(`[useWidgetConfig] Retry ${retryCount + 1}/${maxRetries} after error`);
+          setRetryCount(retryCount + 1);
+          setTimeout(loadWidgetConfig, retryDelay);
+          return;
         }
-
-      } catch (error: any) {
-        console.error("Error cargando la configuración del widget:", error);
-        setError(error.message || "Error al cargar la configuración del widget");
-      } finally {
+        
+        setErrorInfo({
+          error: `Error cargando la configuración del widget: ${error instanceof Error ? error.message : String(error)}`,
+          details: "Por favor verifica tu conexión a internet e inténtalo de nuevo."
+        });
         setLoading(false);
       }
     };
 
     loadWidgetConfig();
-  }, [widgetId]);
 
-  return { loading, error, config, messages, setMessages, conversationId, setConversationId };
+    return () => {
+      controller.abort();
+    };
+  }, [widgetId, retryCount]);
+
+  return { loading, errorInfo, config, messages, conversationId, setMessages, setConversationId };
 };
+
