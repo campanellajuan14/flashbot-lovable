@@ -198,14 +198,14 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             }
           } catch (e) {
             try {
-              const errorText = await response.text();
+            const errorText = await response.text();
               console.error(`[useWidgetConfig] Response content: ${errorText}`);
               addDiagnosticEvent('ERROR', 'Error response text', { text: errorText });
               errorDetails = errorText;
             } catch (textError) {
               console.error('[useWidgetConfig] Could not parse response', textError);
               addDiagnosticEvent('ERROR', 'Could not parse response', { error: String(textError) });
-            }
+          }
           }
           
           // If still retries left, try again
@@ -238,47 +238,49 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
           name: data.name
         });
         
-        // Default configuration to avoid errors
-        const defaultConfig: WidgetConfig = {
-          id: data.id || widgetId,
-          name: data.name || "Chat",
+        // Construct the final config, preferring loaded data but providing fallbacks
+        const finalConfig: WidgetConfig = {
+          // Ensure top-level fields always exist
+          id: data.id || widgetId || 'unknown-id', 
+          name: data.name || 'Chatbot',
           config: {
-            appearance: data.config?.appearance || {},
-            content: data.config?.content || {
-              title: "Chat",
-              placeholder_text: "Type your message...",
-              welcome_message: "Hello! How can I help you today?"
+            // Merge appearance, ensuring it's an object
+            appearance: { 
+              ...(data.config?.appearance || {}) 
             },
-            colors: data.config?.colors || {
-              primary: "#2563eb",
-              secondary: "#f1f5f9",
-              background: "#ffffff",
-              text: "#333333",
-              user_bubble: "#2563eb",
-              bot_bubble: "#f1f5f9",
-              links: "#0078ff"
+            // Merge content, ensuring it's an object and has essential fallbacks
+            content: {
+              title: data.config?.content?.title || 'Chat',
+              subtitle: data.config?.content?.subtitle || '',
+              placeholder_text: data.config?.content?.placeholder_text || 'Type your message...',
+              // IMPORTANT: Use loaded welcome message, fallback ONLY if truly missing
+              welcome_message: data.config?.content?.welcome_message,
+              branding: data.config?.content?.branding ?? true, // Default to true?
             },
-            behavior: data.config?.behavior || {
-              persist_conversation: true,
-              auto_open: false,
-              auto_open_delay: 0,
-              save_conversation_id: false
+            // Merge colors, ensuring it's an object
+            colors: {
+              ...(data.config?.colors || {})
+            },
+            // Merge behavior, ensuring it's an object
+            behavior: {
+              ...(data.config?.behavior || {})
             }
           }
         };
         
-        setConfig(defaultConfig);
-        setErrorInfo(null);
-        console.log("[useWidgetConfig] Config set successfully:", defaultConfig);
-        addDiagnosticEvent('CONFIG', 'Configuration set successfully', {
-          hasAppearance: !!defaultConfig.config.appearance,
-          hasContent: !!defaultConfig.config.content,
-          hasColors: !!defaultConfig.config.colors,
-          hasBehavior: !!defaultConfig.config.behavior
-        });
+        // Add a specific check and warning if the welcome message ended up undefined/null
+        if (finalConfig.config.content.welcome_message === undefined || finalConfig.config.content.welcome_message === null) {
+            console.warn("[useWidgetConfig] Welcome message is missing or null in the final config. Ensure it's set in the chatbot configuration.", { loadedContent: data.config?.content });
+            addDiagnosticEvent('WARNING', 'Final welcome message is missing/null', { loadedContent: data.config?.content });
+            // Optionally set a default if absolutely required, but better to show nothing?
+            // finalConfig.config.content.welcome_message = "Welcome!"; 
+        }
+
+        // Set the correctly constructed final configuration
+        setConfig(finalConfig);
 
         // Check if we have a saved conversation
-        if (defaultConfig.config.behavior.persist_conversation) {
+        if (finalConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
           console.log(`[useWidgetConfig] Checking for saved conversation:`, savedConversation ? "Found" : "Not found");
           addDiagnosticEvent('STORAGE', 'Checking for saved conversation', { found: !!savedConversation });
@@ -330,7 +332,7 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
     return () => {
       controller.abort();
     };
-  }, [widgetId, retryCount]);
+  }, [widgetId, retryCount, setConversationId, setMessages]);
 
   return { loading, errorInfo, config, messages, conversationId, setMessages, setConversationId };
 };

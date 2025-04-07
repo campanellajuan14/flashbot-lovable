@@ -146,26 +146,12 @@ const WidgetEmbed: React.FC = () => {
   }
   
   // At this point, config is guaranteed to be available
-  console.log("[WidgetEmbed] Rendering widget with config."); // Simplified log
+  console.log("[WidgetEmbed] Rendering widget with config:", { 
+    appearance: config.config.appearance,
+    hideBackground: config.config.appearance?.hideBackground || false
+  });
 
-  // --- TEMPORARY SIMPLIFICATION FOR DEBUGGING ---
-  // Always render WidgetContainer, ignore hideBackground for now
-  return (
-    <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
-      <WidgetContainer
-        // Pass only essential, known-good config parts if necessary
-        config={config.config} 
-        messages={messages ?? []} // Ensure messages is always an array
-        inputValue={localInputValue} 
-        sending={sending}
-        handleInputChange={onInputChange} 
-        handleSendMessage={handleSendMessage} 
-      />
-    </div>
-  );
-  // --- END TEMPORARY SIMPLIFICATION ---
-
-  /* Original code commented out for debugging:
+  // --- RESTORING ORIGINAL CODE --- 
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;
 
@@ -192,7 +178,7 @@ const WidgetEmbed: React.FC = () => {
       )}
     </div>
   );
-  */
+  // --- END RESTORING ORIGINAL CODE ---
 };
 
 export default WidgetEmbed;
