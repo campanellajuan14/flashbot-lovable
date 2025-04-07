@@ -74,19 +74,24 @@ const WidgetEmbed: React.FC = () => {
   });
 
   // Manage the input value locally in WidgetEmbed too,
-  // synchronizing with the one in useChatMessages
   const [localInputValue, setLocalInputValue] = useState("");
 
   useEffect(() => {
-    // Sync local input with the input from the hook
     setLocalInputValue(inputValue);
   }, [inputValue]);
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalInputValue(e.target.value);
-    // Also update the input value within useChatMessages
     setChatInputValue(e.target.value); 
   };
+
+  // --- NEW: Create a submit handler that prevents default form submission ---
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault(); // Prevent page reload
+    console.log("[WidgetEmbed] Form submitted, calling handleSendMessage from useChatMessages.");
+    handleSendMessage(); // Call the original send function from the hook
+  };
+  // --- END NEW ---
   
   // Log the widget embed initialization
   useEffect(() => {
@@ -176,7 +181,7 @@ const WidgetEmbed: React.FC = () => {
           inputValue={localInputValue} 
           sending={sending}
           handleInputChange={onInputChange} 
-          handleSendMessage={handleSendMessage} 
+          handleSendMessage={handleSubmit} 
         />
       )}
     </div>
