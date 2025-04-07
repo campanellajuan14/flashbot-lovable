@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import WidgetContainer from "./components/WidgetContainer";
 import WidgetError from "./components/WidgetError";
@@ -45,7 +45,48 @@ const WidgetEmbed: React.FC = () => {
   }, [location, params, widgetId]);
   
   // Get configuration for the widget
-  const { loading, errorInfo, config, messages, conversationId, setMessages, setConversationId } = useWidgetConfig(widgetId);
+  const {
+    loading,
+    errorInfo,
+    config,
+    messages,
+    conversationId,
+    setMessages,
+    setConversationId
+  } = useWidgetConfig(widgetId);
+
+  // Call useChatMessages unconditionally at the top level
+  const {
+    inputValue,
+    sending,
+    handleInputChange,
+    handleSendMessage,
+    // Need setInputValue from useChatMessages to manage input state
+    setInputValue: setChatInputValue 
+  } = useChatMessages({
+    widgetId,
+    // Provide fallback values until config is loaded
+    chatbotId: config?.id ?? "", 
+    conversationId,
+    setConversationId,
+    messages: messages ?? [],
+    setMessages: setMessages ?? (() => {})
+  });
+
+  // Manage the input value locally in WidgetEmbed too,
+  // synchronizing with the one in useChatMessages
+  const [localInputValue, setLocalInputValue] = useState("");
+
+  useEffect(() => {
+    // Sync local input with the input from the hook
+    setLocalInputValue(inputValue);
+  }, [inputValue]);
+
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalInputValue(e.target.value);
+    // Also update the input value within useChatMessages
+    setChatInputValue(e.target.value); 
+  };
   
   // Log the widget embed initialization
   useEffect(() => {
@@ -53,7 +94,22 @@ const WidgetEmbed: React.FC = () => {
     console.log("[WidgetEmbed] Loading state:", loading);
     console.log("[WidgetEmbed] Error state:", errorInfo);
   }, [widgetId, loading, errorInfo]);
-  
+
+  // Add welcome message logic, depends on config being loaded
+  useEffect(() => {
+    if (
+      config &&
+      messages &&
+      messages.length === 0 &&
+      config.config.content?.welcome_message &&
+      !conversationId && 
+      setMessages // Ensure setMessages is available
+    ) {
+      console.log("[WidgetEmbed] Adding welcome message:", config.config.content.welcome_message);
+      setMessages([{ role: "assistant", content: config.config.content.welcome_message }]);
+    }
+  }, [config, messages, conversationId, setMessages]);
+
   // Handle widget loading
   if (loading) {
     return <WidgetLoading />;
@@ -68,29 +124,15 @@ const WidgetEmbed: React.FC = () => {
     />;
   }
   
-  // Handle missing widget configuration
+  // Handle missing widget configuration after loading is done
   if (!config) {
     return <WidgetError 
       error="Error de configuración" 
-      details="No se pudo cargar la configuración del widget correctamente."
+      details="No se pudo cargar la configuración del widget correctamente después de la carga."
     />;
   }
   
-  // Important: Only call useChatMessages when we have a valid config
-  const {
-    inputValue,
-    sending,
-    handleInputChange,
-    handleSendMessage
-  } = useChatMessages({
-    widgetId,
-    chatbotId: config.id,
-    conversationId,
-    setConversationId,
-    messages,
-    setMessages
-  });
-  
+  // At this point, config is guaranteed to be available
   console.log("[WidgetEmbed] Rendering widget with config:", { 
     appearance: config.config.appearance,
     hideBackground: config.config.appearance?.hideBackground || false
@@ -99,24 +141,11 @@ const WidgetEmbed: React.FC = () => {
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;
 
-  // Add welcome message if it's a new conversation and there's a welcome message configured
-  useEffect(() => {
-    if (
-      config && 
-      messages.length === 0 && 
-      content?.welcome_message && 
-      !conversationId
-    ) {
-      console.log("[WidgetEmbed] Adding welcome message:", content.welcome_message);
-      setMessages([{ role: "assistant", content: content.welcome_message }]);
-    }
-  }, [config, messages.length, content, conversationId, setMessages]);
-
   return (
     <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
       {hideBackground ? (
         <MessagesOnlyView
-          messages={messages}
+          messages={messages ?? []} // Ensure messages is always an array
           sending={sending}
           welcomeMessage={content?.welcome_message}
           userBubbleColor={colors?.user_bubble}
@@ -126,11 +155,11 @@ const WidgetEmbed: React.FC = () => {
       ) : (
         <WidgetContainer
           config={config.config}
-          messages={messages}
-          inputValue={inputValue}
+          messages={messages ?? []} // Ensure messages is always an array
+          inputValue={localInputValue} // Use local input value for display
           sending={sending}
-          handleInputChange={handleInputChange}
-          handleSendMessage={handleSendMessage}
+          handleInputChange={onInputChange} // Use the combined input change handler
+          handleSendMessage={handleSendMessage} // Use the handler from useChatMessages
         />
       )}
     </div>
