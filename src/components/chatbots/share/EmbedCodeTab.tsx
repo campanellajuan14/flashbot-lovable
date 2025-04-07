@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate } from "lucide-react";
+import { CopyCheck, Copy, Code, ExternalLink, LayoutTemplate, AlertCircle } from "lucide-react";
 import { ShareSettings } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EmbedCodeTabProps {
   widgetId: string | null;
@@ -13,12 +14,28 @@ interface EmbedCodeTabProps {
 const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, chatbotId }) => {
   const [copied, setCopied] = useState(false);
   const [embedType, setEmbedType] = useState("script");
+  const [hasWidgetIdError, setHasWidgetIdError] = useState(false);
   
-  // Base script URL - actualizado al nuevo dominio
+  // Base script URL - use a stable domain
   const scriptBaseUrl = "https://flashbot.lovable.app";
   
   // The ID to use in the embed code - make sure we're using the correct ID
   const embedWidgetId = widgetConfig?.widget_id || widgetId;
+  
+  // Add logging to see what widget ID we're using
+  useEffect(() => {
+    console.log("[EmbedCodeTab] Debug widget ID:", {
+      widgetId,
+      configWidgetId: widgetConfig?.widget_id,
+      usingEmbedWidgetId: embedWidgetId,
+      chatbotId,
+      hasWidget: !!embedWidgetId
+    });
+    
+    // Check if we have a valid widget ID
+    setHasWidgetIdError(!embedWidgetId);
+    
+  }, [widgetId, widgetConfig, embedWidgetId, chatbotId]);
 
   const scriptCode = `<script 
   src="${scriptBaseUrl}/widget.js" 
@@ -27,7 +44,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
 </script>`;
 
   const iframeCode = `<iframe 
-  src="${scriptBaseUrl}/widget/${embedWidgetId}"
+  src="${scriptBaseUrl}/widget/${embedWidgetId || 'missing-id'}"
   width="100%" 
   height="700" 
   style="border:none;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);max-height:90vh" 
@@ -42,8 +59,8 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate the preview URL for the widget con el nuevo dominio
-  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId}`;
+  // Generate the preview URL for the widget
+  const previewUrl = `${scriptBaseUrl}/widget/${embedWidgetId || 'missing-id'}`;
 
   return (
     <div className="space-y-6">
@@ -56,6 +73,15 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
           Copy this code and paste it into your website to add the chatbot widget. Choose between a floating chat button or an inline iframe.
         </p>
       </div>
+      
+      {hasWidgetIdError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            No se ha generado un ID de widget. Por favor, guarde la configuración del chatbot primero.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Tabs defaultValue="script" value={embedType} onValueChange={setEmbedType} className="w-full">
         <TabsList className="w-full mb-4 grid grid-cols-2">
@@ -131,7 +157,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
       <div className="bg-muted/30 p-4 rounded-lg border">
         <h4 className="text-sm font-medium mb-2">Widget ID</h4>
         <div className="flex items-center gap-2">
-          <code className="bg-muted p-2 rounded text-xs font-mono break-all flex-1">
+          <code className={`bg-muted p-2 rounded text-xs font-mono break-all flex-1 ${hasWidgetIdError ? 'text-destructive' : ''}`}>
             {embedWidgetId || 'No widget ID generated yet'}
           </code>
           <Button 
@@ -142,6 +168,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
+            disabled={!embedWidgetId}
           >
             {copied ? <CopyCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
@@ -178,6 +205,7 @@ const EmbedCodeTab: React.FC<EmbedCodeTabProps> = ({ widgetId, widgetConfig, cha
             variant="outline"
             size="sm"
             onClick={() => window.open(previewUrl, '_blank')}
+            disabled={!embedWidgetId || hasWidgetIdError}
           >
             <ExternalLink className="h-4 w-4" />
           </Button>

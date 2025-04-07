@@ -1,4 +1,3 @@
-
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -53,7 +52,10 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/widget/:id" element={<WidgetEmbed />} />
+            
+            {/* Widget routes - support multiple path patterns */}
+            <Route path="/widget/:widgetId" element={<WidgetEmbed />} />
+            <Route path="/:widgetId" element={<WidgetEmbed />} />
 
             {/* Protected routes */}
             <Route element={<AuthRequired />}>
