@@ -255,8 +255,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
                   placeholder_text: 'Type your message...', 
                   branding: true 
               }),
-              // OPCIÓN 1: Usar el valor de la API con fallback personalizado
-              welcome_message: data.config?.content?.welcome_message || "Hey there! 👋 I'm Flashy, your super-charged AI guide to Flashbot!",
+              // Explicitly override welcome_message with the loaded value (even if null/undefined)
+              welcome_message: data.config?.content?.welcome_message,
             },
             // Merge colors, ensuring it's an object
             colors: {
