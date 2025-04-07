@@ -105,6 +105,9 @@ const WidgetEmbed: React.FC = () => {
       !conversationId && 
       setMessages // Ensure setMessages is available
     ) {
+      // --- DEBUG LOG --- 
+      console.log("[WidgetEmbed] Config object received when adding welcome message:", JSON.stringify(config));
+      // --- END DEBUG LOG ---
       console.log("[WidgetEmbed] Adding welcome message:", config.config.content.welcome_message);
       // Ensure welcome message is added safely
       try {

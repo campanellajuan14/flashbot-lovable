@@ -276,6 +276,10 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             // finalConfig.config.content.welcome_message = "Welcome!"; 
         }
 
+        // --- DEBUG LOG --- 
+        console.log("[useWidgetConfig] Final welcome message before setConfig:", finalConfig.config.content.welcome_message);
+        // --- END DEBUG LOG ---
+
         // Set the correctly constructed final configuration
         setConfig(finalConfig);
 
