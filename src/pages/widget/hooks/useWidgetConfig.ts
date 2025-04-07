@@ -255,8 +255,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
                   placeholder_text: 'Type your message...', 
                   branding: true 
               }),
-              // FORZAR mensaje de bienvenida personalizado ignorando la base de datos
-              welcome_message: "Hey there! 👋 I'm Flashy, your super-charged AI guide to Flashbot!",
+              // OPCIÓN 1: Usar el valor de la API con fallback personalizado
+              welcome_message: data.config?.content?.welcome_message || "Hey there! 👋 I'm Flashy, your super-charged AI guide to Flashbot!",
             },
             // Merge colors, ensuring it's an object
             colors: {

@@ -26,38 +26,10 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     chatbotId,
     conversationId,
     source,
+    widgetId,
     messageLength: message.length
   });
   
-  // SIMULACIÓN: Evitamos la llamada a la API que falla
-  console.log("[API] SIMULANDO RESPUESTA - Endpoint original:", `${API_BASE_URL}/claude-chat`);
-  
-  // Crear un retraso artificial para simular la llamada de red
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Generar una respuesta simulada basada en el mensaje del usuario
-  let simulatedResponse = "Lo siento, estoy en modo simulación y no puedo responder de forma inteligente ahora mismo.";
-  
-  // Opcionalmente, podríamos agregar algunas respuestas predefinidas basadas en palabras clave
-  if (message.toLowerCase().includes("hola")) {
-    simulatedResponse = "¡Hola! ¿En qué puedo ayudarte hoy?";
-  } else if (message.toLowerCase().includes("ayuda")) {
-    simulatedResponse = "Estoy aquí para ayudarte. Puedes preguntarme sobre Flashbot y te responderé lo mejor que pueda.";
-  } else if (message.toLowerCase().includes("gracias")) {
-    simulatedResponse = "¡De nada! Estoy aquí para ayudarte.";
-  }
-  
-  console.log('[API] Simulación completada, generando respuesta:', {
-    conversationId: conversationId || `sim-${Date.now()}`,
-    messageLength: simulatedResponse.length
-  });
-  
-  return {
-    message: simulatedResponse,
-    conversation_id: conversationId || `sim-${Date.now()}`
-  };
-  
-  /* CÓDIGO ORIGINAL COMENTADO 
   const response = await fetch(`${API_BASE_URL}/claude-chat`, {
     method: 'POST',
     headers: { 
@@ -66,7 +38,8 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
       'Authorization': `Bearer ${ANON_KEY}`,
       'x-client-info': source || 'web-client',
       'Origin': window.location.origin,
-      'Referer': document.referrer || window.location.href
+      'Referer': document.referrer || window.location.href,
+      'x-debug-info': `chatbotId=${chatbotId};widgetId=${widgetId};ts=${Date.now()}`
     },
     body: JSON.stringify({
       messages: [{ role: 'user', content: message }],
@@ -114,5 +87,4 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     message: data.message,
     conversation_id: data.conversation_id
   };
-  */
 } 
