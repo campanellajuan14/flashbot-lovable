@@ -45,142 +45,58 @@ interface WidgetConfig {
 
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
 
-// Create a diagnostic object in the window for potential widget issues
-if (typeof window !== 'undefined') {
-  window.widgetDiagnostics = window.widgetDiagnostics || {
-    startTime: new Date().toISOString(),
-    events: [],
-    addEvent: function(type, message, data) {
-      this.events.push({
-        timestamp: new Date().toISOString(),
-        type,
-        message,
-        data: data || null
-      });
-      console.log(`[Widget-Diagnostics] [${type}]`, message, data || '');
-    }
-  };
-}
-
 export const useWidgetConfig = (widgetId: string | undefined) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<WidgetConfig | null>(null);
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    const maxRetries = 3;
-    const retryDelay = 2000; // 2 seconds
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    const addDiagnosticEvent = (type, message, data) => {
-      if (typeof window !== 'undefined' && window.widgetDiagnostics) {
-        window.widgetDiagnostics.addEvent(type, message, data);
-      }
-    };
-
     const loadWidgetConfig = async () => {
       if (!widgetId) {
-        console.error("[useWidgetConfig] No widget ID provided");
-        addDiagnosticEvent('ERROR', 'No widget ID provided', null);
-        setError("Widget ID not found");
+        setError("ID del widget no encontrado");
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`[useWidgetConfig] Attempt ${retryCount + 1}: Loading configuration for widget ID: ${widgetId}`);
-        addDiagnosticEvent('FETCH', `Attempt ${retryCount + 1}: Loading widget configuration`, { widgetId });
-        
+        console.log(`Intentando cargar configuración para widget ID: ${widgetId}`);
         const apiUrl = `https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1/widget-config?widget_id=${widgetId}`;
-        console.log(`[useWidgetConfig] Full URL: ${apiUrl}`);
-        addDiagnosticEvent('URL', 'API endpoint', { url: apiUrl });
+        console.log(`URL completo: ${apiUrl}`);
 
-        // Include more diagnostic headers to help troubleshoot
-        const headers = {
-          'Content-Type': 'application/json',
-          'apikey': ANON_KEY,
-          'Authorization': `Bearer ${ANON_KEY}`,
-          'x-client-info': 'widget-embed-component',
-          'Origin': window.location.origin,
-          'Referer': document.referrer || window.location.href,
-          'x-widget-diagnostic': `attempt=${retryCount+1};ts=${Date.now()}`
-        };
-
-        console.log("[useWidgetConfig] Request headers:", {
-          'Content-Type': headers['Content-Type'],
-          'apikey': headers['apikey'] ? 'Present (not showing full key)' : 'Missing',
-          'Authorization': headers['Authorization'] ? 'Bearer token present' : 'Missing bearer token',
-          'x-client-info': headers['x-client-info'],
-          'Origin': headers['Origin'],
-          'Referer': headers['Referer']
-        });
-        
-        addDiagnosticEvent('HEADERS', 'Request headers', {
-          'apikey': headers['apikey'] ? 'Present' : 'Missing',
-          'Authorization': headers['Authorization'] ? 'Present' : 'Missing',
-          'Origin': headers['Origin'],
-          'Referer': headers['Referer']
-        });
-
-        const startTime = Date.now();
         const response = await fetch(apiUrl, {
           method: 'GET',
-          headers,
-          signal,
-          // Increased timeout to help with network issues
-          cache: 'no-cache'
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': ANON_KEY,
+            'Authorization': `Bearer ${ANON_KEY}`,
+            'x-client-info': 'widget-embed-component',
+            'Origin': window.location.origin
+          }
         });
         
-        const responseTime = Date.now() - startTime;
-        console.log(`[useWidgetConfig] Response received in ${responseTime}ms with status: ${response.status} ${response.statusText}`);
-        addDiagnosticEvent('RESPONSE', `Received response with status ${response.status}`, { 
-          status: response.status, 
-          statusText: response.statusText,
-          timeMs: responseTime
-        });
+        console.log(`Respuesta recibida con estado: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
-          console.error(`[useWidgetConfig] Error loading widget: ${response.status} ${response.statusText}`);
-          addDiagnosticEvent('ERROR', `Error response: ${response.status}`, { status: response.status });
-          
-          let errorMessage = `Error loading widget configuration (${response.status})`;
+          console.error(`Error cargando widget: ${response.status} ${response.statusText}`);
+          let errorMessage = `Error al cargar la configuración del widget`;
           
           try {
             const errorData = await response.json();
-            console.error('[useWidgetConfig] Error details:', errorData);
-            addDiagnosticEvent('ERROR', 'Error details from response', errorData);
-            
             if (errorData && errorData.error) {
               errorMessage = errorData.error;
             }
-            if (errorData && errorData.details) {
-              console.error('[useWidgetConfig] Additional error details:', errorData.details);
-              addDiagnosticEvent('ERROR', 'Additional error details', errorData.details);
-            }
           } catch (e) {
-            try {
-              const errorText = await response.text();
-              console.error(`[useWidgetConfig] Response content: ${errorText}`);
-              addDiagnosticEvent('ERROR', 'Error response text', { text: errorText });
-            } catch (textError) {
-              console.error('[useWidgetConfig] Could not parse response', textError);
-              addDiagnosticEvent('ERROR', 'Could not parse response', { error: String(textError) });
-            }
+            const errorText = await response.text();
+            console.error(`Contenido de la respuesta: ${errorText}`);
           }
           
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        console.log("[useWidgetConfig] Widget configuration loaded:", data);
-        addDiagnosticEvent('SUCCESS', 'Widget configuration loaded', { 
-          id: data.id,
-          name: data.name
-        });
+        console.log("Configuración del widget cargada:", data);
         
         // Default configuration to avoid errors
         const defaultConfig: WidgetConfig = {
@@ -190,8 +106,8 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
             appearance: data.config?.appearance || {},
             content: data.config?.content || {
               title: "Chat",
-              placeholder_text: "Type your message...",
-              welcome_message: "Hello! How can I help you today?"
+              placeholder_text: "Escribe tu mensaje...",
+              welcome_message: "¡Hola! ¿En qué puedo ayudarte hoy?"
             },
             colors: data.config?.colors || {
               primary: "#2563eb",
@@ -212,97 +128,38 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         };
         
         setConfig(defaultConfig);
-        console.log("[useWidgetConfig] Config set successfully:", defaultConfig);
-        addDiagnosticEvent('CONFIG', 'Configuration set successfully', {
-          hasAppearance: !!defaultConfig.config.appearance,
-          hasContent: !!defaultConfig.config.content,
-          hasColors: !!defaultConfig.config.colors,
-          hasBehavior: !!defaultConfig.config.behavior
-        });
 
         // Check if we have a saved conversation
         if (defaultConfig.config.behavior.persist_conversation) {
           const savedConversation = localStorage.getItem(`flashbot_chat_${widgetId}`);
-          console.log(`[useWidgetConfig] Checking for saved conversation:`, savedConversation ? "Found" : "Not found");
-          addDiagnosticEvent('STORAGE', 'Checking for saved conversation', { found: !!savedConversation });
-          
           if (savedConversation) {
             try {
               const { messages: savedMessages, conversationId: savedId } = JSON.parse(savedConversation);
-              console.log(`[useWidgetConfig] Parsed saved conversation:`, { 
-                messageCount: savedMessages?.length || 0, 
-                conversationId: savedId || "None"
-              });
-              addDiagnosticEvent('STORAGE', 'Parsed saved conversation', { 
-                messageCount: savedMessages?.length || 0,
-                hasConversationId: !!savedId
-              });
-              
               if (savedMessages) setMessages(savedMessages);
               if (savedId) setConversationId(savedId);
             } catch (e) {
-              console.error("[useWidgetConfig] Error processing saved conversation:", e);
-              addDiagnosticEvent('ERROR', 'Error processing saved conversation', { error: String(e) });
+              console.error("Error procesando la conversación guardada:", e);
             }
           }
         }
 
         // Show welcome message if no messages and welcome message exists
         if (defaultConfig.config.content.welcome_message && (!messages || messages.length === 0)) {
-          console.log("[useWidgetConfig] Adding welcome message");
-          addDiagnosticEvent('MESSAGES', 'Adding welcome message', null);
           setMessages([
             { role: "assistant", content: defaultConfig.config.content.welcome_message }
           ]);
         }
 
       } catch (error: any) {
-        console.error("[useWidgetConfig] Error loading widget configuration:", error);
-        addDiagnosticEvent('ERROR', 'Error loading widget configuration', { message: error.message });
-        
-        // Retry logic
-        if (retryCount < maxRetries) {
-          console.log(`[useWidgetConfig] Retrying (${retryCount + 1}/${maxRetries}) in ${retryDelay}ms`);
-          addDiagnosticEvent('RETRY', `Scheduling retry ${retryCount + 1}/${maxRetries}`, { delay: retryDelay });
-          
-          setTimeout(() => {
-            setRetryCount(prevCount => prevCount + 1);
-          }, retryDelay);
-          
-          return; // Don't update loading state yet, we're retrying
-        }
-        
-        setError(error.message || "Error loading widget configuration");
+        console.error("Error cargando la configuración del widget:", error);
+        setError(error.message || "Error al cargar la configuración del widget");
       } finally {
-        if (retryCount >= maxRetries || !error) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     loadWidgetConfig();
-
-    return () => {
-      controller.abort();
-      console.log("[useWidgetConfig] Cleaning up effect");
-    };
-  }, [widgetId, retryCount]);
+  }, [widgetId]);
 
   return { loading, error, config, messages, setMessages, conversationId, setConversationId };
 };
-
-// Augment the Window interface
-declare global {
-  interface Window {
-    widgetDiagnostics?: {
-      startTime: string;
-      events: Array<{
-        timestamp: string;
-        type: string;
-        message: string;
-        data: any;
-      }>;
-      addEvent: (type: string, message: string, data?: any) => void;
-    };
-  }
-}

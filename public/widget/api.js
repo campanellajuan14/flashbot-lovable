@@ -7,33 +7,6 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 1000;
 
-// Debug helper
-function logApiAttempt(action, details) {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [Widget API] [${action}]`, details);
-  
-  // If in window context, add to diagnostic queue for UI
-  if (typeof window !== 'undefined') {
-    if (!window.widgetDiagnostics) {
-      window.widgetDiagnostics = {
-        startTime: new Date().toISOString(),
-        events: [],
-        addEvent: function(type, message, data) {
-          this.events.push({
-            timestamp: new Date().toISOString(),
-            type,
-            message,
-            data: data || null
-          });
-          console.log(`[Widget-Diagnostics] [${type}]`, message, data || '');
-        }
-      };
-    }
-    
-    window.widgetDiagnostics.addEvent(action, typeof details === 'object' ? JSON.stringify(details).substring(0, 200) : details);
-  }
-}
-
 /**
  * Fetch widget configuration from the API
  * @param {string} widgetId - The ID of the widget to fetch
@@ -41,19 +14,10 @@ function logApiAttempt(action, details) {
  */
 export async function fetchWidgetConfig(widgetId, retryCount = 0) {
   try {
-    const debugMode = typeof window !== 'undefined' && 
-                     (window.location.search.includes('debug=true') || 
-                      document.currentScript?.getAttribute('data-debug') === 'true');
-                      
-    const requestUrl = `${API_BASE_URL}/widget-config?widget_id=${widgetId}${debugMode ? '&debug=true' : ''}`;
+    const requestUrl = `${API_BASE_URL}/widget-config?widget_id=${widgetId}`;
     
-    logApiAttempt('FETCH_CONFIG', {
-      widgetId,
-      attempt: retryCount + 1, 
-      maxRetries: MAX_RETRIES + 1,
-      url: requestUrl,
-      debugMode
-    });
+    console.log(`Attempting to load configuration for widget ID: ${widgetId} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+    console.log(`Full URL: ${requestUrl}`);
     
     // Create a set of headers that will work reliably for public access
     const headers = {
@@ -62,11 +26,10 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
       'Authorization': `Bearer ${ANON_KEY}`,
       'x-client-info': 'widget-client',
       'Origin': window.location.origin,
-      'Referer': document.referrer || window.location.href,
-      'x-diagnostic-info': `widgetId=${widgetId};ts=${Date.now()};retry=${retryCount};mode=${debugMode ? 'debug' : 'normal'}`
+      'Referer': document.referrer || window.location.href
     };
     
-    logApiAttempt('REQUEST_HEADERS', {
+    console.log('Using headers:', {
       'Content-Type': 'application/json',
       'apikey': ANON_KEY ? 'Key is set' : 'Key is missing',
       'Authorization': ANON_KEY ? 'Bearer token is set' : 'Bearer token is missing',
@@ -74,88 +37,58 @@ export async function fetchWidgetConfig(widgetId, retryCount = 0) {
       'Referer': document.referrer || window.location.href
     });
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
-    try {
-      const response = await fetch(requestUrl, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'omit', // Don't send cookies, use the anon key only
-        signal: controller.signal,
-        cache: 'no-cache' // Bypass cache for fresh results
-      });
-      
-      clearTimeout(timeoutId);
-      
-      logApiAttempt('RESPONSE_RECEIVED', { 
-        status: response.status, 
-        statusText: response.statusText 
-      });
-      
-      if (!response.ok) {
-        // More aggressive retry for various error codes
-        if (retryCount < MAX_RETRIES) {
-          logApiAttempt('RETRY_SCHEDULED', {
-            retryCount: retryCount + 1,
-            delay: RETRY_DELAY * (retryCount + 1),
-            status: response.status
-          });
-          
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
-          return fetchWidgetConfig(widgetId, retryCount + 1);
-        }
-        
-        logApiAttempt('ERROR_RESPONSE', {
-          status: response.status,
-          statusText: response.statusText
-        });
-        
-        let errorMessage = 'Error loading widget configuration';
-        try {
-          const errorData = await response.json();
-          if (errorData && errorData.error) {
-            errorMessage = errorData.error;
-            logApiAttempt('ERROR_DETAILS', errorData);
-          }
-        } catch (e) {
-          try {
-            const errorText = await response.text();
-            logApiAttempt('ERROR_TEXT', { text: errorText });
-          } catch (textError) {
-            logApiAttempt('ERROR_UNREADABLE', { error: String(textError) });
-          }
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      const data = await response.json();
-      logApiAttempt('CONFIG_LOADED', {
-        chatbotId: data.id,
-        name: data.name,
-        configKeys: Object.keys(data.config || {})
-      });
-      
-      return data;
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        logApiAttempt('TIMEOUT', { widgetId, ms: 15000 });
-        throw new Error('Request timeout - server took too long to respond');
-      }
-      throw fetchError;
-    }
-  } catch (error) {
-    logApiAttempt('FETCH_ERROR', {
-      error: error.message,
-      stack: error.stack
+    const response = await fetch(requestUrl, {
+      method: 'GET',
+      headers: headers,
+      credentials: 'omit' // Don't send cookies, use the anon key only
     });
+    
+    console.log(`Response received with status: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      // More aggressive retry for various error codes
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying request (${retryCount + 1}/${MAX_RETRIES}) after error ${response.status}`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+        return fetchWidgetConfig(widgetId, retryCount + 1);
+      }
+      
+      console.error(`Error loading widget: ${response.status} ${response.statusText}`);
+      
+      let errorMessage = 'Error loading widget configuration';
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.error) {
+          errorMessage = errorData.error;
+          console.error(`Detailed error: ${errorData.error}`);
+          if (errorData.details) {
+            console.error(`Additional details: ${errorData.details}`);
+          }
+          if (errorData.tip) {
+            console.error(`Tip: ${errorData.tip}`);
+          }
+        }
+      } catch (e) {
+        try {
+          const errorText = await response.text();
+          console.error(`Response content: ${errorText}`);
+        } catch (textError) {
+          console.error("Could not read error response content");
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    const data = await response.json();
+    console.log('Widget config loaded successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Widget config fetch error:', error);
     
     // Last attempt with fallback configuration after exhausting retries
     if (retryCount >= MAX_RETRIES) {
-      logApiAttempt('USING_FALLBACK', { widgetId });
-      
+      console.warn('Using fallback configuration after exhausting retries');
       return {
         id: widgetId,
         name: "Chat Assistant",
@@ -208,8 +141,7 @@ export async function sendChatMessage(message, state) {
         'Authorization': `Bearer ${ANON_KEY}`,
         'Origin': window.location.origin,
         'Referer': document.referrer || window.location.href,
-        'x-client-info': 'widget-client',
-        'x-diagnostic-info': `widgetId=${state.widgetId};ts=${Date.now()}`
+        'x-client-info': 'widget-client'
       },
       body: JSON.stringify({
         messages: [{ role: 'user', content: message }],
@@ -217,12 +149,7 @@ export async function sendChatMessage(message, state) {
         conversationId: state.conversationId,
         source: 'widget',
         widget_id: state.widgetId,
-        user_info: state.userInfo || {
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-          referrer: document.referrer,
-          timestamp: new Date().toISOString()
-        }
+        user_info: state.userInfo
       }),
       // Use omit to ensure clean requests
       credentials: 'omit',
