@@ -39,7 +39,7 @@ const WidgetEmbed: React.FC = () => {
     return undefined;
   }, [params, location]);
   
-  // Always declare state variables at the top level, regardless of conditions
+  // Always declare state variables at the top level
   const [inputValue, setInputValue] = useState("");
   
   // Log all attempts to obtain widget ID
@@ -62,31 +62,36 @@ const WidgetEmbed: React.FC = () => {
     console.log("[WidgetEmbed] Error state:", errorInfo);
   }, [widgetId, loading, errorInfo]);
   
-  // Extract functions from useChatMessages only when config is available
-  const chatFunctions = useMemo(() => {
-    if (!config) {
-      return {
-        sending: false,
-        handleSendMessage: () => {},
-        handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)
-      };
+  // Call useChatMessages unconditionally at the top level
+  // This is crucial for React's hook rules
+  const {
+    sending: chatSending,
+    handleSendMessage: chatHandleSendMessage,
+    handleInputChange: chatHandleInputChange
+  } = useChatMessages({
+    widgetId,
+    // Provide fallback values when config is not available
+    chatbotId: config?.id || "",
+    conversationId,
+    setConversationId,
+    messages: messages || [],
+    setMessages: setMessages || (() => {})
+  });
+
+  // Handle all user input interactions consistently
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    if (config) {
+      chatHandleInputChange(e);
     }
-    
-    const { sending, handleSendMessage } = useChatMessages({
-      widgetId,
-      chatbotId: config.id,
-      conversationId,
-      setConversationId,
-      messages,
-      setMessages
-    });
-    
-    return {
-      sending,
-      handleSendMessage,
-      handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)
-    };
-  }, [config, widgetId, conversationId, messages, setMessages, setConversationId]);
+  };
+  
+  // Create safe handler functions
+  const handleSendMessage = () => {
+    if (config) {
+      chatHandleSendMessage();
+    }
+  };
   
   // Handle widget loading
   if (loading) {
@@ -123,7 +128,7 @@ const WidgetEmbed: React.FC = () => {
       {hideBackground ? (
         <MessagesOnlyView
           messages={messages}
-          sending={chatFunctions.sending}
+          sending={chatSending}
           welcomeMessage={content?.welcome_message}
           userBubbleColor={colors?.user_bubble}
           botBubbleColor={colors?.bot_bubble}
@@ -134,9 +139,9 @@ const WidgetEmbed: React.FC = () => {
           config={config.config}
           messages={messages}
           inputValue={inputValue}
-          sending={chatFunctions.sending}
-          handleInputChange={chatFunctions.handleInputChange}
-          handleSendMessage={chatFunctions.handleSendMessage}
+          sending={chatSending}
+          handleInputChange={handleInputChange}
+          handleSendMessage={handleSendMessage}
         />
       )}
     </div>
