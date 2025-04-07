@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import WidgetContainer from "./components/WidgetContainer";
 import WidgetError from "./components/WidgetError";
@@ -13,7 +13,7 @@ const WidgetEmbed: React.FC = () => {
   const location = useLocation();
   
   // Extract widget ID from various possible sources
-  const getWidgetIdFromUrl = (): string | undefined => {
+  const widgetId = useMemo(() => {
     // First check params (most reliable)
     if (params.widgetId) {
       return params.widgetId;
@@ -37,9 +37,10 @@ const WidgetEmbed: React.FC = () => {
     }
     
     return undefined;
-  };
+  }, [params, location]);
   
-  const widgetId = getWidgetIdFromUrl();
+  // Always declare state variables at the top level, regardless of conditions
+  const [inputValue, setInputValue] = useState("");
   
   // Log all attempts to obtain widget ID
   useEffect(() => {
@@ -51,13 +52,41 @@ const WidgetEmbed: React.FC = () => {
     console.log("  - Resolved widget ID:", widgetId);
   }, [location, params, widgetId]);
   
+  // Get configuration for the widget
   const { loading, errorInfo, config, messages, conversationId, setMessages, setConversationId } = useWidgetConfig(widgetId);
-  const [inputValue, setInputValue] = useState("");
   
   // Log the widget embed initialization
-  console.log("[WidgetEmbed] Initializing widget embed with ID:", widgetId);
-  console.log("[WidgetEmbed] Loading state:", loading);
-  console.log("[WidgetEmbed] Error state:", errorInfo);
+  useEffect(() => {
+    console.log("[WidgetEmbed] Initializing widget embed with ID:", widgetId);
+    console.log("[WidgetEmbed] Loading state:", loading);
+    console.log("[WidgetEmbed] Error state:", errorInfo);
+  }, [widgetId, loading, errorInfo]);
+  
+  // Extract functions from useChatMessages only when config is available
+  const chatFunctions = useMemo(() => {
+    if (!config) {
+      return {
+        sending: false,
+        handleSendMessage: () => {},
+        handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)
+      };
+    }
+    
+    const { sending, handleSendMessage } = useChatMessages({
+      widgetId,
+      chatbotId: config.id,
+      conversationId,
+      setConversationId,
+      messages,
+      setMessages
+    });
+    
+    return {
+      sending,
+      handleSendMessage,
+      handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)
+    };
+  }, [config, widgetId, conversationId, messages, setMessages, setConversationId]);
   
   // Handle widget loading
   if (loading) {
@@ -81,19 +110,6 @@ const WidgetEmbed: React.FC = () => {
     />;
   }
   
-  const { sending, handleSendMessage } = useChatMessages({
-    widgetId,
-    chatbotId: config.id,
-    conversationId,
-    setConversationId,
-    messages,
-    setMessages
-  });
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-  
   console.log("[WidgetEmbed] Rendering widget with config:", { 
     appearance: config.config.appearance,
     hideBackground: config.config.appearance?.hideBackground || false
@@ -107,7 +123,7 @@ const WidgetEmbed: React.FC = () => {
       {hideBackground ? (
         <MessagesOnlyView
           messages={messages}
-          sending={sending}
+          sending={chatFunctions.sending}
           welcomeMessage={content?.welcome_message}
           userBubbleColor={colors?.user_bubble}
           botBubbleColor={colors?.bot_bubble}
@@ -118,9 +134,9 @@ const WidgetEmbed: React.FC = () => {
           config={config.config}
           messages={messages}
           inputValue={inputValue}
-          sending={sending}
-          handleInputChange={handleInputChange}
-          handleSendMessage={handleSendMessage}
+          sending={chatFunctions.sending}
+          handleInputChange={chatFunctions.handleInputChange}
+          handleSendMessage={chatFunctions.handleSendMessage}
         />
       )}
     </div>
