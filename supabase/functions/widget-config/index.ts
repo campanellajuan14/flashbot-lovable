@@ -1,5 +1,30 @@
+// @deno-types="npm:@supabase/functions-js/src/edge-runtime.d.ts"
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
+
+// Define types (adjusted for potential nullability)
+interface ShareSettings {
+  widget_id?: string | null;
+  appearance?: Record<string, any> | null;
+  content?: Record<string, any> | null;
+  colors?: Record<string, any> | null;
+  behavior?: Record<string, any> | null;
+  restrictions?: { allowed_domains?: string[] | null } | null;
+  enabled?: boolean | null;
+}
+
+interface Chatbot {
+  id: string;
+  name: string;
+  description?: string | null;
+  share_settings?: ShareSettings | null;
+}
+
+// RPC result type (adjust based on your actual SQL function output)
+interface FindWidgetResult {
+    chatbot_id: string;
+    // Add other columns returned by the RPC if any
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,294 +32,177 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+// Type guard for Supabase errors
+function isSupabaseError(error: any): error is { message: string } {
+  return error && typeof error.message === 'string';
+}
+
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("[widget-config] Function called");
-  console.log("[widget-config] Request method:", req.method);
-  console.log("[widget-config] Request URL:", req.url);
-  
-  // Extract diagnostic information from headers
   const diagnosticInfo = req.headers.get('x-diagnostic-info') || req.headers.get('x-widget-diagnostic') || 'none';
-  console.log("[widget-config] Diagnostic info:", diagnosticInfo);
-  
-  // Log all headers to debug authentication issues
-  const headers = Object.fromEntries([...req.headers.entries()]);
-  console.log("[widget-config] Request headers:", JSON.stringify(headers, null, 2));
+  console.log(`[widget-config] Start | Diagnostic: ${diagnosticInfo}`);
 
   try {
     const url = new URL(req.url);
     const widgetId = url.searchParams.get('widget_id');
     const debug = url.searchParams.get('debug') === 'true';
     
-    console.log(`[widget-config] Widget ID from request: ${widgetId}`);
-    console.log(`[widget-config] Debug mode: ${debug}`);
-    
     if (!widgetId) {
-      console.error("[widget-config] Missing widget_id parameter");
-      return new Response(
-        JSON.stringify({ error: "Widget ID is required" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[widget-config] Error: Missing widget_id parameter");
+      return new Response(JSON.stringify({ error: "Widget ID is required" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    // Initialize Supabase client with anon key for public access
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
-    
-    console.log(`[widget-config] Supabase URL: ${supabaseUrl ? "Set" : "Not set"}`);
-    console.log(`[widget-config] Supabase Anon Key: ${supabaseAnonKey ? "Set" : "Not set"}`);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error("[widget-config] Missing Supabase environment variables");
-      return new Response(
-        JSON.stringify({ 
-          error: "Server configuration error", 
-          details: "Missing environment variables" 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[widget-config] Error: Missing Supabase environment variables");
+      return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    console.log(`[widget-config] Looking for widget ID: ${widgetId}`);
     
-    console.log(`[widget-config] Looking for widget with ID: ${widgetId}`);
-    
-    // Try multiple approaches to find the chatbot with specific widget ID
-    let chatbot = null;
-    let error = null;
-    
-    // 1. First approach: Try to find by widget_id directly with "eq" operation
-    console.log("[widget-config] Method 1: Searching by widget_id with eq operation (JSON path)");
-    let { data: widgetData, error: widgetError } = await supabase
-      .from('chatbots')
-      .select('id, name, description, share_settings')
-      .eq('share_settings->widget_id', widgetId)
-      .maybeSingle();
-    
-    if (!widgetError && widgetData) {
-      chatbot = widgetData;
-      console.log("[widget-config] Found widget by widget_id:", chatbot.id);
-    } else {
-      console.log("[widget-config] Not found by widget_id using eq. Error:", widgetError?.message);
-      
-      // 2. Try using a raw SQL query approach for more reliability
-      console.log("[widget-config] Method 2: Using raw SQL query to find widget_id");
-      const { data: sqlData, error: sqlError } = await supabase
-        .rpc('find_widget_by_id', { widget_id_param: widgetId })
-        .maybeSingle();
-        
-      if (!sqlError && sqlData) {
-        console.log("[widget-config] Found widget using SQL function:", sqlData);
-        
-        // Get the full chatbot details
-        const { data: chatbotData, error: chatbotError } = await supabase
-          .from('chatbots')
-          .select('id, name, description, share_settings')
-          .eq('id', sqlData.chatbot_id)
-          .single();
-          
-        if (!chatbotError && chatbotData) {
-          chatbot = chatbotData;
-        } else {
-          console.log("[widget-config] Error getting chatbot details:", chatbotError?.message);
-        }
-      } else {
-        console.log("[widget-config] SQL query didn't find widget. Error:", sqlError?.message);
-      }
-      
-      // 3. Last fallback: Search directly by chatbot ID (in case widget_id is actually a chatbot ID)
-      if (!chatbot) {
-        console.log("[widget-config] Method 3: Searching directly by chatbot ID");
-        const { data: directData, error: directError } = await supabase
-          .from('chatbots')
-          .select('id, name, description, share_settings')
-          .eq('id', widgetId)
-          .maybeSingle();
-          
-        if (!directError && directData) {
-          chatbot = directData;
-          console.log("[widget-config] Found widget by direct ID:", chatbot.id);
-        } else {
-          console.log("[widget-config] Not found by direct ID. Error:", directError?.message);
-          
-          // 4. Final approach: Search all enabled widgets manually
-          console.log("[widget-config] Method 4: Manual search through all enabled widgets");
-          const { data: allChatbots, error: allChatbotsError } = await supabase
-            .from('chatbots')
-            .select('id, name, description, share_settings')
-            .not('share_settings', 'is', null);
-            
-          if (!allChatbotsError && allChatbots) {
-            console.log(`[widget-config] Found ${allChatbots.length} chatbots with share_settings`);
-            
-            // Manually check each chatbot for matching widget_id
-            for (const bot of allChatbots) {
-              const botWidgetId = bot.share_settings?.widget_id;
-              console.log(`[widget-config] Checking chatbot ${bot.id} with widget_id:`, botWidgetId);
-              
-              if (botWidgetId === widgetId) {
-                chatbot = bot;
-                console.log("[widget-config] Found widget in manual search:", chatbot.id);
-                break;
-              }
-            }
-          } else {
-            console.log("[widget-config] Error searching all chatbots:", allChatbotsError?.message);
-          }
-            
-          error = directError || widgetError;
-        }
-      }
-    }
-    
-    if (!chatbot) {
-      console.error("[widget-config] CRITICAL: Widget not found with any method:", error);
-      
-      // In debug mode, return more details
-      if (debug) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Widget not found or not active", 
-            details: error?.message,
-            searchedId: widgetId,
-            searchMethods: {
-              method1: { result: "Not found", error: widgetError?.message },
-              method3: { result: "Not found" }
-            },
-            tip: "Make sure the widget_id is correct and the widget is enabled in share_settings",
-            diagnosticInfo: diagnosticInfo
-          }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: "Widget not found or not active", 
-          details: "The requested widget could not be found or is not enabled."
-        }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    console.log("[widget-config] Found chatbot:", chatbot.id, chatbot.name);
-    console.log("[widget-config] Share settings:", JSON.stringify(chatbot.share_settings, null, 2));
-    
-    // Ensure share_settings exists and has minimum required structure
-    if (!chatbot.share_settings) {
-      chatbot.share_settings = {
-        enabled: true,
-        widget_id: widgetId
-      };
-    }
-    
-    // Check domain restrictions if any
-    const referrer = req.headers.get('Referer') || '';
-    let referrerDomain = '';
-    
+    let chatbot: Chatbot | null = null;
+    let sqlErrorMsg: string | null = null;
+    let eqErrorMsg: string | null = null;
+    let foundByMethod = 'none';
+
+    // --- Method 1: SQL function find_widget_by_id ---
+    console.log("[widget-config] Attempting Method 1: SQL function find_widget_by_id");
     try {
-      if (referrer) {
-        const referrerUrl = new URL(referrer);
-        referrerDomain = referrerUrl.hostname;
-      }
-    } catch (e) {
-      console.log("[widget-config] Error parsing referrer:", e);
+        // Correctly type the RPC call result
+        const { data: rpcData, error: rpcError } = await supabase
+            .rpc<'find_widget_by_id', FindWidgetResult>('find_widget_by_id', { widget_id_param: widgetId })
+            .maybeSingle();
+
+        if (rpcError) {
+            sqlErrorMsg = `RPC Error: ${rpcError.message}`;
+            console.warn("[widget-config] Method 1 Failed (RPC Error):", sqlErrorMsg);
+        } else if (rpcData && rpcData.chatbot_id) {
+            console.log("[widget-config] Method 1 Success: Found chatbot_id:", rpcData.chatbot_id);
+            const { data: chatbotData, error: fetchError } = await supabase
+                .from('chatbots')
+                .select('id, name, description, share_settings')
+                .eq('id', rpcData.chatbot_id)
+                .single<Chatbot>();
+
+            if (fetchError) {
+                sqlErrorMsg = `Fetch Error after RPC: ${fetchError.message}`;
+                console.error("[widget-config] Method 1 Error (Fetch Details):", sqlErrorMsg);
+            } else if (chatbotData) {
+                chatbot = chatbotData;
+                foundByMethod = 'sql_function';
+                console.log("[widget-config] Method 1 Success: Retrieved full chatbot details.");
+            } else {
+                 sqlErrorMsg = "SQL function found ID but chatbot details query returned null.";
+                 console.warn("[widget-config] Method 1 Warning:", sqlErrorMsg);
+            }
+        } else {
+            sqlErrorMsg = "SQL function did not find a matching widget ID or returned null.";
+            console.log("[widget-config] Method 1 Result: No match found by SQL function.");
+        }
+    } catch (rpcCatchError) {
+        sqlErrorMsg = `Caught Exception (RPC): ${rpcCatchError instanceof Error ? rpcCatchError.message : String(rpcCatchError)}`;
+        console.error("[widget-config] Method 1 Exception:", sqlErrorMsg);
     }
-    
-    console.log("[widget-config] Request referrer domain:", referrerDomain);
-    
-    const allowedDomains = chatbot.share_settings.restrictions?.allowed_domains || [];
-    const hasDomainRestrictions = Array.isArray(allowedDomains) && allowedDomains.length > 0;
-    
-    console.log("[widget-config] Domain restrictions:", {
-      hasDomainRestrictions,
-      allowedDomains,
-      referrerDomain
-    });
-    
-    // Skip domain checking if preview URL or debug mode
-    const isPreview = referrerDomain.includes('flashbot.lovable.app') || 
-                      referrerDomain.includes('localhost') ||
-                      debug;
-    
-    if (!isPreview && hasDomainRestrictions && referrerDomain) {
-      // Check if the domain is allowed
-      const isAllowed = allowedDomains.some(domain => 
-        referrerDomain === domain || 
-        referrerDomain.endsWith(`.${domain}`) ||
-        domain === '*'
-      );
+
+    // --- Method 2: Fallback to JSONB eq operator ---
+    if (!chatbot) {
+        console.log("[widget-config] Attempting Method 2: JSONB eq operator (share_settings->>widget_id)");
+        try {
+             // Ensure the column name and operator are correct PostgreSQL syntax
+            const { data: eqData, error: queryError } = await supabase
+                .from('chatbots')
+                .select('id, name, description, share_settings')
+                .eq('share_settings::jsonb->>widget_id' as 'widget_id', widgetId) // Corrected cast
+                .maybeSingle<Chatbot>();
+
+            if (queryError) {
+                eqErrorMsg = `Query Error: ${queryError.message}`;
+                console.warn("[widget-config] Method 2 Failed (Query Error):", eqErrorMsg);
+            } else if (eqData) {
+                chatbot = eqData;
+                foundByMethod = 'jsonb_eq';
+                console.log("[widget-config] Method 2 Success: Found widget using jsonb_eq.");
+            } else {
+                eqErrorMsg = "jsonb_eq operator did not find a match or returned null.";
+                console.log("[widget-config] Method 2 Result: No match found by jsonb_eq.");
+            }
+        } catch (eqCatchError) {
+             eqErrorMsg = `Caught Exception (EQ): ${eqCatchError instanceof Error ? eqCatchError.message : String(eqCatchError)}` ;
+             console.error("[widget-config] Method 2 Exception:", eqErrorMsg);
+        }
+    }
+
+    // --- Handle Not Found --- 
+    if (!chatbot) {
+      const lastErrorMsg = eqErrorMsg || sqlErrorMsg || "Widget not found after all attempts";
+      console.error(`[widget-config] CRITICAL FAILURE: Widget not found (Searched ID: ${widgetId}). Last error: ${lastErrorMsg}`);
       
-      if (!isAllowed) {
-        console.log("[widget-config] Domain not allowed:", referrerDomain);
-        return new Response(
-          JSON.stringify({ 
-            error: "Domain not allowed", 
-            details: `The widget can only be used on the configured domains`,
-            allowedDomains
-          }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      const errorResponse = {
+        error: "Widget not found or not active",
+        details: debug ? `Failed methods. SQL: ${sqlErrorMsg ?? 'No Error/Match'}. EQ: ${eqErrorMsg ?? 'No Error/Match'}.` : "Could not find enabled widget.",
+        ...(debug && { 
+            searchedId: widgetId, 
+            methodsAttempted: { sql_function: sqlErrorMsg ?? 'OK/No Match', jsonb_eq: eqErrorMsg ?? 'OK/No Match' },
+            diagnosticInfo 
+        })
+      };
+      return new Response(JSON.stringify(errorResponse), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    // Prepare response (remove sensitive data)
-    const response = {
+    // --- Found Chatbot - Proceed ---
+    console.log(`[widget-config] Success: Found chatbot by ${foundByMethod}. ID: ${chatbot.id}, Name: ${chatbot.name}`);
+    console.log("[widget-config] Raw share_settings:", JSON.stringify(chatbot.share_settings, null, 2));
+
+    // --- Domain Restriction Check ---
+    const checkDomainRestrictions = () => {
+        const referrer = req.headers.get('Referer') || '';
+        let referrerDomain = '';
+        try { if (referrer) referrerDomain = new URL(referrer).hostname; } catch { console.warn("[widget-config] Could not parse referrer URL:", referrer); }
+        const allowedDomains = chatbot?.share_settings?.restrictions?.allowed_domains || [];
+        const hasRestrictions = Array.isArray(allowedDomains) && allowedDomains.length > 0;
+        const isPreview = referrerDomain.includes('flashbot.lovable.app') || referrerDomain.includes('localhost') || debug;
+
+        if (!isPreview && hasRestrictions && referrerDomain) {
+            const isAllowed = allowedDomains.some(domain => 
+                referrerDomain === domain || referrerDomain.endsWith(`.${domain}`) || domain === '*'
+            );
+            if (!isAllowed) {
+                console.warn("[widget-config] Domain check FAILED:", { referrerDomain, allowedDomains });
+                return { allowed: false, message: "Domain not allowed", details: `Widget use restricted on this domain.`, allowedDomains };
+            }
+        }
+        console.log("[widget-config] Domain check PASSED:", { referrerDomain, hasRestrictions, isPreview });
+        return { allowed: true };
+    };
+    const domainCheck = checkDomainRestrictions();
+    if (!domainCheck.allowed) {
+         return new Response(JSON.stringify({ error: domainCheck.message, details: domainCheck.details, allowedDomains: domainCheck.allowedDomains }),
+           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // --- Prepare and Send Response ---
+    const responsePayload = {
       id: chatbot.id,
       name: chatbot.name,
-      config: {
-        appearance: chatbot.share_settings.appearance || {
-          position: "right",
-          theme: "light",
-          initial_state: "closed",
-          border_radius: 10,
-          box_shadow: true
-        },
-        content: chatbot.share_settings.content || {
-          title: "Chat Assistant",
-          placeholder_text: "Type a message...",
-          welcome_message: "Hello! How can I help you today?",
-          branding: true
-        },
-        colors: chatbot.share_settings.colors || {
-          primary: "#2563eb",
-          secondary: "#f1f5f9",
-          background: "#ffffff",
-          text: "#333333",
-          user_bubble: "#2563eb",
-          bot_bubble: "#f1f5f9",
-          links: "#2563eb"
-        },
-        behavior: chatbot.share_settings.behavior || {
-          persist_conversation: true,
-          auto_open: false,
-          auto_open_delay: 0,
-          save_conversation_id: false
-        }
-      }
+      config: chatbot.share_settings || {} // Pass raw settings, frontend handles defaults
     };
-    
-    console.log("[widget-config] Successfully returning widget config");
-    
-    return new Response(
-      JSON.stringify(response),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
-  } catch (error) {
-    console.error('[widget-config] Error in widget-config:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: "Internal server error", 
-        details: String(error),
-        message: "Please check the Edge Function logs for details"
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.log("[widget-config] Sending Success Response (Payload Snippet):", JSON.stringify(responsePayload).substring(0, 300) + "...");
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (err) {
+    console.error("[widget-config] CRITICAL Unhandled Exception:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: "Internal Server Error", details: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

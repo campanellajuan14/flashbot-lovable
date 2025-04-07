@@ -240,22 +240,23 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         
         // Construct the final config, preferring loaded data but providing fallbacks
         const finalConfig: WidgetConfig = {
-          // Ensure top-level fields always exist
-          id: data.id || widgetId || 'unknown-id', 
+          id: data.id || widgetId || 'unknown-id',
           name: data.name || 'Chatbot',
           config: {
             // Merge appearance, ensuring it's an object
             appearance: { 
               ...(data.config?.appearance || {}) 
             },
-            // Merge content, ensuring it's an object and has essential fallbacks
+            // Merge content: Prioritize loaded data completely
             content: {
-              title: data.config?.content?.title || 'Chat',
-              subtitle: data.config?.content?.subtitle || '',
-              placeholder_text: data.config?.content?.placeholder_text || 'Type your message...',
-              // IMPORTANT: Use loaded welcome message, fallback ONLY if truly missing
+              // Use loaded content object if it exists, otherwise provide minimal defaults
+              ...(data.config?.content || { 
+                  title: 'Chat', 
+                  placeholder_text: 'Type your message...', 
+                  branding: true 
+              }),
+              // Explicitly override welcome_message with the loaded value (even if null/undefined)
               welcome_message: data.config?.content?.welcome_message,
-              branding: data.config?.content?.branding ?? true, // Default to true?
             },
             // Merge colors, ensuring it's an object
             colors: {
@@ -270,14 +271,13 @@ export const useWidgetConfig = (widgetId: string | undefined) => {
         
         // Add a specific check and warning if the welcome message ended up undefined/null
         if (finalConfig.config.content.welcome_message === undefined || finalConfig.config.content.welcome_message === null) {
-            console.warn("[useWidgetConfig] Welcome message is missing or null in the final config. Ensure it's set in the chatbot configuration.", { loadedContent: data.config?.content });
+            console.warn("[useWidgetConfig] Welcome message is explicitly missing or null in the final config.", { loadedContent: data.config?.content });
             addDiagnosticEvent('WARNING', 'Final welcome message is missing/null', { loadedContent: data.config?.content });
-            // Optionally set a default if absolutely required, but better to show nothing?
-            // finalConfig.config.content.welcome_message = "Welcome!"; 
         }
 
         // --- DEBUG LOG --- 
         console.log("[useWidgetConfig] Final welcome message before setConfig:", finalConfig.config.content.welcome_message);
+        console.log("[useWidgetConfig] Final config object before setConfig:", JSON.stringify(finalConfig)); // Log the whole object
         // --- END DEBUG LOG ---
 
         // Set the correctly constructed final configuration
