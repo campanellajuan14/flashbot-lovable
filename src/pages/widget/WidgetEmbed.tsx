@@ -106,9 +106,22 @@ const WidgetEmbed: React.FC = () => {
       setMessages // Ensure setMessages is available
     ) {
       console.log("[WidgetEmbed] Adding welcome message:", config.config.content.welcome_message);
-      setMessages([{ role: "assistant", content: config.config.content.welcome_message }]);
+      // Ensure welcome message is added safely
+      try {
+        const welcomeMsg = { role: "assistant", content: config.config.content.welcome_message };
+        // Check if message structure is valid before setting
+        if (typeof welcomeMsg.content === 'string') { 
+            setMessages([welcomeMsg]);
+        } else {
+            console.error("[WidgetEmbed] Invalid welcome message content type:", typeof welcomeMsg.content);
+            setMessages([{ role: "assistant", content: "Error: Invalid welcome message format." }]);
+        }
+      } catch (e) {
+        console.error("[WidgetEmbed] Error setting welcome message:", e);
+        setMessages([{ role: "assistant", content: "Error displaying welcome message." }]);
+      }
     }
-  }, [config, messages, conversationId, setMessages]);
+  }, [config, messages, conversationId, setMessages]); // Ensure messages is a dependency
 
   // Handle widget loading
   if (loading) {
@@ -133,11 +146,26 @@ const WidgetEmbed: React.FC = () => {
   }
   
   // At this point, config is guaranteed to be available
-  console.log("[WidgetEmbed] Rendering widget with config:", { 
-    appearance: config.config.appearance,
-    hideBackground: config.config.appearance?.hideBackground || false
-  });
+  console.log("[WidgetEmbed] Rendering widget with config."); // Simplified log
 
+  // --- TEMPORARY SIMPLIFICATION FOR DEBUGGING ---
+  // Always render WidgetContainer, ignore hideBackground for now
+  return (
+    <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
+      <WidgetContainer
+        // Pass only essential, known-good config parts if necessary
+        config={config.config} 
+        messages={messages ?? []} // Ensure messages is always an array
+        inputValue={localInputValue} 
+        sending={sending}
+        handleInputChange={onInputChange} 
+        handleSendMessage={handleSendMessage} 
+      />
+    </div>
+  );
+  // --- END TEMPORARY SIMPLIFICATION ---
+
+  /* Original code commented out for debugging:
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;
 
@@ -145,7 +173,7 @@ const WidgetEmbed: React.FC = () => {
     <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
       {hideBackground ? (
         <MessagesOnlyView
-          messages={messages ?? []} // Ensure messages is always an array
+          messages={messages ?? []} 
           sending={sending}
           welcomeMessage={content?.welcome_message}
           userBubbleColor={colors?.user_bubble}
@@ -155,15 +183,16 @@ const WidgetEmbed: React.FC = () => {
       ) : (
         <WidgetContainer
           config={config.config}
-          messages={messages ?? []} // Ensure messages is always an array
-          inputValue={localInputValue} // Use local input value for display
+          messages={messages ?? []} 
+          inputValue={localInputValue} 
           sending={sending}
-          handleInputChange={onInputChange} // Use the combined input change handler
-          handleSendMessage={handleSendMessage} // Use the handler from useChatMessages
+          handleInputChange={onInputChange} 
+          handleSendMessage={handleSendMessage} 
         />
       )}
     </div>
   );
+  */
 };
 
 export default WidgetEmbed;
