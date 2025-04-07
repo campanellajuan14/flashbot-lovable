@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import WidgetContainer from "./components/WidgetContainer";
 import WidgetError from "./components/WidgetError";
@@ -13,12 +13,7 @@ const WidgetEmbed: React.FC = () => {
   const location = useLocation();
   
   // Extract widget ID from various possible sources
-  const widgetId = useMemo(() => {
-    // First check params (most reliable)
-    if (params.widgetId) {
-      return params.widgetId;
-    }
-    
+  const widgetId = params.widgetId || (() => {
     // If params don't have it, try to extract from pathname
     const pathParts = location.pathname.split('/');
     const lastPart = pathParts[pathParts.length - 1];
@@ -37,10 +32,7 @@ const WidgetEmbed: React.FC = () => {
     }
     
     return undefined;
-  }, [params, location]);
-  
-  // Always declare state variables at the top level
-  const [inputValue, setInputValue] = useState("");
+  })();
   
   // Log all attempts to obtain widget ID
   useEffect(() => {
@@ -61,37 +53,6 @@ const WidgetEmbed: React.FC = () => {
     console.log("[WidgetEmbed] Loading state:", loading);
     console.log("[WidgetEmbed] Error state:", errorInfo);
   }, [widgetId, loading, errorInfo]);
-  
-  // Call useChatMessages unconditionally at the top level
-  // This is crucial for React's hook rules
-  const {
-    sending: chatSending,
-    handleSendMessage: chatHandleSendMessage,
-    handleInputChange: chatHandleInputChange
-  } = useChatMessages({
-    widgetId,
-    // Provide fallback values when config is not available
-    chatbotId: config?.id || "",
-    conversationId,
-    setConversationId,
-    messages: messages || [],
-    setMessages: setMessages || (() => {})
-  });
-
-  // Handle all user input interactions consistently
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    if (config) {
-      chatHandleInputChange(e);
-    }
-  };
-  
-  // Create safe handler functions
-  const handleSendMessage = () => {
-    if (config) {
-      chatHandleSendMessage();
-    }
-  };
   
   // Handle widget loading
   if (loading) {
@@ -115,6 +76,21 @@ const WidgetEmbed: React.FC = () => {
     />;
   }
   
+  // Important: Only call useChatMessages when we have a valid config
+  const {
+    inputValue,
+    sending,
+    handleInputChange,
+    handleSendMessage
+  } = useChatMessages({
+    widgetId,
+    chatbotId: config.id,
+    conversationId,
+    setConversationId,
+    messages,
+    setMessages
+  });
+  
   console.log("[WidgetEmbed] Rendering widget with config:", { 
     appearance: config.config.appearance,
     hideBackground: config.config.appearance?.hideBackground || false
@@ -123,12 +99,25 @@ const WidgetEmbed: React.FC = () => {
   const { appearance, content, colors } = config.config;
   const hideBackground = appearance?.hideBackground || false;
 
+  // Add welcome message if it's a new conversation and there's a welcome message configured
+  useEffect(() => {
+    if (
+      config && 
+      messages.length === 0 && 
+      content?.welcome_message && 
+      !conversationId
+    ) {
+      console.log("[WidgetEmbed] Adding welcome message:", content.welcome_message);
+      setMessages([{ role: "assistant", content: content.welcome_message }]);
+    }
+  }, [config, messages.length, content, conversationId, setMessages]);
+
   return (
     <div className="h-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
       {hideBackground ? (
         <MessagesOnlyView
           messages={messages}
-          sending={chatSending}
+          sending={sending}
           welcomeMessage={content?.welcome_message}
           userBubbleColor={colors?.user_bubble}
           botBubbleColor={colors?.bot_bubble}
@@ -139,7 +128,7 @@ const WidgetEmbed: React.FC = () => {
           config={config.config}
           messages={messages}
           inputValue={inputValue}
-          sending={chatSending}
+          sending={sending}
           handleInputChange={handleInputChange}
           handleSendMessage={handleSendMessage}
         />
