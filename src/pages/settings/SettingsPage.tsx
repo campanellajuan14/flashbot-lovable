@@ -4,12 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/index";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { UserCog, Shield } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
+// Import components directly to avoid any potential circular dependencies
 import SettingsHeader from "./components/SettingsHeader";
 import ProfileTab from "./components/ProfileTab";
 import AccountTab from "./components/AccountTab";
 
-const SettingsPage = () => {
+const SettingsPage: React.FC = () => {
   const { isLoading } = useAuth();
 
   if (isLoading) {
