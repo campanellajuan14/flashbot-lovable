@@ -26,7 +26,6 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     chatbotId,
     conversationId,
     source,
-    widgetId,
     messageLength: message.length
   });
   
@@ -38,8 +37,7 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
       'Authorization': `Bearer ${ANON_KEY}`,
       'x-client-info': source || 'web-client',
       'Origin': window.location.origin,
-      'Referer': document.referrer || window.location.href,
-      'x-debug-info': `chatbotId=${chatbotId};widgetId=${widgetId};ts=${Date.now()}`
+      'Referer': document.referrer || window.location.href
     },
     body: JSON.stringify({
       messages: [{ role: 'user', content: message }],
