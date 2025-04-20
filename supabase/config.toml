@@ -13,6 +13,8 @@ max_rows = 1000
 port = 54322
 shadow_port = 54320
 major_version = 15
+# Enable SSL mode for database connections
+ssl_enforcement = true
 
 [studio]
 enabled = true
@@ -36,11 +38,32 @@ additional_redirect_urls = ["https://localhost:5173"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
+# Enable Multi-factor Authentication
+enable_mfa = true
+# Limit session time for added security
+session_expiry = 604800 # 7 days
+# Add network restrictions (comma-separated list of CIDR blocks)
+# Example: allowed_ips = ["123.123.123.123/32", "124.124.124.0/24"]
+# Empty for no restrictions (not recommended for production)
+allowed_ips = []
 
 [auth.email]
 # Changed from enable_signups to enable_confirmations
 double_confirm_changes = true
 enable_confirmations = true
+
+# Custom SMTP configuration (Replace with your actual SMTP provider details)
+[auth.email.custom_smtp]
+enabled = true
+server = "smtp.example.com"
+port = 587
+user = "your-smtp-username"
+password = "your-smtp-password"
+sender_name = "FlashBot"
+sender_email = "noreply@yourcompany.com"
+# Security settings for SMTP
+admin_email = "admin@yourcompany.com"
+security = "STARTTLS" # Options: STARTTLS, SSL
 
 [functions.save-whatsapp-config]
 verify_jwt = true
