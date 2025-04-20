@@ -1,4 +1,3 @@
-
 # This file sets up authentication, storage, and functions configuration
 
 project_id = "obiiomoqhpbgaymfphdz"
@@ -41,7 +40,7 @@ refresh_token_reuse_interval = 10
 [auth.email]
 # Changed from enable_signups to enable_confirmations
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true
 
 [functions.save-whatsapp-config]
 verify_jwt = true
@@ -50,31 +49,31 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.whatsapp-webhook]
-verify_jwt = false
+verify_jwt = true
 
 [functions.claude-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.kv-store-document]
-verify_jwt = false
+verify_jwt = true
 
 [functions.register-conversation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-temp-documents]
 verify_jwt = true
 
 [functions.kv-get-documents-by-chatbot]
-verify_jwt = false
+verify_jwt = true
 
 [functions.kv-clear-documents-by-chatbot]
-verify_jwt = false
+verify_jwt = true
 
 [functions.match-documents]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-documents]
 verify_jwt = true
 
 [functions.widget-config]
-verify_jwt = false
+verify_jwt = true
