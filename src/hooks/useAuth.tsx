@@ -1,4 +1,3 @@
-
 import { 
   createContext, 
   useContext,
@@ -18,6 +17,7 @@ export interface AuthUser {
   businessName?: string;
   role: 'admin' | 'user';
   profileImageUrl?: string;
+  hasMfa: boolean;
 }
 
 // Define the context type
@@ -28,6 +28,13 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, businessName: string) => Promise<void>;
   signOut: () => void;
+  // MFA functions
+  enrollMfa: () => Promise<{ qr: string; secret: string }>;
+  verifyMfa: (code: string) => Promise<boolean>;
+  unenrollMfa: () => Promise<boolean>;
+  getMfaFactors: () => Promise<any[]>;
+  // Check if MFA is required for this account
+  isMfaRequired: () => boolean;
 }
 
 // Create the context with a default value
@@ -38,6 +45,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Function to check if MFA is required (admin users always require MFA)
+  const isMfaRequired = () => {
+    if (!user) return false;
+    // Admins are required to have MFA
+    return user.role === 'admin';
+  };
   
   // Setup auth state listener
   useEffect(() => {
@@ -56,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: session.user.email || '',
             businessName: session.user.user_metadata?.business_name || '',
             role: 'user',
+            hasMfa: false, // Will be updated with actual value
           };
           
           console.log("Setting user from auth event:", authUser);
@@ -68,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           setTimeout(async () => {
             try {
+              // Get user profile data
               const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('business_name, role')
@@ -79,6 +95,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 return;
               }
               
+              // Get MFA factors to check if user has MFA enabled
+              const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+              
+              if (factorsError) {
+                console.error('Error fetching MFA factors:', factorsError);
+              }
+              
+              const hasMfa = factorsData?.totp?.length > 0 && 
+                             factorsData.totp.some(factor => factor.status === 'verified');
+              
               if (profileData) {
                 setUser(prev => {
                   if (!prev) return null;
@@ -86,8 +112,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     ...prev,
                     businessName: profileData.business_name || prev.businessName,
                     role: (profileData.role as 'admin' | 'user') || prev.role,
+                    hasMfa,
                   };
                 });
+                
+                // If user is admin and doesn't have MFA, log security warning
+                const isAdmin = profileData.role === 'admin';
+                if (isAdmin && !hasMfa) {
+                  console.warn('Admin user does not have MFA enabled');
+                  
+                  // Warn the user to enable MFA
+                  sonnerToast.warning("Configuración de seguridad recomendada", {
+                    description: "Como administrador, recomendamos activar la autenticación de dos factores (2FA).",
+                    duration: 8000,
+                  });
+                }
               }
             } catch (error) {
               console.error('Error fetching additional user data:', error);
@@ -107,6 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: session.user.email || '',
           businessName: session.user.user_metadata?.business_name || '',
           role: 'user',
+          hasMfa: false, // Will be updated with actual value
         };
         
         console.log("Setting initial user:", authUser);
@@ -115,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Use setTimeout for additional data fetch
         setTimeout(async () => {
           try {
+            // Get user profile data
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('business_name, role')
@@ -126,6 +167,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
             }
             
+            // Get MFA factors to check if user has MFA enabled
+            const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+            
+            if (factorsError) {
+              console.error('Error fetching MFA factors:', factorsError);
+            }
+            
+            const hasMfa = factorsData?.totp?.length > 0 && 
+                           factorsData.totp.some(factor => factor.status === 'verified');
+            
             if (profileData) {
               setUser(prev => {
                 if (!prev) return null;
@@ -133,8 +184,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   ...prev,
                   businessName: profileData.business_name || prev.businessName,
                   role: (profileData.role as 'admin' | 'user') || prev.role,
+                  hasMfa,
                 };
               });
+              
+              // If user is admin and doesn't have MFA, log security warning
+              const isAdmin = profileData.role === 'admin';
+              if (isAdmin && !hasMfa) {
+                console.warn('Admin user does not have MFA enabled');
+                
+                // Warn the user to enable MFA
+                sonnerToast.warning("Configuración de seguridad recomendada", {
+                  description: "Como administrador, recomendamos activar la autenticación de dos factores (2FA).",
+                  duration: 8000,
+                });
+              }
             }
           } catch (error) {
             console.error('Error fetching additional user data:', error);
@@ -244,6 +308,136 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
+  // Enroll in MFA
+  const enrollMfa = async (): Promise<{ qr: string; secret: string }> => {
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp'
+      });
+      
+      if (error) throw error;
+      
+      return {
+        qr: data.totp.qr_code,
+        secret: data.totp.secret
+      };
+    } catch (error: any) {
+      console.error('Error enrolling in MFA:', error);
+      sonnerToast.error("Error MFA", {
+        description: error.message || "No se pudo configurar la autenticación de dos factores.",
+      });
+      throw error;
+    }
+  };
+  
+  // Verify MFA code after enrollment
+  const verifyMfa = async (code: string): Promise<boolean> => {
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      if (!factors.totp || factors.totp.length === 0) {
+        throw new Error('No MFA factors found');
+      }
+      
+      // Get the first factor 
+      const factorId = factors.totp[0].id;
+      
+      const { data, error } = await supabase.auth.mfa.challenge({
+        factorId
+      });
+      
+      if (error) throw error;
+      
+      const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: data.id,
+        code
+      });
+      
+      if (verifyError) throw verifyError;
+      
+      // Update user state to reflect MFA status
+      setUser(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          hasMfa: true
+        };
+      });
+      
+      sonnerToast.success("MFA activado", {
+        description: "La autenticación de dos factores se ha configurado correctamente.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Error verifying MFA:', error);
+      sonnerToast.error("Error de verificación", {
+        description: error.message || "El código de verificación es incorrecto o ha expirado.",
+      });
+      return false;
+    }
+  };
+  
+  // Unenroll from MFA
+  const unenrollMfa = async (): Promise<boolean> => {
+    try {
+      // Get the list of factors first
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      
+      if (factorsError) throw factorsError;
+      
+      if (!factors.totp || factors.totp.length === 0) {
+        throw new Error('No MFA factors found to unenroll');
+      }
+      
+      // Unenroll each factor
+      for (const factor of factors.totp) {
+        if (factor.status === 'verified') {
+          const { error } = await supabase.auth.mfa.unenroll({
+            factorId: factor.id
+          });
+          
+          if (error) throw error;
+        }
+      }
+      
+      // Update user state to reflect MFA status
+      setUser(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          hasMfa: false
+        };
+      });
+      
+      sonnerToast.success("MFA desactivado", {
+        description: "La autenticación de dos factores se ha desactivado correctamente.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Error unenrolling MFA:', error);
+      sonnerToast.error("Error", {
+        description: error.message || "No se pudo desactivar la autenticación de dos factores.",
+      });
+      return false;
+    }
+  };
+  
+  // Get MFA factors
+  const getMfaFactors = async (): Promise<any[]> => {
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      
+      if (error) throw error;
+      
+      return data.totp || [];
+    } catch (error: any) {
+      console.error('Error getting MFA factors:', error);
+      return [];
+    }
+  };
+  
   console.log("Auth state:", { user, isAuthenticated: !!user, isLoading });
 
   return (
@@ -255,6 +449,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signIn,
         signUp,
         signOut,
+        enrollMfa,
+        verifyMfa,
+        unenrollMfa,
+        getMfaFactors,
+        isMfaRequired
       }}
     >
       {children}
@@ -262,11 +461,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook to use the auth context
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
