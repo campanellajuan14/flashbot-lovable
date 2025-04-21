@@ -12,7 +12,7 @@ const AuthRequired = () => {
 
   // If not authenticated, redirect to sign-in page
   if (!isAuthenticated) {
-    return <Navigate to="/auth/signin" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If authenticated, render the child routes
