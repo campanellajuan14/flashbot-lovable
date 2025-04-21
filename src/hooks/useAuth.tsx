@@ -1,9 +1,12 @@
+
 import { 
   createContext, 
   useContext,
   useState, 
   useEffect, 
-  ReactNode 
+  ReactNode,
+  useRef,
+  useCallback 
 } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -45,102 +48,115 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const isInitialized = useRef(false);
+  const profileRequestInProgress = useRef(false);
+  const lastUserId = useRef<string | null>(null);
   
   // Function to check if MFA is required (admin users always require MFA)
-  const isMfaRequired = () => {
+  const isMfaRequired = useCallback(() => {
     if (!user) return false;
     // Admins are required to have MFA
     return user.role === 'admin';
-  };
+  }, [user]);
+  
+  // Consolidated function to fetch user profile data to prevent duplicate calls
+  const fetchUserData = useCallback(async (userId: string) => {
+    // Skip if already fetching for this user or if no user ID
+    if (profileRequestInProgress.current || !userId) return;
+    
+    // Return if we've already fetched data for this user
+    if (lastUserId.current === userId && user?.id === userId) return;
+    
+    console.log("Fetching user profile data for:", userId);
+    profileRequestInProgress.current = true;
+    lastUserId.current = userId;
+    
+    try {
+      // Get user profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('business_name, role')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        profileRequestInProgress.current = false;
+        return;
+      }
+      
+      // Get MFA factors to check if user has MFA enabled
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      
+      if (factorsError) {
+        console.error('Error fetching MFA factors:', factorsError);
+      }
+      
+      const hasMfa = factorsData?.totp?.length > 0 && 
+                     factorsData.totp.some(factor => factor.status === 'verified');
+      
+      if (profileData) {
+        setUser(prev => {
+          if (!prev || prev.id !== userId) {
+            // Create new user object if none exists or if user ID changed
+            return {
+              id: userId,
+              email: prev?.email || '',
+              businessName: profileData.business_name || '',
+              role: (profileData.role as 'admin' | 'user') || 'user',
+              hasMfa,
+            };
+          }
+          // Otherwise update existing user object
+          return {
+            ...prev,
+            businessName: profileData.business_name || prev.businessName,
+            role: (profileData.role as 'admin' | 'user') || prev.role,
+            hasMfa,
+          };
+        });
+        
+        // If user is admin and doesn't have MFA, log security warning
+        const isAdmin = profileData.role === 'admin';
+        if (isAdmin && !hasMfa) {
+          console.warn('Admin user does not have MFA enabled');
+          
+          // Warn the user to enable MFA
+          sonnerToast.warning("Configuración de seguridad recomendada", {
+            description: "Como administrador, recomendamos activar la autenticación de dos factores (2FA).",
+            duration: 8000,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      profileRequestInProgress.current = false;
+      setIsLoading(false);
+    }
+  }, [user, setUser]);
   
   // Setup auth state listener
   useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+    
     console.log("Setting up auth listener");
     setIsLoading(true);
     
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
-        // Use simple synchronous state updates in the callback
-        if (session?.user) {
-          const authUser: AuthUser = {
-            id: session.user.id,
-            email: session.user.email || '',
-            businessName: session.user.user_metadata?.business_name || '',
-            role: 'user',
-            hasMfa: false, // Will be updated with actual value
-          };
-          
-          console.log("Setting user from auth event:", authUser);
-          setUser(authUser);
-        } else {
+        // Handle user sign out
+        if (!session?.user) {
           setUser(null);
+          setIsLoading(false);
+          return;
         }
         
-        // Use setTimeout to defer any additional Supabase calls
-        if (session?.user) {
-          setTimeout(async () => {
-            try {
-              // Get user profile data
-              const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('business_name, role')
-                .eq('id', session.user.id)
-                .maybeSingle();
-                
-              if (profileError) {
-                console.error('Error fetching profile:', profileError);
-                return;
-              }
-              
-              // Get MFA factors to check if user has MFA enabled
-              const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-              
-              if (factorsError) {
-                console.error('Error fetching MFA factors:', factorsError);
-              }
-              
-              const hasMfa = factorsData?.totp?.length > 0 && 
-                             factorsData.totp.some(factor => factor.status === 'verified');
-              
-              if (profileData) {
-                setUser(prev => {
-                  if (!prev) return null;
-                  return {
-                    ...prev,
-                    businessName: profileData.business_name || prev.businessName,
-                    role: (profileData.role as 'admin' | 'user') || prev.role,
-                    hasMfa,
-                  };
-                });
-                
-                // If user is admin and doesn't have MFA, log security warning
-                const isAdmin = profileData.role === 'admin';
-                if (isAdmin && !hasMfa) {
-                  console.warn('Admin user does not have MFA enabled');
-                  
-                  // Warn the user to enable MFA
-                  sonnerToast.warning("Configuración de seguridad recomendada", {
-                    description: "Como administrador, recomendamos activar la autenticación de dos factores (2FA).",
-                    duration: 8000,
-                  });
-                }
-              }
-            } catch (error) {
-              console.error('Error fetching additional user data:', error);
-            }
-          }, 0);
-        }
-      }
-    );
-    
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.id);
-      
-      if (session?.user) {
+        // Create basic user object
         const authUser: AuthUser = {
           id: session.user.id,
           email: session.user.email || '',
@@ -149,67 +165,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           hasMfa: false, // Will be updated with actual value
         };
         
-        console.log("Setting initial user:", authUser);
+        // Update basic user info (ID, email)
         setUser(authUser);
         
-        // Use setTimeout for additional data fetch
-        setTimeout(async () => {
-          try {
-            // Get user profile data
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('business_name, role')
-              .eq('id', session.user.id)
-              .maybeSingle();
-              
-            if (profileError) {
-              console.error('Error fetching profile:', profileError);
-              return;
-            }
-            
-            // Get MFA factors to check if user has MFA enabled
-            const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-            
-            if (factorsError) {
-              console.error('Error fetching MFA factors:', factorsError);
-            }
-            
-            const hasMfa = factorsData?.totp?.length > 0 && 
-                           factorsData.totp.some(factor => factor.status === 'verified');
-            
-            if (profileData) {
-              setUser(prev => {
-                if (!prev) return null;
-                return {
-                  ...prev,
-                  businessName: profileData.business_name || prev.businessName,
-                  role: (profileData.role as 'admin' | 'user') || prev.role,
-                  hasMfa,
-                };
-              });
-              
-              // If user is admin and doesn't have MFA, log security warning
-              const isAdmin = profileData.role === 'admin';
-              if (isAdmin && !hasMfa) {
-                console.warn('Admin user does not have MFA enabled');
-                
-                // Warn the user to enable MFA
-                sonnerToast.warning("Configuración de seguridad recomendada", {
-                  description: "Como administrador, recomendamos activar la autenticación de dos factores (2FA).",
-                  duration: 8000,
-                });
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching additional user data:', error);
-          } finally {
-            setIsLoading(false);
-          }
-        }, 0);
-      } else {
+        // Fetch additional user data in a controlled manner
+        fetchUserData(session.user.id);
+      }
+    );
+    
+    // Check for existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
+      
+      if (!session?.user) {
         setUser(null);
         setIsLoading(false);
+        return;
       }
+      
+      // Create basic user object
+      const authUser: AuthUser = {
+        id: session.user.id,
+        email: session.user.email || '',
+        businessName: session.user.user_metadata?.business_name || '',
+        role: 'user',
+        hasMfa: false, // Will be updated with actual value
+      };
+      
+      // Update basic user info (ID, email)
+      setUser(authUser);
+      
+      // Fetch additional user data in a controlled manner
+      fetchUserData(session.user.id);
     }).catch(error => {
       console.error("Error checking session:", error);
       setUser(null);
@@ -219,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserData]);
 
   // Sign in function
   const signIn = async (email: string, password: string): Promise<void> => {
