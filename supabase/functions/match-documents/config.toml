@@ -2,3 +2,4 @@
 [functions.options]
 memory = 256
 timeout = 20
+max_connections = 8
