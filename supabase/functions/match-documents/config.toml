@@ -1,5 +1,5 @@
 
 [functions.options]
-memory = 256
-timeout = 20
+memory = 512
+timeout = 30
 max_connections = 8
