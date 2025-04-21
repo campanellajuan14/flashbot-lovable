@@ -1,7 +1,9 @@
 // API helpers for widget and chatbot functionality
+import { env } from '@/config/environment';
 
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iaWlvbW9xaHBiZ2F5bWZwaGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjIyNTUsImV4cCI6MjA1MzMzODI1NX0.JAtEJ3nJucemX7rQd1I0zlTBGAVsNQ_SPGiULmjwfXY';
-const API_BASE_URL = 'https://obiiomoqhpbgaymfphdz.supabase.co/functions/v1';
+// Use environment variables instead of hardcoded values
+const ANON_KEY = env.supabase.anonKey;
+const API_BASE_URL = env.api.baseUrl;
 
 interface ChatMessageParams {
   message: string;
@@ -17,6 +19,63 @@ interface ChatMessageResponse {
 }
 
 /**
+ * Reusable fetch function with error handling, retries and timeouts
+ */
+async function fetchWithRetry(url: string, options: RequestInit, retries = env.performance.maxRetries) {
+  try {
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), env.performance.connectionTimeout);
+    
+    // Add signal to options
+    const fetchOptions = {
+      ...options,
+      signal: controller.signal
+    };
+    
+    const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      // Check if we should retry
+      if (retries > 0 && [408, 429, 500, 502, 503, 504].includes(response.status)) {
+        // Exponential backoff
+        const delay = Math.min(Math.pow(2, env.performance.maxRetries - retries) * 1000, 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1);
+      }
+      
+      // Get error details
+      let errorDetail;
+      try {
+        errorDetail = await response.json();
+      } catch (e) {
+        errorDetail = await response.text();
+      }
+      
+      throw new Error(
+        `API error: ${response.status} ${response.statusText}. ${JSON.stringify(errorDetail)}`
+      );
+    }
+    
+    return response;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout exceeded');
+    }
+    
+    // Retry network errors
+    if (retries > 0 && error instanceof TypeError && error.message.includes('network')) {
+      const delay = Math.min(Math.pow(2, env.performance.maxRetries - retries) * 1000, 10000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    
+    throw error;
+  }
+}
+
+/**
  * Sends a chat message to the API
  */
 export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMessageResponse> {
@@ -29,9 +88,9 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     messageLength: message.length
   });
   
-  const response = await fetch(`${API_BASE_URL}/claude-chat`, {
+  const response = await fetchWithRetry(`${API_BASE_URL}/claude-chat`, {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'apikey': ANON_KEY,
       'Authorization': `Bearer ${ANON_KEY}`,
@@ -54,27 +113,6 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     })
   });
   
-  if (!response.ok) {
-    console.error(`[API] Error sending message: ${response.status} ${response.statusText}`);
-    
-    // Try to get more error details
-    try {
-      const errorData = await response.json();
-      console.error('[API] Error details:', errorData);
-      throw new Error(errorData.error || 'Error sending message');
-    } catch (e) {
-      // If can't parse JSON, try to get text
-      try {
-        const errorText = await response.text();
-        console.error('[API] Error response text:', errorText);
-        throw new Error(errorText || 'Error sending message');
-      } catch (textError) {
-        console.error('[API] Could not read error response');
-        throw new Error('Error sending message');
-      }
-    }
-  }
-  
   const data = await response.json();
   console.log('[API] Message sent successfully, received response:', {
     conversationId: data.conversation_id,
@@ -85,4 +123,41 @@ export async function sendChatMessage(params: ChatMessageParams): Promise<ChatMe
     message: data.message,
     conversation_id: data.conversation_id
   };
+}
+
+/**
+ * Fetches widget configuration 
+ */
+export async function getWidgetConfig(widgetId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/widget-config?widget_id=${widgetId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY,
+      'Authorization': `Bearer ${ANON_KEY}`
+    }
+  });
+  
+  return response.json();
+}
+
+/**
+ * Register a new conversation
+ */
+export async function registerConversation(chatbotId: string, source = 'web', widgetId?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/register-conversation`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY,
+      'Authorization': `Bearer ${ANON_KEY}`
+    },
+    body: JSON.stringify({
+      chatbotId,
+      source,
+      widgetId
+    })
+  });
+  
+  return response.json();
 } 

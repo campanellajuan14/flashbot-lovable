@@ -58,11 +58,10 @@ enabled = true
 server = "smtp.example.com"
 port = 587
 user = "your-smtp-username"
-password = "your-smtp-password"
+password = "your-smtp-password" # Store this in Supabase secrets - DO NOT commit to repository
 sender_name = "FlashBot"
-sender_email = "noreply@yourcompany.com"
-# Security settings for SMTP
-admin_email = "admin@yourcompany.com"
+sender_email = "noreply@example.com"
+admin_email = "admin@example.com"
 security = "STARTTLS" # Options: STARTTLS, SSL
 
 [functions.save-whatsapp-config]
@@ -100,3 +99,31 @@ verify_jwt = true
 
 [functions.widget-config]
 verify_jwt = true
+
+# Connection pool configuration for improved stability
+[db.pooler]
+enabled = true 
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+pool_timeout = 60
+
+# Rate limiting for API to prevent abuse
+[api.rate_limits]
+enabled = true
+points = 100
+duration = 60 # 60 second window
+
+# Add health monitoring route
+[api.monitoring]
+enabled = true
+health_path = "/api/health"
+
+# Set consistent timeouts
+[db.timeouts]
+statement_timeout = 60000 # 60 seconds
+idle_in_transaction_session_timeout = 60000 # 60 seconds
+
+# Function logging settings
+[functions.logging]
+level = "info" # Options: debug, info, warn, error

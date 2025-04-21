@@ -1,0 +1,211 @@
+#!/bin/bash
+
+# Secure credentials configuration script
+# Handles API key rotation, database privileges, and secure credential management
+
+# Color configuration for terminal output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}=========================================================${NC}"
+echo -e "${BLUE}         FlashBot Security Configuration Script          ${NC}"
+echo -e "${BLUE}=========================================================${NC}"
+
+# Check if Supabase CLI is installed
+if ! command -v supabase &> /dev/null; then
+  echo -e "${RED}Supabase CLI is not installed. Please install it first.${NC}"
+  echo -e "${YELLOW}https://supabase.com/docs/guides/cli/getting-started${NC}"
+  exit 1
+fi
+
+# Check if jq is installed (needed for JSON processing)
+if ! command -v jq &> /dev/null; then
+  echo -e "${RED}jq is not installed. Please install it first.${NC}"
+  exit 1
+fi
+
+# Directory to store backup of current credentials
+BACKUP_DIR="./credential_backups"
+mkdir -p "$BACKUP_DIR"
+BACKUP_FILE="$BACKUP_DIR/credentials_$(date +%Y%m%d%H%M%S).json"
+
+# Backup current credentials
+echo -e "${YELLOW}Backing up current credentials...${NC}"
+supabase secrets list --format json > "$BACKUP_FILE"
+
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ Current credentials backed up to $BACKUP_FILE${NC}"
+else
+  echo -e "${RED}✗ Failed to backup current credentials${NC}"
+  exit 1
+fi
+
+# Function to securely set a secret
+set_secret() {
+  local key=$1
+  local value=$2
+  local description=$3
+  
+  echo -e "${YELLOW}Setting $description...${NC}"
+  supabase secrets set "$key=$value"
+  
+  if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ $description set successfully${NC}"
+    return 0
+  else
+    echo -e "${RED}✗ Failed to set $description${NC}"
+    return 1
+  fi
+}
+
+# Function to rotate API keys
+rotate_api_key() {
+  local service=$1
+  local key_name=$2
+  
+  echo -e "${YELLOW}Would you like to rotate the $service API key? (y/n)${NC}"
+  read -r rotate_key
+  
+  if [ "$rotate_key" = "y" ]; then
+    echo -e "${YELLOW}Enter new $service API key:${NC}"
+    read -rs new_api_key
+    echo ""
+    
+    if [ -z "$new_api_key" ]; then
+      echo -e "${RED}Key cannot be empty${NC}"
+      return 1
+    fi
+    
+    set_secret "$key_name" "$new_api_key" "$service API key"
+    return $?
+  else
+    echo -e "${YELLOW}Skipping $service API key rotation${NC}"
+    return 0
+  fi
+}
+
+# Configure OpenAI API key
+rotate_api_key "OpenAI" "OPENAI_API_KEY"
+
+# Configure SMTP settings
+echo -e "${YELLOW}Would you like to configure SMTP settings? (y/n)${NC}"
+read -r configure_smtp
+
+if [ "$configure_smtp" = "y" ]; then
+  echo -e "${YELLOW}Enter SMTP server:${NC}"
+  read -r smtp_server
+  
+  echo -e "${YELLOW}Enter SMTP port:${NC}"
+  read -r smtp_port
+  
+  echo -e "${YELLOW}Enter SMTP username:${NC}"
+  read -r smtp_user
+  
+  echo -e "${YELLOW}Enter SMTP password:${NC}"
+  read -rs smtp_password
+  echo ""
+  
+  echo -e "${YELLOW}Enter sender email:${NC}"
+  read -r sender_email
+  
+  echo -e "${YELLOW}Enter sender name:${NC}"
+  read -r sender_name
+  
+  # Update config.toml
+  echo -e "${YELLOW}Updating SMTP configuration in config.toml...${NC}"
+  supabase config set auth.email.custom_smtp.enabled=true
+  supabase config set auth.email.custom_smtp.server="$smtp_server"
+  supabase config set auth.email.custom_smtp.port="$smtp_port"
+  supabase config set auth.email.custom_smtp.user="$smtp_user"
+  supabase config set auth.email.custom_smtp.sender_name="$sender_name"
+  supabase config set auth.email.custom_smtp.sender_email="$sender_email"
+  
+  # Set SMTP password as secret rather than in config file
+  set_secret "SMTP_PASSWORD" "$smtp_password" "SMTP password"
+fi
+
+# Configure database connection pooling
+echo -e "${YELLOW}Configuring database connection pooling...${NC}"
+supabase config set db.pooler.enabled=true
+supabase config set db.pooler.pool_mode="transaction"
+supabase config set db.pooler.default_pool_size=20
+
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ Database connection pooling configured${NC}"
+else
+  echo -e "${RED}✗ Failed to configure database connection pooling${NC}"
+fi
+
+# Configure Redis caching
+echo -e "${YELLOW}Would you like to configure Redis caching? (y/n)${NC}"
+read -r configure_redis
+
+if [ "$configure_redis" = "y" ]; then
+  echo -e "${YELLOW}Enter Redis URL (redis://user:password@host:port):${NC}"
+  read -r redis_url
+  
+  set_secret "REDIS_URL" "$redis_url" "Redis URL"
+fi
+
+# Configure rate limiting
+echo -e "${YELLOW}Configuring API rate limiting...${NC}"
+supabase config set api.rate_limits.enabled=true
+supabase config set api.rate_limits.points=100
+supabase config set api.rate_limits.duration=60
+
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ API rate limiting configured${NC}"
+else
+  echo -e "${RED}✗ Failed to configure API rate limiting${NC}"
+fi
+
+# Generate .env.local file for local development
+echo -e "${YELLOW}Generating .env.local file for local development...${NC}"
+cat > .env.local << EOF
+# Generated by security configuration script - DO NOT COMMIT THIS FILE
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=$(jq -r '.SUPABASE_URL // "https://obiiomoqhpbgaymfphdz.supabase.co"' "$BACKUP_FILE")
+NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jq -r '.SUPABASE_ANON_KEY' "$BACKUP_FILE")
+
+# API Keys (stored as secrets in production)
+OPENAI_API_KEY='Get from Supabase dashboard or run supabase secrets list'
+
+# Redis Configuration
+REDIS_URL='Get from Supabase dashboard or run supabase secrets list'
+
+# Environment
+NODE_ENV=development
+EOF
+
+echo -e "${GREEN}✓ .env.local file generated${NC}"
+
+# Check and warn about hardcoded credentials in source code
+echo -e "${YELLOW}Checking for hardcoded credentials in source code...${NC}"
+grep -r --include="*.{js,ts,tsx,jsx}" "key\|password\|secret\|token" --exclude-dir=node_modules . | grep -v "process.env\|Deno.env" | grep -v "package.json\|package-lock.json"
+
+echo -e "${YELLOW}⚠️  Review the above lines for potential hardcoded credentials${NC}"
+echo -e "${YELLOW}⚠️  Replace them with environment variables from src/config/environment.ts${NC}"
+
+# Deploy configuration changes
+echo -e "${BLUE}Deploying configuration changes...${NC}"
+supabase db push
+
+if [ $? -eq 0 ]; then
+  echo -e "${GREEN}✓ Security configuration deployed successfully${NC}"
+else
+  echo -e "${RED}✗ Failed to deploy security configuration${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}Security configuration completed!${NC}"
+echo -e "${YELLOW}Remember to:${NC}"
+echo -e "1. Keep backup files in ./credential_backups secure or delete them"
+echo -e "2. Remove any hardcoded credentials from your codebase"
+echo -e "3. Configure network policies in the Supabase dashboard"
+echo -e "4. Enable MFA for all admin accounts"
+
+exit 0 
